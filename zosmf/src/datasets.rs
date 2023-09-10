@@ -1,10 +1,10 @@
 pub mod list;
-pub mod list_members;
+pub mod members;
 
 use reqwest::Client;
 
-use self::list::ListBuilder;
-use self::list_members::{ListMembersBuilder, Member};
+use self::list::Dsname;
+use self::members::list::Member;
 
 #[derive(Clone, Debug)]
 pub struct Datasets<'a> {
@@ -17,11 +17,11 @@ impl<'a> Datasets<'a> {
         Datasets { base_url, client }
     }
 
-    pub fn list(&self, name_pattern: &str) -> ListBuilder<'a> {
-        ListBuilder::new(self.base_url, self.client, name_pattern)
+    pub fn list(&self, name_pattern: &str) -> list::ListBuilder<'a, Dsname> {
+        list::ListBuilder::new(self.base_url, self.client, name_pattern)
     }
 
-    pub fn list_members(&self, dataset_name: &str) -> ListMembersBuilder<'a, Member> {
-        ListMembersBuilder::new(self.base_url, self.client, dataset_name.to_string())
+    pub fn list_members(&self, dataset_name: &str) -> members::list::ListBuilder<'a, Member> {
+        members::list::ListBuilder::new(self.base_url, self.client, dataset_name.to_string())
     }
 }
