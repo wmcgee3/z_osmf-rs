@@ -1,18 +1,12 @@
-use std::marker::PhantomData;
-
 use anyhow::Context;
 use reqwest::Client;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use zosmf_macros::Endpoint;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct List<A>
-where
-    A: Attributes,
-{
-    pub items: Vec<A>,
+pub struct List {
+    pub items: Vec<Attributes>,
     pub json_version: i32,
     pub more_rows: Option<bool>,
     pub returned_rows: i32,
@@ -22,10 +16,7 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct ListBuilder<'a, A>
-where
-    A: Attributes,
-{
+pub struct ListBuilder<'a> {
     base_url: &'a str,
     client: &'a Client,
 
@@ -39,15 +30,10 @@ where
     max_items: Option<i32>,
     #[endpoint(optional, skip_builder)]
     include_total: bool,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    attributes: PhantomData<A>,
 }
 
-impl<'a, A> ListBuilder<'a, A>
-where
-    A: Attributes,
-{
-    pub fn attributes_base(self) -> ListBuilder<'a, Base> {
+impl<'a> ListBuilder<'a> {
+    pub fn attributes_base(self) -> ListBuilder<'a> {
         ListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -56,11 +42,10 @@ where
             start: self.start,
             max_items: self.max_items,
             include_total: self.include_total,
-            attributes: PhantomData,
         }
     }
 
-    pub fn attributes_dsname(self) -> ListBuilder<'a, Dsname> {
+    pub fn attributes_dsname(self) -> ListBuilder<'a> {
         ListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -69,11 +54,10 @@ where
             start: self.start,
             max_items: self.max_items,
             include_total: self.include_total,
-            attributes: PhantomData,
         }
     }
 
-    pub fn attributes_vol(self) -> ListBuilder<'a, Vol> {
+    pub fn attributes_vol(self) -> ListBuilder<'a> {
         ListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -82,13 +66,10 @@ where
             start: self.start,
             max_items: self.max_items,
             include_total: self.include_total,
-            attributes: PhantomData,
         }
     }
-}
 
-impl<'a> ListBuilder<'a, Base> {
-    pub async fn build(self) -> anyhow::Result<List<Base>> {
+    pub async fn build(self) -> anyhow::Result<List> {
         let response = self
             .get_request_builder()
             .header(
@@ -103,43 +84,39 @@ impl<'a> ListBuilder<'a, Base> {
     }
 }
 
-impl<'a> ListBuilder<'a, Dsname> {
-    pub async fn build(self) -> anyhow::Result<List<Dsname>> {
-        let response = self
-            .get_request_builder()
-            .header(
-                "X-IBM-Attributes",
-                if self.include_total {
-                    "dsname,total"
-                } else {
-                    ""
-                },
-            )
-            .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(get_list(response).await?)
-    }
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Attributes {
+    Base {
+        dsname: String,
+        blksz: Option<String>,
+        catnm: Option<String>,
+        cdate: Option<String>,
+        dev: Option<String>,
+        dsntp: Option<String>,
+        dsorg: Option<String>,
+        edate: Option<String>,
+        extx: Option<String>,
+        lrecl: Option<String>,
+        migr: Option<String>,
+        mvol: Option<String>,
+        ovf: Option<String>,
+        rdate: Option<String>,
+        recfm: Option<String>,
+        sizex: Option<String>,
+        spacu: Option<String>,
+        used: Option<String>,
+        vol: String,
+        vols: Option<String>,
+    },
+    Dsname {
+        dsname: String,
+    },
+    Vol {
+        dsname: String,
+        vol: String,
+    },
 }
-
-impl<'a> ListBuilder<'a, Vol> {
-    pub async fn build(self) -> anyhow::Result<List<Vol>> {
-        let response = self
-            .get_request_builder()
-            .header(
-                "X-IBM-Attributes",
-                format!("vol{}", if self.include_total { ",total" } else { "" }),
-            )
-            .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(get_list(response).await?)
-    }
-}
-
-pub trait Attributes {}
 
 #[derive(Deserialize)]
 pub struct Base {
@@ -165,22 +142,16 @@ pub struct Base {
     pub vols: Option<String>,
 }
 
-impl Attributes for Base {}
-
 #[derive(Deserialize)]
 pub struct Dsname {
     pub dsname: String,
 }
-
-impl Attributes for Dsname {}
 
 #[derive(Deserialize)]
 pub struct Vol {
     pub dsname: String,
     pub vol: String,
 }
-
-impl Attributes for Vol {}
 
 pub enum Volume {
     Alias,
@@ -219,10 +190,7 @@ impl Serialize for Volume {
     }
 }
 
-async fn get_list<A>(response: reqwest::Response) -> anyhow::Result<List<A>>
-where
-    A: Attributes + DeserializeOwned,
-{
+async fn get_list(response: reqwest::Response) -> anyhow::Result<List> {
     let transaction_id = response
         .headers()
         .get("X-IBM-Txid")
@@ -250,11 +218,8 @@ where
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ResponseJson<A>
-where
-    A: Attributes,
-{
-    items: Vec<A>,
+struct ResponseJson {
+    items: Vec<Attributes>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,
