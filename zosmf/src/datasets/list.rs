@@ -277,9 +277,7 @@ fn de_mvol<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-
-    Ok(Some(s == "Y"))
+    Ok(Option::<String>::deserialize(deserializer)?.map(|s| s == "Y"))
 }
 
 fn ser_mvol<S>(mvol: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
