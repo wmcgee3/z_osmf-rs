@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getter};
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct List<A>
+pub struct DatasetList<A>
 where
     A: Attr,
 {
@@ -21,7 +21,7 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct ListBuilder<'a, A>
+pub struct DatasetListBuilder<'a, A>
 where
     A: Attr + for<'de> Deserialize<'de>,
 {
@@ -44,12 +44,12 @@ where
     attrs: PhantomData<A>,
 }
 
-impl<'a, A> ListBuilder<'a, A>
+impl<'a, A> DatasetListBuilder<'a, A>
 where
     A: Attr + for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> ListBuilder<'a, Base> {
-        ListBuilder {
+    pub fn attributes_base(self) -> DatasetListBuilder<'a, DatasetBase> {
+        DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
@@ -62,8 +62,8 @@ where
         }
     }
 
-    pub fn attributes_dsname(self) -> ListBuilder<'a, Dsname> {
-        ListBuilder {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<'a, DatasetName> {
+        DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
@@ -76,8 +76,8 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> ListBuilder<'a, Vol> {
-        ListBuilder {
+    pub fn attributes_vol(self) -> DatasetListBuilder<'a, DatasetVol> {
+        DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
@@ -90,7 +90,7 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<List<A>> {
+    pub async fn build(self) -> anyhow::Result<DatasetList<A>> {
         let response = self.get_response().await?;
 
         let transaction_id = response
@@ -108,7 +108,7 @@ where
             total_rows,
         } = response.json().await?;
 
-        Ok(List {
+        Ok(DatasetList {
             items,
             json_version,
             more_rows,
@@ -120,7 +120,7 @@ where
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct Base {
+pub struct DatasetBase {
     dsname: String,
     blksz: Option<String>,
     catnm: Option<String>,
@@ -144,14 +144,14 @@ pub struct Base {
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct Vol {
+pub struct DatasetName {
     dsname: String,
-    vol: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct Dsname {
+pub struct DatasetVol {
     dsname: String,
+    vol: String,
 }
 
 #[derive(Clone, Debug)]
@@ -193,9 +193,9 @@ impl Serialize for Volume {
 }
 
 pub trait Attr {}
-impl Attr for Base {}
-impl Attr for Dsname {}
-impl Attr for Vol {}
+impl Attr for DatasetBase {}
+impl Attr for DatasetName {}
+impl Attr for DatasetVol {}
 
 #[derive(Clone, Copy, Debug)]
 enum Attrs {
@@ -236,7 +236,7 @@ where
 
 fn build_attributes<A>(
     request_builder: RequestBuilder,
-    list_builder: &ListBuilder<A>,
+    list_builder: &DatasetListBuilder<A>,
 ) -> RequestBuilder
 where
     A: Attr + for<'de> Deserialize<'de>,

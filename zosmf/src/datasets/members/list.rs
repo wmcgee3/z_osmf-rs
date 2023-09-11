@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getter};
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct List<A>
+pub struct MemberList<A>
 where
     A: Attr,
 {
@@ -20,7 +20,7 @@ where
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct ListBuilder<'a, A>
+pub struct MemberListBuilder<'a, A>
 where
     A: Attr,
 {
@@ -44,12 +44,12 @@ where
     attrs: PhantomData<A>,
 }
 
-impl<'a, A> ListBuilder<'a, A>
+impl<'a, A> MemberListBuilder<'a, A>
 where
     A: Attr + for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> ListBuilder<'a, Base> {
-        ListBuilder {
+    pub fn attributes_base(self) -> MemberListBuilder<'a, MemberBase> {
+        MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -62,8 +62,8 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> ListBuilder<'a, Member> {
-        ListBuilder {
+    pub fn attributes_member(self) -> MemberListBuilder<'a, MemberName> {
+        MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -76,7 +76,7 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<List<A>> {
+    pub async fn build(self) -> anyhow::Result<MemberList<A>> {
         let response = self.get_response().await?;
 
         let ResponseJson {
@@ -87,7 +87,7 @@ where
             json_version,
         } = response.json().await?;
 
-        Ok(List {
+        Ok(MemberList {
             items,
             json_version,
             more_rows,
@@ -97,13 +97,24 @@ where
     }
 }
 
-pub enum Base {
-    FixedOrVariable { member: String },
-    Unformatted { member: String },
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum MemberBase {
+    FixedOrVariable(MemberFixedOrVariable),
+    Undefined(MemberUndefined),
 }
 
-#[derive(Getter)]
-pub struct Member {
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct MemberFixedOrVariable {
+    member: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct MemberUndefined {
+    member: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct MemberName {
     member: String,
 }
 
@@ -128,8 +139,8 @@ impl From<MigratedRecall> for HeaderValue {
 }
 
 pub trait Attr {}
-impl Attr for Base {}
-impl Attr for Member {}
+impl Attr for MemberBase {}
+impl Attr for MemberName {}
 
 #[derive(Clone, Copy, Debug)]
 enum Attrs {

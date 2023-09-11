@@ -6,7 +6,7 @@ use quote::quote;
 use crate::utils::extract_optional_type;
 
 #[derive(FromDeriveInput)]
-#[darling(attributes(getter), supports(enum_named, struct_named))]
+#[darling(attributes(getter), supports(struct_named))]
 pub(crate) struct Getter {
     pub ident: syn::Ident,
     pub generics: syn::Generics,
@@ -36,7 +36,7 @@ impl Getter {
                     }
                 })
                 .collect(),
-            darling::ast::Data::Enum(_enum_data) => Vec::new(),
+            _ => panic!(),
         }
     }
 }
