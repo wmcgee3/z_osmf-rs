@@ -13,7 +13,7 @@ pub struct Zosmf {
 }
 
 impl Zosmf {
-    pub async fn new<B>(client_builder: ClientBuilder, base_url: B) -> Result<Self>
+    pub fn new<B>(client_builder: ClientBuilder, base_url: B) -> Result<Self>
     where
         B: std::fmt::Display,
     {
