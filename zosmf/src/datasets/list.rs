@@ -59,7 +59,7 @@ pub struct DatasetVol {
 #[derive(Clone, Debug)]
 pub enum Volume {
     Alias,
-    Migrate,
+    Migrated,
     Volume(String),
     Vsam,
 }
@@ -73,7 +73,7 @@ impl<'de> Deserialize<'de> for Volume {
 
         Ok(match s.as_str() {
             "*ALIAS" => Volume::Alias,
-            "MIGRAT" => Volume::Migrate,
+            "MIGRAT" => Volume::Migrated,
             "*VSAM*" => Volume::Vsam,
             _ => Volume::Volume(s),
         })
@@ -87,7 +87,7 @@ impl Serialize for Volume {
     {
         serializer.serialize_str(match self {
             Volume::Alias => "*ALIAS",
-            Volume::Migrate => "MIGRAT",
+            Volume::Migrated => "MIGRAT",
             Volume::Volume(vol) => vol,
             Volume::Vsam => "*VSAM*",
         })
