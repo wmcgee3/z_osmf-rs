@@ -33,7 +33,7 @@ pub struct DatasetBase {
     lrecl: Option<String>,
     #[serde(deserialize_with = "de_migr", serialize_with = "ser_migr")]
     migr: bool,
-    #[serde(deserialize_with = "de_mvol", serialize_with = "ser_mvol")]
+    #[serde(default, deserialize_with = "de_mvol", serialize_with = "ser_mvol")]
     mvol: Option<bool>,
     ovf: Option<String>,
     rdate: Option<String>,
