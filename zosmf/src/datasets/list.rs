@@ -31,9 +31,10 @@ pub struct DatasetBase {
     edate: Option<String>,
     extx: Option<String>,
     lrecl: Option<String>,
-    #[serde(deserialize_with = "de_migrated", serialize_with = "ser_migrated")]
+    #[serde(deserialize_with = "de_migr", serialize_with = "ser_migr")]
     migr: bool,
-    mvol: Option<String>,
+    #[serde(deserialize_with = "de_mvol", serialize_with = "ser_mvol")]
+    mvol: Option<bool>,
     ovf: Option<String>,
     rdate: Option<String>,
     recfm: Option<String>,
@@ -256,7 +257,7 @@ where
     }
 }
 
-fn de_migrated<'de, D>(deserializer: D) -> Result<bool, D::Error>
+fn de_migr<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -265,9 +266,29 @@ where
     Ok(s == "YES")
 }
 
-fn ser_migrated<S>(migr: &bool, serializer: S) -> Result<S::Ok, S::Error>
+fn ser_migr<S>(migr: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     serializer.serialize_str(if *migr { "YES" } else { "NO" })
+}
+
+fn de_mvol<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+
+    Ok(Some(s == "Y"))
+}
+
+fn ser_mvol<S>(mvol: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if let Some(mvol) = mvol {
+        serializer.serialize_str(if *mvol { "Y" } else { "N" })
+    } else {
+        serializer.serialize_none()
+    }
 }

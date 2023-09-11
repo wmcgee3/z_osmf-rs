@@ -18,6 +18,47 @@ where
     total_rows: Option<i32>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum MemberBase {
+    FixedOrVariable(MemberFixedOrVariable),
+    Undefined(MemberUndefined),
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct MemberFixedOrVariable {
+    member: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct MemberUndefined {
+    member: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct MemberName {
+    member: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MigratedRecall {
+    Error,
+    NoWait,
+    Wait,
+}
+
+impl From<MigratedRecall> for HeaderValue {
+    fn from(val: MigratedRecall) -> HeaderValue {
+        match val {
+            MigratedRecall::Error => "error",
+            MigratedRecall::NoWait => "nowait",
+            MigratedRecall::Wait => "wait",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
 pub struct MemberListBuilder<'a, A>
@@ -94,47 +135,6 @@ where
             returned_rows,
             total_rows,
         })
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum MemberBase {
-    FixedOrVariable(MemberFixedOrVariable),
-    Undefined(MemberUndefined),
-}
-
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct MemberFixedOrVariable {
-    member: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct MemberUndefined {
-    member: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct MemberName {
-    member: String,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MigratedRecall {
-    Error,
-    NoWait,
-    Wait,
-}
-
-impl From<MigratedRecall> for HeaderValue {
-    fn from(val: MigratedRecall) -> HeaderValue {
-        match val {
-            MigratedRecall::Error => "error",
-            MigratedRecall::NoWait => "nowait",
-            MigratedRecall::Wait => "wait",
-        }
-        .try_into()
-        .unwrap()
     }
 }
 
