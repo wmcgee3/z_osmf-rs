@@ -3,7 +3,7 @@ use zosmf::Zosmf;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let _ = dotenvy::dotenv();
+    let _ = dotenvy::dotenv_override();
 
     let base_url = std::env::var("ZOSMF_BASE_URL")?;
     let username = std::env::var("ZOSMF_USERNAME")?;
