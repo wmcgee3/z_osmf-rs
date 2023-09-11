@@ -1,30 +1,29 @@
 use std::marker::PhantomData;
 
 use anyhow::Context;
-use reqwest::Client;
-use serde::de::DeserializeOwned;
+use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
-use zosmf_macros::Endpoint;
+use zosmf_macros::{Endpoint, Getter};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct List<A>
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetList<A>
 where
-    A: Attributes,
+    A: Attr,
 {
-    pub items: Vec<A>,
-    pub json_version: i32,
-    pub more_rows: Option<bool>,
-    pub returned_rows: i32,
-    pub total_rows: Option<i32>,
-    pub transaction_id: String,
+    items: Vec<A>,
+    json_version: i32,
+    more_rows: Option<bool>,
+    returned_rows: i32,
+    total_rows: Option<i32>,
+    transaction_id: String,
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct ListBuilder<'a, A>
+pub struct DatasetListBuilder<'a, A>
 where
-    A: Attributes,
+    A: Attr + for<'de> Deserialize<'de>,
 {
     base_url: &'a str,
     client: &'a Client,
@@ -37,151 +36,125 @@ where
     start: Option<String>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
+    #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]
+    attributes: Option<Attrs>,
     #[endpoint(optional, skip_builder)]
     include_total: bool,
     #[endpoint(optional, skip_setter, skip_builder)]
-    attributes: PhantomData<A>,
+    attrs: PhantomData<A>,
 }
 
-impl<'a, A> ListBuilder<'a, A>
+impl<'a, A> DatasetListBuilder<'a, A>
 where
-    A: Attributes,
+    A: Attr + for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> ListBuilder<'a, Base> {
-        ListBuilder {
+    pub fn attributes_base(self) -> DatasetListBuilder<'a, DatasetBase> {
+        DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
             max_items: self.max_items,
+            attributes: Some(Attrs::Base),
             include_total: self.include_total,
-            attributes: PhantomData,
+            attrs: PhantomData,
         }
     }
 
-    pub fn attributes_dsname(self) -> ListBuilder<'a, Dsname> {
-        ListBuilder {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<'a, DatasetName> {
+        DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
             max_items: self.max_items,
+            attributes: Some(Attrs::Dsname),
             include_total: self.include_total,
-            attributes: PhantomData,
+            attrs: PhantomData,
         }
     }
 
-    pub fn attributes_vol(self) -> ListBuilder<'a, Vol> {
-        ListBuilder {
+    pub fn attributes_vol(self) -> DatasetListBuilder<'a, DatasetVol> {
+        DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
             max_items: self.max_items,
+            attributes: Some(Attrs::Vol),
             include_total: self.include_total,
-            attributes: PhantomData,
+            attrs: PhantomData,
         }
     }
-}
 
-impl<'a> ListBuilder<'a, Base> {
-    pub async fn build(self) -> anyhow::Result<List<Base>> {
-        let response = self
-            .get_request_builder()
-            .header(
-                "X-IBM-Attributes",
-                format!("base{}", if self.include_total { ",total" } else { "" }),
-            )
-            .send()
-            .await?
-            .error_for_status()?;
+    pub async fn build(self) -> anyhow::Result<DatasetList<A>> {
+        let response = self.get_response().await?;
 
-        Ok(get_list(response).await?)
+        let transaction_id = response
+            .headers()
+            .get("X-IBM-Txid")
+            .context("missing transaction id")?
+            .to_str()?
+            .to_string();
+
+        let ResponseJson {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+        } = response.json().await?;
+
+        Ok(DatasetList {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+            transaction_id,
+        })
     }
 }
 
-impl<'a> ListBuilder<'a, Dsname> {
-    pub async fn build(self) -> anyhow::Result<List<Dsname>> {
-        let response = self
-            .get_request_builder()
-            .header(
-                "X-IBM-Attributes",
-                if self.include_total {
-                    "dsname,total"
-                } else {
-                    ""
-                },
-            )
-            .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(get_list(response).await?)
-    }
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetBase {
+    dsname: String,
+    blksz: Option<String>,
+    catnm: Option<String>,
+    cdate: Option<String>,
+    dev: Option<String>,
+    dsntp: Option<String>,
+    dsorg: Option<String>,
+    edate: Option<String>,
+    extx: Option<String>,
+    lrecl: Option<String>,
+    migr: Option<String>,
+    mvol: Option<String>,
+    ovf: Option<String>,
+    rdate: Option<String>,
+    recfm: Option<String>,
+    sizex: Option<String>,
+    spacu: Option<String>,
+    used: Option<String>,
+    vol: String,
+    vols: Option<String>,
 }
 
-impl<'a> ListBuilder<'a, Vol> {
-    pub async fn build(self) -> anyhow::Result<List<Vol>> {
-        let response = self
-            .get_request_builder()
-            .header(
-                "X-IBM-Attributes",
-                format!("vol{}", if self.include_total { ",total" } else { "" }),
-            )
-            .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(get_list(response).await?)
-    }
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetName {
+    dsname: String,
 }
 
-pub trait Attributes {}
-
-#[derive(Deserialize)]
-pub struct Base {
-    pub dsname: String,
-    pub blksz: Option<String>,
-    pub catnm: Option<String>,
-    pub cdate: Option<String>,
-    pub dev: Option<String>,
-    pub dsntp: Option<String>,
-    pub dsorg: Option<String>,
-    pub edate: Option<String>,
-    pub extx: Option<String>,
-    pub lrecl: Option<String>,
-    pub migr: Option<String>,
-    pub mvol: Option<String>,
-    pub ovf: Option<String>,
-    pub rdate: Option<String>,
-    pub recfm: Option<String>,
-    pub sizex: Option<String>,
-    pub spacu: Option<String>,
-    pub used: Option<String>,
-    pub vol: String,
-    pub vols: Option<String>,
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetVol {
+    dsname: String,
+    vol: String,
 }
 
-impl Attributes for Base {}
-
-#[derive(Deserialize)]
-pub struct Dsname {
-    pub dsname: String,
-}
-
-impl Attributes for Dsname {}
-
-#[derive(Deserialize)]
-pub struct Vol {
-    pub dsname: String,
-    pub vol: String,
-}
-
-impl Attributes for Vol {}
-
+#[derive(Clone, Debug)]
 pub enum Volume {
     Alias,
     Migrate,
@@ -219,40 +192,37 @@ impl Serialize for Volume {
     }
 }
 
-async fn get_list<A>(response: reqwest::Response) -> anyhow::Result<List<A>>
-where
-    A: Attributes + DeserializeOwned,
-{
-    let transaction_id = response
-        .headers()
-        .get("X-IBM-Txid")
-        .context("missing transaction id")?
-        .to_str()?
-        .to_string();
+pub trait Attr {}
+impl Attr for DatasetBase {}
+impl Attr for DatasetName {}
+impl Attr for DatasetVol {}
 
-    let ResponseJson {
-        items,
-        returned_rows,
-        more_rows,
-        total_rows,
-        json_version,
-    } = response.json().await?;
+#[derive(Clone, Copy, Debug)]
+enum Attrs {
+    Base,
+    Dsname,
+    Vol,
+}
 
-    Ok(List {
-        items,
-        json_version,
-        more_rows,
-        returned_rows,
-        total_rows,
-        transaction_id,
-    })
+impl std::fmt::Display for Attrs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Attrs::Base => "base",
+                Attrs::Dsname => "dsname",
+                Attrs::Vol => "vol",
+            }
+        )
+    }
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson<A>
 where
-    A: Attributes,
+    A: Attr,
 {
     items: Vec<A>,
     returned_rows: i32,
@@ -262,4 +232,25 @@ where
     total_rows: Option<i32>,
     #[serde(rename = "JSONversion")]
     json_version: i32,
+}
+
+fn build_attributes<A>(
+    request_builder: RequestBuilder,
+    list_builder: &DatasetListBuilder<A>,
+) -> RequestBuilder
+where
+    A: Attr + for<'de> Deserialize<'de>,
+{
+    match (list_builder.attributes, list_builder.include_total) {
+        (None, false) => request_builder,
+        (None, true) => request_builder.header("X-IBM-Attributes", "dsname,total"),
+        (Some(attributes), include_total) => request_builder.header(
+            "X-IBM-Attributes",
+            format!(
+                "{}{}",
+                attributes,
+                if include_total { ",total" } else { "" }
+            ),
+        ),
+    }
 }

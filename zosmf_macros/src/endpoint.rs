@@ -1,20 +1,23 @@
+use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField};
 use proc_macro2::TokenStream;
 use quote::quote;
+
+use crate::utils::extract_optional_type;
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(endpoint), supports(struct_named))]
 pub(crate) struct Endpoint {
     pub ident: syn::Ident,
     pub generics: syn::Generics,
-    data: darling::ast::Data<darling::util::Ignored, EndpointField>,
+    data: darling::ast::Data<Ignored, EndpointField>,
 
     method: syn::Ident,
     path: String,
 }
 
 impl Endpoint {
-    pub(crate) fn get_new_fn(&self) -> TokenStream {
+    pub(crate) fn new_fn(&self) -> TokenStream {
         let (optional_fields, required_fields): (Vec<&EndpointField>, Vec<&EndpointField>) = self
             .data
             .as_ref()
@@ -45,7 +48,7 @@ impl Endpoint {
             .collect::<Vec<_>>();
 
         quote! {
-            pub(super) fn new( #( #args, )* ) -> Self {
+            pub(crate) fn new( #( #args, )* ) -> Self {
                 Self {
                     #( #required_assignments, )*
                     #( #optional_assignments, )*
@@ -54,7 +57,7 @@ impl Endpoint {
         }
     }
 
-    pub(crate) fn get_setter_fns(&self) -> Vec<TokenStream> {
+    pub(crate) fn setter_fns(&self) -> Vec<TokenStream> {
         self.data
             .as_ref()
             .take_struct()
@@ -76,6 +79,14 @@ impl Endpoint {
                             #setter_fn(self, value.into())
                         }
                     }
+                } else if let Some(optional_ty) = extract_optional_type(ty) {
+                    quote! {
+                        pub fn #ident(mut self, value: impl Into<#optional_ty>) -> Self {
+                            self.#ident = Some(value.into());
+
+                            self
+                        }
+                    }
                 } else {
                     quote! {
                         pub fn #ident(mut self, value: impl Into<#ty>) -> Self {
@@ -89,7 +100,7 @@ impl Endpoint {
             .collect()
     }
 
-    pub(crate) fn get_request_builder_fn(&self) -> TokenStream {
+    pub(crate) fn get_response_fn(&self) -> TokenStream {
         let Endpoint {
             data, method, path, ..
         } = &self;
@@ -118,7 +129,7 @@ impl Endpoint {
 
                 if let Some(builder_fn) = builder_fn {
                     quote! {
-                        request_builder = #builder_fn(request_builder, &self.#ident);
+                        request_builder = #builder_fn(request_builder, &self);
                     }
                 } else if let Some(header) = header {
                     quote! {
@@ -163,7 +174,7 @@ impl Endpoint {
             .collect::<Vec<_>>();
 
         quote! {
-            fn get_request_builder(&self) -> reqwest::RequestBuilder {
+            async fn get_response(&self) -> anyhow::Result<reqwest::Response> {
                 let path = {
                     let Self {
                         #( #path_idents, )*
@@ -178,7 +189,7 @@ impl Endpoint {
 
                 #( #optional_builders )*
 
-                request_builder
+                Ok(request_builder.send().await?.error_for_status()?)
             }
         }
     }

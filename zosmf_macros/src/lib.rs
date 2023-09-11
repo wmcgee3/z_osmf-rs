@@ -1,10 +1,13 @@
 #![forbid(unsafe_code)]
 
 use darling::FromDeriveInput;
+use getter::Getter;
 use proc_macro::TokenStream;
 use quote::quote;
 
 mod endpoint;
+mod getter;
+mod utils;
 
 use self::endpoint::Endpoint;
 
@@ -21,9 +24,9 @@ pub fn derive_endpoint(input: TokenStream) -> TokenStream {
 
     let (impl_, ty, where_clause) = generics.split_for_impl();
 
-    let new_fn = endpoint.get_new_fn();
-    let setter_fns = endpoint.get_setter_fns();
-    let build_fn = endpoint.get_request_builder_fn();
+    let new_fn = endpoint.new_fn();
+    let setter_fns = endpoint.setter_fns();
+    let get_response_fn = endpoint.get_response_fn();
 
     quote! {
         impl #impl_ #ident #ty #where_clause {
@@ -31,7 +34,28 @@ pub fn derive_endpoint(input: TokenStream) -> TokenStream {
 
             #( #setter_fns )*
 
-            #build_fn
+            #get_response_fn
+        }
+    }
+    .into()
+}
+
+#[proc_macro_derive(Getter, attributes(getter))]
+pub fn derive_getter(input: TokenStream) -> TokenStream {
+    let input = &syn::parse_macro_input!(input as syn::DeriveInput);
+    let getter = Getter::from_derive_input(input).unwrap();
+
+    let Getter {
+        ident, generics, ..
+    } = &getter;
+
+    let (impl_, ty, where_clause) = generics.split_for_impl();
+
+    let getters = getter.get_getters();
+
+    quote! {
+        impl #impl_ #ident #ty #where_clause {
+            #( #getters )*
         }
     }
     .into()
