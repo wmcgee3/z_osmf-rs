@@ -19,6 +19,80 @@ where
     transaction_id: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetBase {
+    dsname: String,
+    blksz: Option<String>,
+    catnm: Option<String>,
+    cdate: Option<String>,
+    dev: Option<String>,
+    dsntp: Option<String>,
+    dsorg: Option<String>,
+    edate: Option<String>,
+    extx: Option<String>,
+    lrecl: Option<String>,
+    #[serde(deserialize_with = "de_migrated", serialize_with = "ser_migrated")]
+    migr: bool,
+    mvol: Option<String>,
+    ovf: Option<String>,
+    rdate: Option<String>,
+    recfm: Option<String>,
+    sizex: Option<String>,
+    spacu: Option<String>,
+    used: Option<String>,
+    vol: Volume,
+    vols: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetName {
+    dsname: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+pub struct DatasetVol {
+    dsname: String,
+    vol: Volume,
+}
+
+#[derive(Clone, Debug)]
+pub enum Volume {
+    Alias,
+    Migrate,
+    Volume(String),
+    Vsam,
+}
+
+impl<'de> Deserialize<'de> for Volume {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        Ok(match s.as_str() {
+            "*ALIAS" => Volume::Alias,
+            "MIGRAT" => Volume::Migrate,
+            "*VSAM*" => Volume::Vsam,
+            _ => Volume::Volume(s),
+        })
+    }
+}
+
+impl Serialize for Volume {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(match self {
+            Volume::Alias => "*ALIAS",
+            Volume::Migrate => "MIGRAT",
+            Volume::Volume(vol) => vol,
+            Volume::Vsam => "*VSAM*",
+        })
+    }
+}
+
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
 pub struct DatasetListBuilder<'a, A>
@@ -119,79 +193,6 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct DatasetBase {
-    dsname: String,
-    blksz: Option<String>,
-    catnm: Option<String>,
-    cdate: Option<String>,
-    dev: Option<String>,
-    dsntp: Option<String>,
-    dsorg: Option<String>,
-    edate: Option<String>,
-    extx: Option<String>,
-    lrecl: Option<String>,
-    migr: Option<String>,
-    mvol: Option<String>,
-    ovf: Option<String>,
-    rdate: Option<String>,
-    recfm: Option<String>,
-    sizex: Option<String>,
-    spacu: Option<String>,
-    used: Option<String>,
-    vol: String,
-    vols: Option<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct DatasetName {
-    dsname: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct DatasetVol {
-    dsname: String,
-    vol: String,
-}
-
-#[derive(Clone, Debug)]
-pub enum Volume {
-    Alias,
-    Migrate,
-    Volume(String),
-    Vsam,
-}
-
-impl<'de> Deserialize<'de> for Volume {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-
-        Ok(match s.as_str() {
-            "*ALIAS" => Volume::Alias,
-            "MIGRAT" => Volume::Migrate,
-            "*VSAM*" => Volume::Vsam,
-            _ => Volume::Volume(s),
-        })
-    }
-}
-
-impl Serialize for Volume {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(match self {
-            Volume::Alias => "*ALIAS",
-            Volume::Migrate => "MIGRAT",
-            Volume::Volume(vol) => vol,
-            Volume::Vsam => "*VSAM*",
-        })
-    }
-}
-
 pub trait Attr {}
 impl Attr for DatasetBase {}
 impl Attr for DatasetName {}
@@ -253,4 +254,20 @@ where
             ),
         ),
     }
+}
+
+fn de_migrated<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+
+    Ok(s == "YES")
+}
+
+fn ser_migrated<S>(migr: &bool, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(if *migr { "YES" } else { "NO" })
 }
