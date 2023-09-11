@@ -6,6 +6,8 @@ use anyhow::Result;
 use datasets::Datasets;
 use reqwest::{Client, ClientBuilder};
 
+mod utils;
+
 #[derive(Clone, Debug)]
 pub struct Zosmf {
     base_url: String,

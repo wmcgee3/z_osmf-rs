@@ -7,11 +7,8 @@ use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getter};
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct MemberList<A>
-where
-    A: Attr,
-{
-    items: Vec<A>,
+pub struct MemberList<T> {
+    items: Vec<T>,
     json_version: i32,
     more_rows: Option<bool>,
     returned_rows: i32,
@@ -61,10 +58,7 @@ impl From<MigratedRecall> for HeaderValue {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct MemberListBuilder<'a, A>
-where
-    A: Attr,
-{
+pub struct MemberListBuilder<'a, T> {
     base_url: &'a str,
     client: &'a Client,
 
@@ -82,12 +76,12 @@ where
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
     #[endpoint(optional, skip_setter, skip_builder)]
-    attrs: PhantomData<A>,
+    attrs: PhantomData<T>,
 }
 
-impl<'a, A> MemberListBuilder<'a, A>
+impl<'a, T> MemberListBuilder<'a, T>
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
     pub fn attributes_base(self) -> MemberListBuilder<'a, MemberBase> {
         MemberListBuilder {
@@ -117,7 +111,7 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<MemberList<A>> {
+    pub async fn build(self) -> anyhow::Result<MemberList<T>> {
         let response = self.get_response().await?;
 
         let ResponseJson {
@@ -138,10 +132,6 @@ where
     }
 }
 
-pub trait Attr {}
-impl Attr for MemberBase {}
-impl Attr for MemberName {}
-
 #[derive(Clone, Copy, Debug)]
 enum Attrs {
     Base,
@@ -161,11 +151,8 @@ impl From<Attrs> for HeaderValue {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ResponseJson<A>
-where
-    A: Attr,
-{
-    items: Vec<A>,
+struct ResponseJson<T> {
+    items: Vec<T>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,

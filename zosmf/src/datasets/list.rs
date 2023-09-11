@@ -6,12 +6,11 @@ use serde::{Deserialize, Serialize};
 
 use zosmf_macros::{Endpoint, Getter};
 
+use crate::utils::*;
+
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct DatasetList<A>
-where
-    A: Attr,
-{
-    items: Vec<A>,
+pub struct DatasetList<T> {
+    items: Vec<T>,
     json_version: i32,
     more_rows: Option<bool>,
     returned_rows: i32,
@@ -21,39 +20,74 @@ where
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct DatasetBase {
-    dsname: String,
-    blksz: Option<String>,
-    catnm: Option<String>,
-    cdate: Option<String>,
-    dev: Option<String>,
-    dsntp: Option<String>,
-    dsorg: Option<String>,
-    edate: Option<String>,
-    extx: Option<String>,
-    lrecl: Option<String>,
-    #[serde(deserialize_with = "de_migr", serialize_with = "ser_migr")]
-    migr: bool,
-    #[serde(default, deserialize_with = "de_mvol", serialize_with = "ser_mvol")]
-    mvol: Option<bool>,
-    ovf: Option<String>,
-    rdate: Option<String>,
-    recfm: Option<String>,
-    sizex: Option<String>,
-    spacu: Option<String>,
-    used: Option<String>,
-    vol: Volume,
-    vols: Option<String>,
+    #[serde(rename = "dsname")]
+    name: String,
+    #[serde(rename = "blksz")]
+    block_size: Option<String>,
+    #[serde(rename = "catnm")]
+    catalog: Option<String>,
+    #[serde(rename = "cdate")]
+    creation_date: Option<String>,
+    #[serde(rename = "dev")]
+    device_type: Option<String>,
+    #[serde(rename = "dsntp")]
+    dataset_type: Option<String>,
+    #[serde(rename = "dsorg")]
+    organization: Option<String>,
+    #[serde(rename = "edate")]
+    expiration_date: Option<String>,
+    #[serde(rename = "extx")]
+    extents_used: Option<String>,
+    #[serde(rename = "lrecl")]
+    logical_record_length: Option<String>,
+    #[serde(
+        rename = "migr",
+        deserialize_with = "de_yes_no",
+        serialize_with = "ser_yes_no"
+    )]
+    migrated: bool,
+    #[serde(
+        default,
+        rename = "mvol",
+        deserialize_with = "de_optional_y_n",
+        serialize_with = "ser_optional_y_n"
+    )]
+    multi_volume: Option<bool>,
+    #[serde(
+        default,
+        rename = "ovf",
+        deserialize_with = "de_optional_yes_no",
+        serialize_with = "ser_optional_yes_no"
+    )]
+    space_overflow: Option<bool>,
+    #[serde(rename = "rdate")]
+    last_referenced_date: Option<String>,
+    #[serde(rename = "recfm")]
+    record_format: Option<String>,
+    #[serde(rename = "sizex")]
+    size_in_tracks: Option<String>,
+    #[serde(rename = "spacu")]
+    space_units: Option<String>,
+    #[serde(rename = "used")]
+    percent_used: Option<String>,
+    #[serde(rename = "vol")]
+    volume: Volume,
+    #[serde(rename = "vols")]
+    volumes: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct DatasetName {
-    dsname: String,
+    #[serde(rename = "dsname")]
+    name: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct DatasetVol {
-    dsname: String,
-    vol: Volume,
+    #[serde(rename = "dsname")]
+    name: String,
+    #[serde(rename = "vol")]
+    volume: Volume,
 }
 
 #[derive(Clone, Debug)]
@@ -96,9 +130,9 @@ impl Serialize for Volume {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<'a, A>
+pub struct DatasetListBuilder<'a, T>
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
     base_url: &'a str,
     client: &'a Client,
@@ -116,12 +150,12 @@ where
     #[endpoint(optional, skip_builder)]
     include_total: bool,
     #[endpoint(optional, skip_setter, skip_builder)]
-    attrs: PhantomData<A>,
+    attrs: PhantomData<T>,
 }
 
-impl<'a, A> DatasetListBuilder<'a, A>
+impl<'a, T> DatasetListBuilder<'a, T>
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
     pub fn attributes_base(self) -> DatasetListBuilder<'a, DatasetBase> {
         DatasetListBuilder {
@@ -165,7 +199,7 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<DatasetList<A>> {
+    pub async fn build(self) -> anyhow::Result<DatasetList<T>> {
         let response = self.get_response().await?;
 
         let transaction_id = response
@@ -194,11 +228,6 @@ where
     }
 }
 
-pub trait Attr {}
-impl Attr for DatasetBase {}
-impl Attr for DatasetName {}
-impl Attr for DatasetVol {}
-
 #[derive(Clone, Copy, Debug)]
 enum Attrs {
     Base,
@@ -222,11 +251,8 @@ impl std::fmt::Display for Attrs {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ResponseJson<A>
-where
-    A: Attr,
-{
-    items: Vec<A>,
+struct ResponseJson<T> {
+    items: Vec<T>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,
@@ -236,12 +262,12 @@ where
     json_version: i32,
 }
 
-fn build_attributes<A>(
+fn build_attributes<T>(
     request_builder: RequestBuilder,
-    list_builder: &DatasetListBuilder<A>,
+    list_builder: &DatasetListBuilder<T>,
 ) -> RequestBuilder
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
     match (list_builder.attributes, list_builder.include_total) {
         (None, false) => request_builder,
@@ -254,39 +280,5 @@ where
                 if include_total { ",total" } else { "" }
             ),
         ),
-    }
-}
-
-fn de_migr<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-
-    Ok(s == "YES")
-}
-
-fn ser_migr<S>(migr: &bool, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    serializer.serialize_str(if *migr { "YES" } else { "NO" })
-}
-
-fn de_mvol<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    Ok(Option::<String>::deserialize(deserializer)?.map(|s| s == "Y"))
-}
-
-fn ser_mvol<S>(mvol: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    if let Some(mvol) = mvol {
-        serializer.serialize_str(if *mvol { "Y" } else { "N" })
-    } else {
-        serializer.serialize_none()
     }
 }
