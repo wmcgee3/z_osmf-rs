@@ -6,9 +6,11 @@ use serde::{Deserialize, Serialize};
 
 use zosmf_macros::{Endpoint, Getter};
 
+use crate::datasets::utils::MigratedRecall;
+
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct MemberList<T> {
-    items: Vec<T>,
+    items: T,
     json_version: i32,
     more_rows: Option<bool>,
     returned_rows: i32,
@@ -16,44 +18,27 @@ pub struct MemberList<T> {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum MemberBase {
-    FixedOrVariable(MemberFixedOrVariable),
-    Undefined(MemberUndefined),
+pub enum BaseMembers {
+    FixedOrVariable(Vec<MemberFixedOrVariable>),
+    Undefined(Vec<MemberUndefined>),
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct MemberFixedOrVariable {
-    member: String,
+    #[serde(rename = "member")]
+    name: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct MemberUndefined {
-    member: String,
+    #[serde(rename = "member")]
+    name: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct MemberName {
-    member: String,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MigratedRecall {
-    Error,
-    NoWait,
-    Wait,
-}
-
-impl From<MigratedRecall> for HeaderValue {
-    fn from(val: MigratedRecall) -> HeaderValue {
-        match val {
-            MigratedRecall::Error => "error",
-            MigratedRecall::NoWait => "nowait",
-            MigratedRecall::Wait => "wait",
-        }
-        .try_into()
-        .unwrap()
-    }
+    #[serde(rename = "member")]
+    name: String,
 }
 
 #[derive(Endpoint)]
@@ -83,7 +68,7 @@ impl<'a, T> MemberListBuilder<'a, T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> MemberListBuilder<'a, MemberBase> {
+    pub fn attributes_base(self) -> MemberListBuilder<'a, BaseMembers> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -97,7 +82,7 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> MemberListBuilder<'a, MemberName> {
+    pub fn attributes_member(self) -> MemberListBuilder<'a, Vec<MemberName>> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -152,7 +137,7 @@ impl From<Attrs> for HeaderValue {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson<T> {
-    items: Vec<T>,
+    items: T,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,

@@ -1,10 +1,14 @@
 pub mod list;
 pub mod members;
+pub mod read;
+
+pub use self::list::*;
 
 use reqwest::Client;
 
-use self::list::{DatasetListBuilder, DatasetName};
-use self::members::list::{MemberListBuilder, MemberName};
+use self::members::{MemberListBuilder, MemberName};
+
+mod utils;
 
 #[derive(Clone, Debug)]
 pub struct Datasets<'a> {
