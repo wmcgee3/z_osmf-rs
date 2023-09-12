@@ -1,10 +1,11 @@
 use std::marker::PhantomData;
 
-use anyhow::Context;
 use bytes::Bytes;
 use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getter};
+
+use crate::utils::{get_etag, get_session_ref, get_transaction_id};
 
 use super::utils::MigratedRecall;
 
@@ -262,26 +263,9 @@ fn build_return_etag<T>(
 }
 
 fn get_headers(response: &Response) -> anyhow::Result<(Option<String>, Option<String>, String)> {
-    let etag = response
-        .headers()
-        .get("Etag")
-        .map(|v| v.to_str())
-        .transpose()?
-        .map(|v| v.to_string());
-
-    let session_ref = response
-        .headers()
-        .get("X-IBM-Session-Ref")
-        .map(|v| v.to_str())
-        .transpose()?
-        .map(|v| v.to_string());
-
-    let transaction_id = response
-        .headers()
-        .get("Etag")
-        .context("missing transaction id")?
-        .to_str()?
-        .to_string();
-
-    Ok((etag, session_ref, transaction_id))
+    Ok((
+        get_etag(response)?,
+        get_session_ref(response)?,
+        get_transaction_id(response)?,
+    ))
 }

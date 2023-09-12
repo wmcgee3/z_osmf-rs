@@ -1,4 +1,33 @@
+use anyhow::{Context, Result};
+use reqwest::Response;
 use serde::Deserialize;
+
+pub(crate) fn get_etag(response: &Response) -> Result<Option<String>> {
+    Ok(response
+        .headers()
+        .get("Etag")
+        .map(|v| v.to_str())
+        .transpose()?
+        .map(|v| v.to_string()))
+}
+
+pub(crate) fn get_session_ref(response: &Response) -> Result<Option<String>> {
+    Ok(response
+        .headers()
+        .get("X-IBM-Session-Ref")
+        .map(|v| v.to_str())
+        .transpose()?
+        .map(|v| v.to_string()))
+}
+
+pub(crate) fn get_transaction_id(response: &Response) -> Result<String> {
+    Ok(response
+        .headers()
+        .get("Etag")
+        .context("missing transaction id")?
+        .to_str()?
+        .to_string())
+}
 
 pub(crate) fn de_yes_no<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getter};
 
 use crate::datasets::utils::MigratedRecall;
+use crate::utils::{de_optional_y_n, ser_optional_y_n};
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct MemberList<T> {
@@ -27,12 +28,45 @@ pub enum BaseMembers {
 pub struct MemberFixedOrVariable {
     #[serde(rename = "member")]
     name: String,
+    #[serde(rename = "vers")]
+    version: Option<i32>,
+    #[serde(rename = "mod")]
+    modification_level: Option<i32>,
+    #[serde(rename = "c4date")]
+    creation_year: Option<i32>,
+    #[serde(rename = "m4date")]
+    modification_year: Option<i32>,
+    #[serde(rename = "cnorc")]
+    current_number_of_records: Option<i32>,
+    #[serde(rename = "inorc")]
+    initial_number_of_records: Option<i32>,
+    #[serde(rename = "mnorc")]
+    modified_number_of_records: Option<i32>,
+    #[serde(rename = "mtime")]
+    modified_time: Option<String>,
+    #[serde(rename = "msec")]
+    modified_seconds: Option<String>,
+    user: Option<String>,
+    #[serde(default)]
+    #[serde(rename = "sclm")]
+    #[serde(deserialize_with = "de_optional_y_n")]
+    #[serde(serialize_with = "ser_optional_y_n")]
+    modified_by_sclm: Option<bool>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
 pub struct MemberUndefined {
     #[serde(rename = "member")]
     name: String,
+    #[serde(rename = "ac")]
+    authorization_code: Option<String>,
+    amode: Option<String>,
+    #[serde(rename = "attr")]
+    attributes: Option<String>,
+    rmode: Option<String>,
+    size: Option<String>,
+    ttr: Option<String>,
+    ssi: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]

@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use anyhow::Context;
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
@@ -202,12 +201,7 @@ where
     pub async fn build(self) -> anyhow::Result<DatasetList<T>> {
         let response = self.get_response().await?;
 
-        let transaction_id = response
-            .headers()
-            .get("X-IBM-Txid")
-            .context("missing transaction id")?
-            .to_str()?
-            .to_string();
+        let transaction_id = get_transaction_id(&response)?;
 
         let ResponseJson {
             items,

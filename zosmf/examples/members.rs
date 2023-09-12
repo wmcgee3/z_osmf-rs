@@ -17,8 +17,18 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     match pds_members.items() {
-        BaseMembers::FixedOrVariable(_) => println!("PDS has fixed or variable formatting!"),
-        BaseMembers::Undefined(_) => println!("PDS has undefined formatting!"),
+        BaseMembers::FixedOrVariable(fov) => {
+            println!(
+                "My Fixed or Variable Format Members:\n\n{}\n",
+                fov.iter().map(|m| m.name()).collect::<Vec<_>>().join("\n")
+            );
+        }
+        BaseMembers::Undefined(u) => {
+            println!(
+                "My Undefined Formatting Members:\n\n{}\n",
+                u.iter().map(|m| m.name()).collect::<Vec<_>>().join("\n")
+            );
+        }
     }
 
     Ok(())
