@@ -18,9 +18,10 @@ pub struct MemberList<T> {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
 pub enum MembersBase {
-    FixedOrVariable(Vec<MemberFixedOrVariable>),
     Undefined(Vec<MemberUndefined>),
+    FixedOrVariable(Vec<MemberFixedOrVariable>),
 }
 
 #[derive(Clone, Debug, Deserialize, Getter, Serialize)]
@@ -46,10 +47,12 @@ pub struct MemberFixedOrVariable {
     #[serde(rename = "msec")]
     modified_seconds: Option<String>,
     user: Option<String>,
-    #[serde(default)]
-    #[serde(rename = "sclm")]
-    #[serde(deserialize_with = "de_optional_y_n")]
-    #[serde(serialize_with = "ser_optional_y_n")]
+    #[serde(
+        default,
+        rename = "sclm",
+        deserialize_with = "de_optional_y_n",
+        serialize_with = "ser_optional_y_n"
+    )]
     modified_by_sclm: Option<bool>,
 }
 
