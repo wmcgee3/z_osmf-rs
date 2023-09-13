@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 
-use reqwest::header::HeaderValue;
-use reqwest::Client;
+use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
 use zosmf_macros::{Endpoint, Getter};
@@ -19,7 +18,7 @@ pub struct MemberList<T> {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum BaseMembers {
+pub enum MembersBase {
     FixedOrVariable(Vec<MemberFixedOrVariable>),
     Undefined(Vec<MemberUndefined>),
 }
@@ -59,7 +58,7 @@ pub struct MemberUndefined {
     #[serde(rename = "member")]
     name: String,
     #[serde(rename = "ac")]
-    authorization_code: Option<String>,
+    authorization_code: String,
     amode: Option<String>,
     #[serde(rename = "attr")]
     attributes: Option<String>,
@@ -90,8 +89,10 @@ pub struct MemberListBuilder<'a, T> {
     pattern: Option<String>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
-    #[endpoint(optional, header = "X-IBM-Attributes", skip_setter)]
+    #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]
     attributes: Option<Attrs>,
+    #[endpoint(optional, skip_setter, skip_builder)]
+    include_total: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
     #[endpoint(optional, skip_setter, skip_builder)]
@@ -102,7 +103,7 @@ impl<'a, T> MemberListBuilder<'a, T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> MemberListBuilder<'a, BaseMembers> {
+    pub fn attributes_base(self) -> MemberListBuilder<'a, MembersBase> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -111,6 +112,7 @@ where
             pattern: self.pattern,
             max_items: self.max_items,
             attributes: Some(Attrs::Base),
+            include_total: self.include_total,
             migrated_recall: self.migrated_recall,
             attrs: PhantomData,
         }
@@ -125,6 +127,7 @@ where
             pattern: self.pattern,
             max_items: self.max_items,
             attributes: Some(Attrs::Member),
+            include_total: self.include_total,
             migrated_recall: self.migrated_recall,
             attrs: PhantomData,
         }
@@ -157,14 +160,16 @@ enum Attrs {
     Member,
 }
 
-impl From<Attrs> for HeaderValue {
-    fn from(val: Attrs) -> HeaderValue {
-        match val {
-            Attrs::Base => "base",
-            Attrs::Member => "member",
-        }
-        .try_into()
-        .unwrap()
+impl std::fmt::Display for Attrs {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Attrs::Base => "base",
+                Attrs::Member => "member",
+            }
+        )
     }
 }
 
@@ -179,4 +184,25 @@ struct ResponseJson<T> {
     total_rows: Option<i32>,
     #[serde(rename = "JSONversion")]
     json_version: i32,
+}
+
+fn build_attributes<T>(
+    request_builder: RequestBuilder,
+    member_list_builder: &MemberListBuilder<T>,
+) -> RequestBuilder {
+    let MemberListBuilder {
+        attributes,
+        include_total,
+        ..
+    } = member_list_builder;
+    let key = "X-IBM-Attributes";
+
+    match (attributes, include_total) {
+        (None, false) => request_builder,
+        (None, true) => request_builder.header(key, "member,total"),
+        (Some(attr), total) => request_builder.header(
+            key,
+            format!("{}{}", attr, if *total { ",total" } else { "" }),
+        ),
+    }
 }

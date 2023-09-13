@@ -3,7 +3,7 @@ use darling::{FromDeriveInput, FromField};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::utils::{extract_optional_type, string_to_str_type};
+use crate::utils::{extract_optional_type, string_to_str_type, vec_to_slice_type};
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(getter), supports(struct_named))]
@@ -21,8 +21,8 @@ impl Getter {
                 .filter(|f| !f.skip)
                 .map(|f| {
                     let GetterField { ident, ty, .. } = f;
-                    if let Some(optional_ty) = extract_optional_type(ty) {
-                        let (ty, method) = string_to_str_type(&optional_ty);
+                    if let Some(ty) = extract_optional_type(ty) {
+                        let (ty, method) = string_to_str_type(vec_to_slice_type(ty));
 
                         quote! {
                             pub fn #ident(&self) -> Option<&#ty> {
@@ -30,7 +30,7 @@ impl Getter {
                             }
                         }
                     } else {
-                        let (ty, _) = string_to_str_type(ty);
+                        let (ty, _) = string_to_str_type(vec_to_slice_type(ty.clone()));
 
                         quote! {
                             pub fn #ident(&self) -> &#ty {

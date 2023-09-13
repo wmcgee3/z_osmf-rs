@@ -23,7 +23,7 @@ pub(crate) fn get_session_ref(response: &Response) -> Result<Option<String>> {
 pub(crate) fn get_transaction_id(response: &Response) -> Result<String> {
     Ok(response
         .headers()
-        .get("Etag")
+        .get("X-IBM-Txid")
         .context("missing transaction id")?
         .to_str()?
         .to_string())

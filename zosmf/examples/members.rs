@@ -1,6 +1,6 @@
-use zosmf::datasets::members::BaseMembers;
+use zosmf::datasets::MembersBase;
 
-#[path = "setup/setup.rs"]
+#[path = "_setup/mod.rs"]
 mod setup;
 
 use setup::get_zosmf;
@@ -17,13 +17,13 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     match pds_members.items() {
-        BaseMembers::FixedOrVariable(fov) => {
+        MembersBase::FixedOrVariable(fov) => {
             println!(
                 "My Fixed or Variable Format Members:\n\n{}\n",
                 fov.iter().map(|m| m.name()).collect::<Vec<_>>().join("\n")
             );
         }
-        BaseMembers::Undefined(u) => {
+        MembersBase::Undefined(u) => {
             println!(
                 "My Undefined Formatting Members:\n\n{}\n",
                 u.iter().map(|m| m.name()).collect::<Vec<_>>().join("\n")

@@ -1,4 +1,4 @@
-#[path = "setup/setup.rs"]
+#[path = "_setup/mod.rs"]
 mod setup;
 
 use setup::get_zosmf;

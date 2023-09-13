@@ -1,12 +1,12 @@
 pub mod list;
-pub mod members;
+pub mod list_members;
 pub mod read;
 
 pub use self::list::*;
+pub use self::list_members::*;
+pub use self::read::*;
 
 use reqwest::Client;
-
-use self::members::{MemberListBuilder, MemberName};
 
 mod utils;
 
