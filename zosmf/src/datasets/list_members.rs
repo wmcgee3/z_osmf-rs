@@ -3,12 +3,12 @@ use std::marker::PhantomData;
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
-use zosmf_macros::{Endpoint, Getter};
+use zosmf_macros::{Endpoint, Getters};
 
 use crate::datasets::utils::MigratedRecall;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberList<T> {
     items: T,
     json_version: i32,
@@ -24,7 +24,7 @@ pub enum MembersBase {
     FixedOrVariable(Vec<MemberFixedOrVariable>),
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberFixedOrVariable {
     #[serde(rename = "member")]
     name: String,
@@ -56,7 +56,7 @@ pub struct MemberFixedOrVariable {
     modified_by_sclm: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberUndefined {
     #[serde(rename = "member")]
     name: String,
@@ -71,7 +71,7 @@ pub struct MemberUndefined {
     ssi: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberName {
     #[serde(rename = "member")]
     name: String,

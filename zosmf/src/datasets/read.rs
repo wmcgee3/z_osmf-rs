@@ -3,13 +3,13 @@ use std::marker::PhantomData;
 use bytes::Bytes;
 use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
-use zosmf_macros::{Endpoint, Getter};
+use zosmf_macros::{Endpoint, Getters};
 
 use crate::utils::{get_etag, get_session_ref, get_transaction_id};
 
 use super::utils::MigratedRecall;
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
     contents: T,
     etag: Option<String>,

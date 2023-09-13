@@ -3,11 +3,11 @@ use std::marker::PhantomData;
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
-use zosmf_macros::{Endpoint, Getter};
+use zosmf_macros::{Endpoint, Getters};
 
 use crate::utils::*;
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {
     items: Vec<T>,
     json_version: i32,
@@ -17,7 +17,7 @@ pub struct DatasetList<T> {
     transaction_id: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetBase {
     #[serde(rename = "dsname")]
     name: String,
@@ -75,13 +75,13 @@ pub struct DatasetBase {
     volumes: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetName {
     #[serde(rename = "dsname")]
     name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetVol {
     #[serde(rename = "dsname")]
     name: String,
