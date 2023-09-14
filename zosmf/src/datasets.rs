@@ -28,4 +28,8 @@ impl<'a> Datasets<'a> {
     pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<'a, MemberName> {
         MemberListBuilder::new(self.base_url, self.client, dataset_name.to_string())
     }
+
+    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<'a, Text> {
+        DatasetReadBuilder::new(self.base_url, self.client, dataset_name)
+    }
 }
