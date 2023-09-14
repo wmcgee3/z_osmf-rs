@@ -2,23 +2,25 @@ pub mod list;
 pub mod list_members;
 pub mod read;
 
-pub use self::list::*;
-pub use self::list_members::*;
-pub use self::read::*;
-
-use reqwest::Client;
+pub use list::*;
+pub use list_members::*;
+pub use read::*;
 
 mod utils;
 
+use reqwest::Client;
+
+use crate::data_type::Text;
+
 #[derive(Clone, Debug)]
-pub struct Datasets<'a> {
+pub struct DatasetsClient<'a> {
     base_url: &'a str,
     client: &'a Client,
 }
 
-impl<'a> Datasets<'a> {
+impl<'a> DatasetsClient<'a> {
     pub(super) fn new(base_url: &'a str, client: &'a Client) -> Self {
-        Datasets { base_url, client }
+        DatasetsClient { base_url, client }
     }
 
     pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<'a, DatasetName> {

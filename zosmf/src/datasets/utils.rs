@@ -1,7 +1,6 @@
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MigratedRecall {

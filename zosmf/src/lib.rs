@@ -1,12 +1,15 @@
 #![forbid(unsafe_code)]
 
+pub mod data_type;
 pub mod datasets;
-
-use anyhow::Result;
-use datasets::Datasets;
-use reqwest::{Client, ClientBuilder};
+pub mod files;
 
 mod utils;
+
+use reqwest::{Client, ClientBuilder};
+
+use datasets::DatasetsClient;
+use files::FilesClient;
 
 #[derive(Clone, Debug)]
 pub struct Zosmf {
@@ -15,7 +18,7 @@ pub struct Zosmf {
 }
 
 impl Zosmf {
-    pub fn new<B>(client_builder: ClientBuilder, base_url: B) -> Result<Self>
+    pub fn new<B>(client_builder: ClientBuilder, base_url: B) -> anyhow::Result<Self>
     where
         B: std::fmt::Display,
     {
@@ -25,7 +28,7 @@ impl Zosmf {
         Ok(Zosmf { base_url, client })
     }
 
-    pub async fn login<U, P>(&self, username: U, password: P) -> Result<()>
+    pub async fn login<U, P>(&self, username: U, password: P) -> anyhow::Result<()>
     where
         U: std::fmt::Display,
         P: std::fmt::Display,
@@ -40,7 +43,7 @@ impl Zosmf {
         Ok(())
     }
 
-    pub async fn logout(&self) -> Result<()> {
+    pub async fn logout(&self) -> anyhow::Result<()> {
         self.client
             .delete(format!("{}/zosmf/services/authenticate", self.base_url))
             .send()
@@ -50,7 +53,11 @@ impl Zosmf {
         Ok(())
     }
 
-    pub fn datasets(&self) -> Datasets {
-        Datasets::new(&self.base_url, &self.client)
+    pub fn datasets(&self) -> DatasetsClient {
+        DatasetsClient::new(&self.base_url, &self.client)
+    }
+
+    pub fn files(&self) -> FilesClient {
+        FilesClient::new(&self.base_url, &self.client)
     }
 }

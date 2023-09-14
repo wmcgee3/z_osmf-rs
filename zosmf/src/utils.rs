@@ -1,8 +1,8 @@
-use anyhow::{Context, Result};
+use anyhow::Context;
 use reqwest::Response;
 use serde::Deserialize;
 
-pub(crate) fn get_etag(response: &Response) -> Result<Option<String>> {
+pub(crate) fn get_etag(response: &Response) -> anyhow::Result<Option<String>> {
     Ok(response
         .headers()
         .get("Etag")
@@ -11,7 +11,7 @@ pub(crate) fn get_etag(response: &Response) -> Result<Option<String>> {
         .map(|v| v.to_string()))
 }
 
-pub(crate) fn get_session_ref(response: &Response) -> Result<Option<String>> {
+pub(crate) fn get_session_ref(response: &Response) -> anyhow::Result<Option<String>> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
@@ -20,7 +20,7 @@ pub(crate) fn get_session_ref(response: &Response) -> Result<Option<String>> {
         .map(|v| v.to_string()))
 }
 
-pub(crate) fn get_transaction_id(response: &Response) -> Result<String> {
+pub(crate) fn get_transaction_id(response: &Response) -> anyhow::Result<String> {
     Ok(response
         .headers()
         .get("X-IBM-Txid")

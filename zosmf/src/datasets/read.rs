@@ -5,13 +5,13 @@ use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
+use crate::data_type::{Binary, BytesDataType, DataType, Record, Text};
+use crate::datasets::utils::MigratedRecall;
 use crate::utils::{get_etag, get_session_ref, get_transaction_id};
-
-use super::utils::MigratedRecall;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
-    contents: T,
+    data: T,
     etag: Option<String>,
     session_ref: Option<String>,
     transaction_id: String,
@@ -109,44 +109,14 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
     }
 }
 
-impl<'a> DatasetReadBuilder<'a, Binary> {
-    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
-        let response = self.get_response().await?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let contents = response.bytes().await?;
-
-        Ok(DatasetRead {
-            contents,
-            etag,
-            session_ref,
-            transaction_id,
-        })
-    }
-}
-
-impl<'a> DatasetReadBuilder<'a, Record> {
-    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
-        let response = self.get_response().await?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let contents = response.bytes().await?;
-
-        Ok(DatasetRead {
-            contents,
-            etag,
-            session_ref,
-            transaction_id,
-        })
-    }
-}
-
 impl<'a> DatasetReadBuilder<'a, Text> {
     pub async fn build(self) -> anyhow::Result<DatasetRead<String>> {
         let response = self.get_response().await?;
         let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let contents = response.text().await?;
+        let data = response.text().await?;
 
         Ok(DatasetRead {
-            contents,
+            data,
             etag,
             session_ref,
             transaction_id,
@@ -154,26 +124,21 @@ impl<'a> DatasetReadBuilder<'a, Text> {
     }
 }
 
-pub struct Binary;
-pub struct Record;
-pub struct Text;
+impl<'a, B> DatasetReadBuilder<'a, B>
+where
+    B: BytesDataType,
+{
+    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
+        let response = self.get_response().await?;
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
 
-#[derive(Clone, Debug, PartialEq)]
-enum DataType {
-    Binary,
-    Record,
-    Text,
-}
-
-impl std::fmt::Display for DataType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            DataType::Binary => "binary",
-            DataType::Record => "record",
-            DataType::Text => "text",
-        };
-
-        write!(f, "{}", s)
+        Ok(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        })
     }
 }
 
