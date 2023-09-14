@@ -5,8 +5,8 @@ use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
-use crate::data_type::{Binary, BytesDataType, DataType, Record, Text};
-use crate::utils::{get_etag, get_transaction_id};
+use crate::data_type::*;
+use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
@@ -23,7 +23,14 @@ pub struct FileReadBuilder<'a, T> {
 
     #[endpoint(path)]
     file_path: String,
-
+    #[endpoint(optional, query = "search", builder_fn = "build_search")]
+    search_pattern: Option<String>,
+    #[endpoint(optional, skip_builder)]
+    search_is_regex: bool,
+    #[endpoint(optional, skip_builder)]
+    search_case_sensitive: bool,
+    #[endpoint(optional, skip_builder)]
+    search_max_return: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
@@ -38,6 +45,10 @@ impl<'a, T> FileReadBuilder<'a, T> {
             base_url: self.base_url,
             client: self.client,
             file_path: self.file_path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
             data_type: self.data_type,
             encoding: self.encoding,
             data_type_marker: PhantomData,
@@ -49,6 +60,10 @@ impl<'a, T> FileReadBuilder<'a, T> {
             base_url: self.base_url,
             client: self.client,
             file_path: self.file_path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
             data_type: self.data_type,
             encoding: self.encoding,
             data_type_marker: PhantomData,
@@ -59,6 +74,10 @@ impl<'a, T> FileReadBuilder<'a, T> {
             base_url: self.base_url,
             client: self.client,
             file_path: self.file_path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
             data_type: self.data_type,
             encoding: self.encoding,
             data_type_marker: PhantomData,
@@ -119,6 +138,38 @@ fn build_data_type<T>(
         }
         (None, None) => request_builder,
     }
+}
+
+fn build_search<T>(
+    mut request_builder: RequestBuilder,
+    dataset_read_builder: &FileReadBuilder<T>,
+) -> RequestBuilder {
+    let FileReadBuilder {
+        search_pattern,
+        search_is_regex,
+        search_case_sensitive,
+        search_max_return,
+        ..
+    } = &dataset_read_builder;
+
+    if let Some(search) = search_pattern {
+        request_builder = request_builder.query(&[(
+            if *search_is_regex {
+                "research"
+            } else {
+                "search"
+            },
+            search,
+        )]);
+        if *search_case_sensitive {
+            request_builder = request_builder.query(&[("insensitive", "false")]);
+        }
+        if let Some(max) = search_max_return {
+            request_builder = request_builder.query(&[("maxreturnsize", max)]);
+        }
+    }
+
+    request_builder
 }
 
 fn get_headers(response: &Response) -> anyhow::Result<(Option<String>, String)> {

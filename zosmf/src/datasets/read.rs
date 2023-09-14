@@ -5,9 +5,9 @@ use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
-use crate::data_type::{Binary, BytesDataType, DataType, Record, Text};
+use crate::data_type::*;
 use crate::datasets::utils::MigratedRecall;
-use crate::utils::{get_etag, get_session_ref, get_transaction_id};
+use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
@@ -25,7 +25,6 @@ pub struct DatasetReadBuilder<'a, T> {
 
     #[endpoint(path)]
     dataset_name: String,
-
     #[endpoint(optional, path, setter_fn = "set_volume")]
     volume: String,
     #[endpoint(optional, path, setter_fn = "set_member")]
@@ -42,12 +41,12 @@ pub struct DatasetReadBuilder<'a, T> {
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<String>,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    data_type_marker: PhantomData<T>,
     #[endpoint(optional, builder_fn = "build_return_etag")]
     return_etag: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
+    #[endpoint(optional, skip_setter, skip_builder)]
+    data_type_marker: PhantomData<T>,
 }
 
 impl<'a, T> DatasetReadBuilder<'a, T> {
@@ -64,9 +63,9 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
             member: self.member,
             data_type: Some(DataType::Binary),
             encoding: self.encoding,
-            data_type_marker: PhantomData,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            data_type_marker: PhantomData,
         }
     }
 
@@ -83,9 +82,9 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
             member: self.member,
             data_type: Some(DataType::Record),
             encoding: self.encoding,
-            data_type_marker: PhantomData,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            data_type_marker: PhantomData,
         }
     }
 
@@ -102,9 +101,9 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
             member: self.member,
             data_type: Some(DataType::Text),
             encoding: self.encoding,
-            data_type_marker: PhantomData,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            data_type_marker: PhantomData,
         }
     }
 }

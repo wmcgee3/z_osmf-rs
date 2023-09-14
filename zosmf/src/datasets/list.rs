@@ -149,7 +149,7 @@ where
     #[endpoint(optional, skip_builder)]
     include_total: bool,
     #[endpoint(optional, skip_setter, skip_builder)]
-    attrs: PhantomData<T>,
+    attributes_marker: PhantomData<T>,
 }
 
 impl<'a, T> DatasetListBuilder<'a, T>
@@ -166,7 +166,7 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Base),
             include_total: self.include_total,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
@@ -180,7 +180,7 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Dsname),
             include_total: self.include_total,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
@@ -194,7 +194,7 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Vol),
             include_total: self.include_total,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 

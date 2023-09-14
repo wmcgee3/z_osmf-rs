@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
 use crate::datasets::utils::MigratedRecall;
-use crate::utils::{de_optional_y_n, ser_optional_y_n};
+use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberList<T> {
@@ -85,7 +85,6 @@ pub struct MemberListBuilder<'a, T> {
 
     #[endpoint(path)]
     dataset_name: String,
-
     #[endpoint(optional, query = "start")]
     start: Option<String>,
     #[endpoint(optional, query = "pattern")]
@@ -99,7 +98,7 @@ pub struct MemberListBuilder<'a, T> {
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
     #[endpoint(optional, skip_setter, skip_builder)]
-    attrs: PhantomData<T>,
+    attributes_marker: PhantomData<T>,
 }
 
 impl<'a, T> MemberListBuilder<'a, T>
@@ -117,7 +116,7 @@ where
             attributes: Some(Attrs::Base),
             include_total: self.include_total,
             migrated_recall: self.migrated_recall,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
@@ -132,7 +131,7 @@ where
             attributes: Some(Attrs::Member),
             include_total: self.include_total,
             migrated_recall: self.migrated_recall,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
