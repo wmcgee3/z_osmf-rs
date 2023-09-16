@@ -1,5 +1,9 @@
+pub mod delete;
+pub mod list;
 pub mod read;
 
+pub use delete::*;
+pub use list::*;
 pub use read::*;
 
 use reqwest::Client;
@@ -17,7 +21,15 @@ impl<'a> FilesClient<'a> {
         FilesClient { base_url, client }
     }
 
-    pub fn read(&self, file_path: &str) -> FileReadBuilder<'a, Text> {
+    pub fn list(&self, path: &str) -> FileListBuilder {
+        FileListBuilder::new(self.base_url, self.client, path)
+    }
+
+    pub fn read(&self, file_path: &str) -> FileReadBuilder<Text> {
         FileReadBuilder::new(self.base_url, self.client, file_path)
+    }
+
+    pub fn delete(&self, file_path: &str) -> FileDeleteBuilder {
+        FileDeleteBuilder::new(self.base_url, self.client, file_path)
     }
 }
