@@ -134,7 +134,7 @@ impl Endpoint {
                 } else if let Some(header) = header {
                     quote! {
                         if let Some(value) = &self.#ident {
-                            request_builder = request_builder.header(#header, *value);
+                            request_builder = request_builder.header(#header, value.clone());
                         }
                     }
                 } else if let Some(query) = query {

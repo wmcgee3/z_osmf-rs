@@ -2,7 +2,6 @@ use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
 pub enum MigratedRecall {
     Error,
     NoWait,
@@ -15,6 +14,23 @@ impl From<MigratedRecall> for HeaderValue {
             MigratedRecall::Error => "error",
             MigratedRecall::NoWait => "nowait",
             MigratedRecall::Wait => "wait",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum ObtainEnq {
+    Exclusive,
+    SharedReadWrite,
+}
+
+impl From<ObtainEnq> for HeaderValue {
+    fn from(val: ObtainEnq) -> HeaderValue {
+        match val {
+            ObtainEnq::Exclusive => "EXCLU",
+            ObtainEnq::SharedReadWrite => "SHRW",
         }
         .try_into()
         .unwrap()

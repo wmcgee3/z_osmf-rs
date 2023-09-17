@@ -6,7 +6,7 @@ pub trait BytesDataType {}
 impl BytesDataType for Binary {}
 impl BytesDataType for Record {}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum DataType {
     Binary,
     Record,

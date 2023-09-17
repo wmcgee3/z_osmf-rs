@@ -1,10 +1,12 @@
 pub mod list;
 pub mod list_members;
 pub mod read;
+pub mod write;
 
 pub use list::*;
 pub use list_members::*;
 pub use read::*;
+pub use write::*;
 
 mod utils;
 
@@ -33,5 +35,9 @@ impl<'a> DatasetsClient<'a> {
 
     pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<'a, Text> {
         DatasetReadBuilder::new(self.base_url, self.client, dataset_name)
+    }
+
+    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<'a, String, Text> {
+        DatasetWriteBuilder::new(self.base_url, self.client, dataset_name)
     }
 }

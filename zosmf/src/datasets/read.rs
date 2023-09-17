@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
 use crate::data_type::*;
-use crate::datasets::utils::MigratedRecall;
+use crate::datasets::utils::*;
 use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
@@ -45,6 +45,14 @@ pub struct DatasetReadBuilder<'a, T> {
     return_etag: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
+    #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
+    obtain_enq: Option<ObtainEnq>,
+    #[endpoint(optional, header = "X-IBM-Session-Ref")]
+    session_ref: Option<String>,
+    #[endpoint(optional, builder_fn = "build_release_enq")]
+    release_enq: bool,
+    #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
+    dsname_encoding: Option<String>,
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type_marker: PhantomData<T>,
 }
@@ -65,6 +73,10 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
             data_type_marker: PhantomData,
         }
     }
@@ -84,6 +96,10 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
             data_type_marker: PhantomData,
         }
     }
@@ -103,6 +119,10 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
             data_type_marker: PhantomData,
         }
     }
@@ -213,6 +233,17 @@ fn build_data_type<T>(
         }
         (None, None) => request_builder,
     }
+}
+
+fn build_release_enq<T>(
+    mut request_builder: RequestBuilder,
+    builder: &DatasetReadBuilder<'_, T>,
+) -> RequestBuilder {
+    if builder.release_enq {
+        request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
+    }
+
+    request_builder
 }
 
 fn build_return_etag<T>(
