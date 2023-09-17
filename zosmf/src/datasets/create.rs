@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::Serialize;
@@ -20,7 +21,7 @@ pub struct DatasetCreateBuilder {
     dataset_name: String,
 
     #[endpoint(optional, skip_setter, builder_fn = "build_json")]
-    _json: RequestJson<'static>,
+    json: PhantomData<RequestJson<'static>>,
 
     #[endpoint(optional, skip_builder)]
     volume: Option<String>,
