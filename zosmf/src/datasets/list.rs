@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
@@ -129,12 +130,12 @@ impl Serialize for Volume {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<'a, T>
+pub struct DatasetListBuilder<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    base_url: &'a str,
-    client: &'a Client,
+    base_url: Arc<str>,
+    client: Client,
 
     #[endpoint(query = "dslevel")]
     name_pattern: String,
@@ -152,11 +153,11 @@ where
     attributes_marker: PhantomData<T>,
 }
 
-impl<'a, T> DatasetListBuilder<'a, T>
+impl<T> DatasetListBuilder<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> DatasetListBuilder<'a, DatasetBase> {
+    pub fn attributes_base(self) -> DatasetListBuilder<DatasetBase> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -170,7 +171,7 @@ where
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetListBuilder<'a, DatasetName> {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetName> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -184,7 +185,7 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<'a, DatasetVol> {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetVol> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,

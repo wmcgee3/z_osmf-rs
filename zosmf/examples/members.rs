@@ -10,7 +10,7 @@ async fn main() -> anyhow::Result<()> {
     let zosmf = get_zosmf().await?;
 
     let pds_members = zosmf
-        .datasets()
+        .datasets
         .list_members("SOME.PDS.NAME")
         .attributes_base()
         .build()

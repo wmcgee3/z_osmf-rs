@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
-use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
 use zosmf_macros::{Endpoint, Getters};
@@ -79,9 +79,9 @@ pub struct MemberName {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct MemberListBuilder<'a, T> {
-    base_url: &'a str,
-    client: &'a Client,
+pub struct MemberListBuilder<T> {
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(path)]
     dataset_name: String,
@@ -101,11 +101,11 @@ pub struct MemberListBuilder<'a, T> {
     attributes_marker: PhantomData<T>,
 }
 
-impl<'a, T> MemberListBuilder<'a, T>
+impl<T> MemberListBuilder<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> MemberListBuilder<'a, MembersBase> {
+    pub fn attributes_base(self) -> MemberListBuilder<MembersBase> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -120,7 +120,7 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> MemberListBuilder<'a, Vec<MemberName>> {
+    pub fn attributes_member(self) -> MemberListBuilder<Vec<MemberName>> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -189,9 +189,9 @@ struct ResponseJson<T> {
 }
 
 fn build_attributes<T>(
-    request_builder: RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     member_list_builder: &MemberListBuilder<T>,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     let MemberListBuilder {
         attributes,
         include_total,

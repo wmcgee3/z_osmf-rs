@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use bytes::Bytes;
-use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
@@ -17,9 +17,9 @@ pub struct FileRead<T> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs{file_path}")]
-pub struct FileReadBuilder<'a, T> {
-    base_url: &'a str,
-    client: &'a Client,
+pub struct FileReadBuilder<T> {
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(path)]
     file_path: String,
@@ -39,8 +39,8 @@ pub struct FileReadBuilder<'a, T> {
     data_type_marker: PhantomData<T>,
 }
 
-impl<'a, T> FileReadBuilder<'a, T> {
-    pub fn data_type_binary(self) -> FileReadBuilder<'a, Binary> {
+impl<T> FileReadBuilder<T> {
+    pub fn data_type_binary(self) -> FileReadBuilder<Binary> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -55,7 +55,7 @@ impl<'a, T> FileReadBuilder<'a, T> {
         }
     }
 
-    pub fn data_type_record(self) -> FileReadBuilder<'a, Record> {
+    pub fn data_type_record(self) -> FileReadBuilder<Record> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -69,7 +69,7 @@ impl<'a, T> FileReadBuilder<'a, T> {
             data_type_marker: PhantomData,
         }
     }
-    pub fn data_type_text(self) -> FileReadBuilder<'a, Text> {
+    pub fn data_type_text(self) -> FileReadBuilder<Text> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -85,7 +85,7 @@ impl<'a, T> FileReadBuilder<'a, T> {
     }
 }
 
-impl<'a> FileReadBuilder<'a, Text> {
+impl<'a> FileReadBuilder<Text> {
     pub async fn build(self) -> anyhow::Result<FileRead<String>> {
         let response = self.get_response().await?;
         let (etag, transaction_id) = get_headers(&response)?;
@@ -99,7 +99,7 @@ impl<'a> FileReadBuilder<'a, Text> {
     }
 }
 
-impl<'a, B> FileReadBuilder<'a, B>
+impl<B> FileReadBuilder<B>
 where
     B: BytesDataType,
 {
@@ -117,9 +117,9 @@ where
 }
 
 fn build_data_type<T>(
-    request_builder: RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     dataset_read_builder: &FileReadBuilder<T>,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     let FileReadBuilder {
         data_type,
         encoding,
@@ -141,9 +141,9 @@ fn build_data_type<T>(
 }
 
 fn build_search<T>(
-    mut request_builder: RequestBuilder,
+    mut request_builder: reqwest::RequestBuilder,
     dataset_read_builder: &FileReadBuilder<T>,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     let FileReadBuilder {
         search_pattern,
         search_is_regex,
@@ -172,6 +172,6 @@ fn build_search<T>(
     request_builder
 }
 
-fn get_headers(response: &Response) -> anyhow::Result<(Option<String>, String)> {
+fn get_headers(response: &reqwest::Response) -> anyhow::Result<(Option<String>, String)> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
 }

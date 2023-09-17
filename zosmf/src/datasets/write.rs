@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use anyhow::Context;
 use bytes::Bytes;
-use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
@@ -18,12 +18,12 @@ pub struct DatasetWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member_name}")]
-pub struct DatasetWriteBuilder<'a, D, T>
+pub struct DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
 {
-    base_url: &'a str,
-    client: &'a Client,
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(path)]
     dataset_name: String,
@@ -55,11 +55,11 @@ where
     data_type_marker: PhantomData<T>,
 }
 
-impl<'a, D, T> DatasetWriteBuilder<'a, D, T>
+impl<D, T> DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
 {
-    pub fn data_type_binary(self, data: Bytes) -> DatasetWriteBuilder<'a, Bytes, Binary> {
+    pub fn data_type_binary(self, data: Bytes) -> DatasetWriteBuilder<Bytes, Binary> {
         DatasetWriteBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -80,7 +80,7 @@ where
         }
     }
 
-    pub fn data_type_record(self, data: Bytes) -> DatasetWriteBuilder<'a, Bytes, Record> {
+    pub fn data_type_record(self, data: Bytes) -> DatasetWriteBuilder<Bytes, Record> {
         DatasetWriteBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -101,7 +101,7 @@ where
         }
     }
 
-    pub fn data_type_text(self, data: String) -> DatasetWriteBuilder<'a, String, Text> {
+    pub fn data_type_text(self, data: String) -> DatasetWriteBuilder<String, Text> {
         DatasetWriteBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -136,9 +136,9 @@ where
 }
 
 fn build_data<D, T>(
-    mut request_builder: RequestBuilder,
+    mut request_builder: reqwest::RequestBuilder,
     builder: &DatasetWriteBuilder<D, T>,
-) -> RequestBuilder
+) -> reqwest::RequestBuilder
 where
     D: Into<reqwest::Body> + Clone,
 {
@@ -179,9 +179,9 @@ where
 }
 
 fn build_release_enq<D, T>(
-    mut request_builder: RequestBuilder,
+    mut request_builder: reqwest::RequestBuilder,
     builder: &DatasetWriteBuilder<D, T>,
-) -> RequestBuilder
+) -> reqwest::RequestBuilder
 where
     D: Into<reqwest::Body> + Clone,
 {

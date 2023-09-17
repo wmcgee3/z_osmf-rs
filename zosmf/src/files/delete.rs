@@ -1,4 +1,5 @@
-use reqwest::{Client, RequestBuilder};
+use std::sync::Arc;
+
 use zosmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -10,9 +11,9 @@ pub struct FileDelete {
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{file_path}")]
-pub struct FileDeleteBuilder<'a> {
-    base_url: &'a str,
-    client: &'a Client,
+pub struct FileDeleteBuilder {
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(path)]
     file_path: String,
@@ -20,7 +21,7 @@ pub struct FileDeleteBuilder<'a> {
     recursive: bool,
 }
 
-impl<'a> FileDeleteBuilder<'a> {
+impl FileDeleteBuilder {
     pub async fn build(self) -> anyhow::Result<FileDelete> {
         let response = self.get_response().await?;
 
@@ -31,9 +32,9 @@ impl<'a> FileDeleteBuilder<'a> {
 }
 
 fn build_recursive(
-    mut request_builder: RequestBuilder,
+    mut request_builder: reqwest::RequestBuilder,
     builder: &FileDeleteBuilder,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     if builder.recursive {
         request_builder = request_builder.header("X-IBM-Option", "recursive");
     }

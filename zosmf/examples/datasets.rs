@@ -9,7 +9,7 @@ async fn main() -> anyhow::Result<()> {
 
     let username = std::env::var("ZOSMF_USERNAME")?;
 
-    let my_datasets = zosmf.datasets().list(&username).build().await?;
+    let my_datasets = zosmf.datasets.list(&username).build().await?;
 
     let my_dataset_names = my_datasets
         .items()

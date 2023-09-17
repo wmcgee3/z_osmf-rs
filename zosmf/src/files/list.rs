@@ -1,4 +1,5 @@
-use reqwest::{Client, RequestBuilder};
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
@@ -29,9 +30,9 @@ pub struct FileAttributes {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
-pub struct FileListBuilder<'a> {
-    base_url: &'a str,
-    client: &'a Client,
+pub struct FileListBuilder {
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(query = "path")]
     path: String,
@@ -61,7 +62,7 @@ pub struct FileListBuilder<'a> {
     symlinks: Option<SymLinks>,
 }
 
-impl<'a> FileListBuilder<'a> {
+impl FileListBuilder {
     pub async fn build(self) -> anyhow::Result<FileList> {
         let response = self.get_response().await?;
 
@@ -108,7 +109,10 @@ struct ResponseJson {
     json_version: i32,
 }
 
-fn build_lstat(mut request_builder: RequestBuilder, builder: &FileListBuilder) -> RequestBuilder {
+fn build_lstat(
+    mut request_builder: reqwest::RequestBuilder,
+    builder: &FileListBuilder,
+) -> reqwest::RequestBuilder {
     if builder.lstat {
         request_builder = request_builder.header("X-IBM-Lstat", "true");
     }

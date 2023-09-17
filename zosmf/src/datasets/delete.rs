@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use zosmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -9,9 +11,9 @@ pub struct DatasetDelete {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restifles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetDeleteBuilder<'a> {
-    base_url: &'a str,
-    client: &'a reqwest::Client,
+pub struct DatasetDeleteBuilder {
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(path)]
     dataset_name: String,
@@ -23,7 +25,7 @@ pub struct DatasetDeleteBuilder<'a> {
     dsname_encoding: Option<String>,
 }
 
-impl<'a> DatasetDeleteBuilder<'a> {
+impl DatasetDeleteBuilder {
     pub async fn build(self) -> anyhow::Result<DatasetDelete> {
         let response = self.get_response().await?;
 

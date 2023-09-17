@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use bytes::Bytes;
-use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
@@ -19,9 +19,9 @@ pub struct DatasetRead<T> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetReadBuilder<'a, T> {
-    base_url: &'a str,
-    client: &'a Client,
+pub struct DatasetReadBuilder<T> {
+    base_url: Arc<str>,
+    client: reqwest::Client,
 
     #[endpoint(path)]
     dataset_name: String,
@@ -57,8 +57,8 @@ pub struct DatasetReadBuilder<'a, T> {
     data_type_marker: PhantomData<T>,
 }
 
-impl<'a, T> DatasetReadBuilder<'a, T> {
-    pub fn data_type_binary(self) -> DatasetReadBuilder<'a, Binary> {
+impl<T> DatasetReadBuilder<T> {
+    pub fn data_type_binary(self) -> DatasetReadBuilder<Binary> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -81,7 +81,7 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
         }
     }
 
-    pub fn data_type_record(self) -> DatasetReadBuilder<'a, Record> {
+    pub fn data_type_record(self) -> DatasetReadBuilder<Record> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -104,7 +104,7 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
         }
     }
 
-    pub fn data_type_text(self) -> DatasetReadBuilder<'a, Text> {
+    pub fn data_type_text(self) -> DatasetReadBuilder<Text> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -128,7 +128,7 @@ impl<'a, T> DatasetReadBuilder<'a, T> {
     }
 }
 
-impl<'a> DatasetReadBuilder<'a, Text> {
+impl<'a> DatasetReadBuilder<Text> {
     pub async fn build(self) -> anyhow::Result<DatasetRead<String>> {
         let response = self.get_response().await?;
         let (etag, session_ref, transaction_id) = get_headers(&response)?;
@@ -143,7 +143,7 @@ impl<'a> DatasetReadBuilder<'a, Text> {
     }
 }
 
-impl<'a, B> DatasetReadBuilder<'a, B>
+impl<B> DatasetReadBuilder<B>
 where
     B: BytesDataType,
 {
@@ -180,9 +180,9 @@ fn set_volume<T>(
 }
 
 fn build_search<T>(
-    mut request_builder: RequestBuilder,
+    mut request_builder: reqwest::RequestBuilder,
     dataset_read_builder: &DatasetReadBuilder<T>,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     let DatasetReadBuilder {
         search_pattern,
         search_is_regex,
@@ -212,9 +212,9 @@ fn build_search<T>(
 }
 
 fn build_data_type<T>(
-    request_builder: RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     dataset_read_builder: &DatasetReadBuilder<T>,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     let DatasetReadBuilder {
         data_type,
         encoding,
@@ -236,9 +236,9 @@ fn build_data_type<T>(
 }
 
 fn build_release_enq<T>(
-    mut request_builder: RequestBuilder,
-    builder: &DatasetReadBuilder<'_, T>,
-) -> RequestBuilder {
+    mut request_builder: reqwest::RequestBuilder,
+    builder: &DatasetReadBuilder<T>,
+) -> reqwest::RequestBuilder {
     if builder.release_enq {
         request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
     }
@@ -247,9 +247,9 @@ fn build_release_enq<T>(
 }
 
 fn build_return_etag<T>(
-    mut request_builder: RequestBuilder,
+    mut request_builder: reqwest::RequestBuilder,
     dataset_read_builder: &DatasetReadBuilder<T>,
-) -> RequestBuilder {
+) -> reqwest::RequestBuilder {
     if dataset_read_builder.return_etag {
         request_builder = request_builder.header("X-IBM-Return-Etag", "true");
     }
@@ -257,7 +257,9 @@ fn build_return_etag<T>(
     request_builder
 }
 
-fn get_headers(response: &Response) -> anyhow::Result<(Option<String>, Option<String>, String)> {
+fn get_headers(
+    response: &reqwest::Response,
+) -> anyhow::Result<(Option<String>, Option<String>, String)> {
     Ok((
         get_etag(response)?,
         get_session_ref(response)?,
