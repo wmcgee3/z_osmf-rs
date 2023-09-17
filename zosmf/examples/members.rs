@@ -1,9 +1,9 @@
 use zosmf::datasets::MembersBase;
 
 #[path = "_setup/mod.rs"]
-mod setup;
+mod _setup;
 
-use setup::get_zosmf;
+use _setup::get_zosmf;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

@@ -40,22 +40,16 @@ impl Zosmf {
             .into();
         let client = client_builder.cookie_store(true).build()?;
 
-        #[cfg(feature = "datasets")]
-        let datasets = DatasetsClient::new(base_url.clone(), client.clone());
-        #[cfg(feature = "files")]
-        let files = FilesClient::new(base_url.clone(), client.clone());
-        #[cfg(feature = "jobs")]
-        let jobs = JobsClient::new(base_url.clone(), client.clone());
-
         Ok(Zosmf {
+            #[cfg(feature = "datasets")]
+            datasets: DatasetsClient::new(base_url.clone(), client.clone()),
+            #[cfg(feature = "files")]
+            files: FilesClient::new(base_url.clone(), client.clone()),
+            #[cfg(feature = "jobs")]
+            jobs: JobsClient::new(base_url.clone(), client.clone()),
+
             base_url,
             client,
-            #[cfg(feature = "datasets")]
-            datasets,
-            #[cfg(feature = "files")]
-            files,
-            #[cfg(feature = "jobs")]
-            jobs,
         })
     }
 
