@@ -1,0 +1,22 @@
+#[path = "_setup/mod.rs"]
+mod _setup;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let zosmf = _setup::get_zosmf().await?;
+
+    let read_member = zosmf
+        .datasets
+        .read("SYS1.PARMLIB")
+        .member("SMFPRM00")
+        .build()
+        .await?;
+
+    println!("{}", read_member.data());
+
+    let read_dataset = zosmf.datasets.read("JIAHJ.REST.SRVMP").build().await?;
+
+    println!("{}", read_dataset.data());
+
+    Ok(())
+}

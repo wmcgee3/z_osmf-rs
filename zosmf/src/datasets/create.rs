@@ -24,13 +24,13 @@ pub struct DatasetCreateBuilder {
     json: PhantomData<RequestJson<'static>>,
 
     #[endpoint(optional, skip_builder)]
-    volume: Option<String>,
+    volume: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    device_type: Option<String>,
+    device_type: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    organization: Option<String>,
+    organization: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    space_allocation_unit: Option<String>,
+    space_allocation_unit: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     primary_space: Option<i32>,
     #[endpoint(optional, skip_builder)]
@@ -40,21 +40,21 @@ pub struct DatasetCreateBuilder {
     #[endpoint(optional, skip_builder)]
     average_block_size: Option<i32>,
     #[endpoint(optional, skip_builder)]
-    record_format: Option<String>,
+    record_format: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     block_size: Option<i32>,
     #[endpoint(optional, skip_builder)]
     logical_record_length: Option<i32>,
     #[endpoint(optional, skip_builder)]
-    storage_class: Option<String>,
+    storage_class: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    management_class: Option<String>,
+    management_class: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    data_class: Option<String>,
+    data_class: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    dataset_type: Option<String>,
+    dataset_type: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    model_dataset: Option<String>,
+    model_dataset: Option<Box<str>>,
 }
 
 impl DatasetCreateBuilder {
@@ -147,22 +147,4 @@ fn build_json(
     };
 
     request_builder.json(&request_json)
-}
-
-#[cfg(test)]
-mod tests {
-    #[tokio::test]
-    async fn test_create() -> anyhow::Result<()> {
-        let zosmf = crate::Zosmf::new(reqwest::Client::builder(), "")?;
-
-        let create_builder = zosmf.datasets.create("");
-
-        let _create = create_builder
-            .volume("somevol")
-            .average_block_size(400)
-            .build()
-            .await?;
-
-        Ok(())
-    }
 }

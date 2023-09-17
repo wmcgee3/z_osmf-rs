@@ -17,7 +17,7 @@ pub struct DatasetWrite {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member_name}")]
+#[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
 pub struct DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
@@ -30,7 +30,7 @@ where
     #[endpoint(optional, path, setter_fn = "set_volume")]
     volume: String,
     #[endpoint(optional, path, setter_fn = "set_member")]
-    member_name: String,
+    member: String,
     #[endpoint(optional, header = "If-Match")]
     if_match: Option<String>,
     #[endpoint(optional, skip_setter, skip_builder)]
@@ -65,7 +65,7 @@ where
             client: self.client,
             dataset_name: self.dataset_name,
             volume: self.volume,
-            member_name: self.member_name,
+            member: self.member,
             if_match: self.if_match,
             data_type: Some(DataType::Binary),
             data: Some(data),
@@ -86,7 +86,7 @@ where
             client: self.client,
             dataset_name: self.dataset_name,
             volume: self.volume,
-            member_name: self.member_name,
+            member: self.member,
             if_match: self.if_match,
             data_type: Some(DataType::Record),
             data: Some(data),
@@ -107,7 +107,7 @@ where
             client: self.client,
             dataset_name: self.dataset_name,
             volume: self.volume,
-            member_name: self.member_name,
+            member: self.member,
             if_match: self.if_match,
             data_type: Some(DataType::Text),
             data: Some(data),
@@ -199,7 +199,7 @@ fn set_member<D, T>(
 where
     D: Into<reqwest::Body> + Clone,
 {
-    builder.member_name = format!("({})", value);
+    builder.member = format!("({})", value);
 
     builder
 }
