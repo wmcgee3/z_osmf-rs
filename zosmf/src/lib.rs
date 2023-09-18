@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 
 pub mod data_type;
+pub mod if_match;
+
 #[cfg(feature = "datasets")]
 pub mod datasets;
 #[cfg(feature = "files")]
@@ -18,15 +20,18 @@ use jobs::JobsClient;
 
 #[derive(Clone, Debug)]
 pub struct Zosmf {
-    base_url: Arc<str>,
-    client: reqwest::Client,
-
+    /// Attribute that holds the [DatasetsClient] sub-client.
     #[cfg(feature = "datasets")]
     pub datasets: DatasetsClient,
+    /// Attribute that holds the [FilesClient] sub-client.
     #[cfg(feature = "files")]
     pub files: FilesClient,
+    /// Attribute that holds the [JobsClient] sub-client.
     #[cfg(feature = "jobs")]
     pub jobs: JobsClient,
+
+    base_url: Arc<str>,
+    client: reqwest::Client,
 }
 
 impl Zosmf {

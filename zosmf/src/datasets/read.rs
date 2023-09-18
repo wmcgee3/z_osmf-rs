@@ -7,6 +7,7 @@ use zosmf_macros::{Endpoint, Getters};
 
 use crate::data_type::*;
 use crate::datasets::utils::*;
+use crate::if_match::*;
 use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
@@ -17,9 +18,20 @@ pub struct DatasetRead<T> {
     transaction_id: String,
 }
 
+#[derive(Clone, Debug)]
+pub enum DatasetReadIfNoneMatch<T> {
+    Modified(DatasetRead<T>),
+    NotModified(DatasetReadNotModified),
+}
+
+#[derive(Clone, Debug, Getters)]
+pub struct DatasetReadNotModified {
+    transaction_id: String,
+}
+
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetReadBuilder<T> {
+pub struct DatasetReadBuilder<T, I> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -37,6 +49,8 @@ pub struct DatasetReadBuilder<T> {
     search_case_sensitive: bool,
     #[endpoint(optional, skip_builder)]
     search_max_return: Option<i32>,
+    #[endpoint(optional, header = "If-None-Match", skip_setter)]
+    if_none_match: Option<String>,
     #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
@@ -53,12 +67,15 @@ pub struct DatasetReadBuilder<T> {
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<String>,
+
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type_marker: PhantomData<T>,
+    #[endpoint(optional, skip_setter, skip_builder)]
+    if_none_match_marker: PhantomData<I>,
 }
 
-impl<T> DatasetReadBuilder<T> {
-    pub fn data_type_binary(self) -> DatasetReadBuilder<Binary> {
+impl<T, I> DatasetReadBuilder<T, I> {
+    pub fn data_type_binary(self) -> DatasetReadBuilder<Binary, I> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -70,6 +87,7 @@ impl<T> DatasetReadBuilder<T> {
             volume: self.volume,
             member: self.member,
             data_type: Some(DataType::Binary),
+            if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
@@ -78,10 +96,11 @@ impl<T> DatasetReadBuilder<T> {
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
             data_type_marker: PhantomData,
+            if_none_match_marker: self.if_none_match_marker,
         }
     }
 
-    pub fn data_type_record(self) -> DatasetReadBuilder<Record> {
+    pub fn data_type_record(self) -> DatasetReadBuilder<Record, I> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -93,6 +112,7 @@ impl<T> DatasetReadBuilder<T> {
             volume: self.volume,
             member: self.member,
             data_type: Some(DataType::Record),
+            if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
@@ -101,10 +121,11 @@ impl<T> DatasetReadBuilder<T> {
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
             data_type_marker: PhantomData,
+            if_none_match_marker: self.if_none_match_marker,
         }
     }
 
-    pub fn data_type_text(self) -> DatasetReadBuilder<Text> {
+    pub fn data_type_text(self) -> DatasetReadBuilder<Text, I> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -116,6 +137,7 @@ impl<T> DatasetReadBuilder<T> {
             volume: self.volume,
             member: self.member,
             data_type: Some(DataType::Text),
+            if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
@@ -124,13 +146,42 @@ impl<T> DatasetReadBuilder<T> {
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
             data_type_marker: PhantomData,
+            if_none_match_marker: self.if_none_match_marker,
+        }
+    }
+
+    pub fn if_none_match<V>(self, value: V) -> DatasetReadBuilder<T, Etag>
+    where
+        V: ToString,
+    {
+        DatasetReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            dataset_name: self.dataset_name,
+            volume: self.volume,
+            member: self.member,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
+            if_none_match: Some(value.to_string()),
+            data_type: self.data_type,
+            encoding: self.encoding,
+            return_etag: self.return_etag,
+            migrated_recall: self.migrated_recall,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
+            data_type_marker: self.data_type_marker,
+            if_none_match_marker: PhantomData,
         }
     }
 }
 
-impl<'a> DatasetReadBuilder<Text> {
+impl<'a> DatasetReadBuilder<Text, NoEtag> {
     pub async fn build(self) -> anyhow::Result<DatasetRead<String>> {
-        let response = self.get_response().await?;
+        let response = self.get_response().await?.error_for_status()?;
         let (etag, session_ref, transaction_id) = get_headers(&response)?;
         let data = response.text().await?;
 
@@ -143,12 +194,36 @@ impl<'a> DatasetReadBuilder<Text> {
     }
 }
 
-impl<B> DatasetReadBuilder<B>
+impl<'a> DatasetReadBuilder<Text, Etag> {
+    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<String>> {
+        let response = self.get_response().await?;
+
+        if response.status() == 304 {
+            let transaction_id = get_transaction_id(&response)?;
+
+            return Ok(DatasetReadIfNoneMatch::NotModified(
+                DatasetReadNotModified { transaction_id },
+            ));
+        }
+
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.text().await?;
+
+        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        }))
+    }
+}
+
+impl<B> DatasetReadBuilder<B, NoEtag>
 where
     B: BytesDataType,
 {
     pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
-        let response = self.get_response().await?;
+        let response = self.get_response().await?.error_for_status()?;
         let (etag, session_ref, transaction_id) = get_headers(&response)?;
         let data = response.bytes().await?;
 
@@ -161,27 +236,53 @@ where
     }
 }
 
-fn set_member<T>(
-    mut dataset_read_builder: DatasetReadBuilder<T>,
+impl<B> DatasetReadBuilder<B, Etag>
+where
+    B: BytesDataType,
+{
+    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<Bytes>> {
+        let response = self.get_response().await?;
+        if response.status() == 304 {
+            let transaction_id = get_transaction_id(&response)?;
+
+            return Ok(DatasetReadIfNoneMatch::NotModified(
+                DatasetReadNotModified { transaction_id },
+            ));
+        }
+        let response = response.error_for_status()?;
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        }))
+    }
+}
+
+fn set_member<T, I>(
+    mut dataset_read_builder: DatasetReadBuilder<T, I>,
     value: String,
-) -> DatasetReadBuilder<T> {
+) -> DatasetReadBuilder<T, I> {
     dataset_read_builder.member = format!("({})", value);
 
     dataset_read_builder
 }
 
-fn set_volume<T>(
-    mut dataset_read_builder: DatasetReadBuilder<T>,
+fn set_volume<T, I>(
+    mut dataset_read_builder: DatasetReadBuilder<T, I>,
     value: String,
-) -> DatasetReadBuilder<T> {
+) -> DatasetReadBuilder<T, I> {
     dataset_read_builder.volume = format!("-({})/", value);
 
     dataset_read_builder
 }
 
-fn build_search<T>(
+fn build_search<T, I>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T>,
+    dataset_read_builder: &DatasetReadBuilder<T, I>,
 ) -> reqwest::RequestBuilder {
     let DatasetReadBuilder {
         search_pattern,
@@ -211,9 +312,9 @@ fn build_search<T>(
     request_builder
 }
 
-fn build_data_type<T>(
+fn build_data_type<T, I>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T>,
+    dataset_read_builder: &DatasetReadBuilder<T, I>,
 ) -> reqwest::RequestBuilder {
     let DatasetReadBuilder {
         data_type,
@@ -235,9 +336,9 @@ fn build_data_type<T>(
     }
 }
 
-fn build_release_enq<T>(
+fn build_release_enq<T, I>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DatasetReadBuilder<T>,
+    builder: &DatasetReadBuilder<T, I>,
 ) -> reqwest::RequestBuilder {
     if builder.release_enq {
         request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
@@ -246,9 +347,9 @@ fn build_release_enq<T>(
     request_builder
 }
 
-fn build_return_etag<T>(
+fn build_return_etag<T, I>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T>,
+    dataset_read_builder: &DatasetReadBuilder<T, I>,
 ) -> reqwest::RequestBuilder {
     if dataset_read_builder.return_etag {
         request_builder = request_builder.header("X-IBM-Return-Etag", "true");
