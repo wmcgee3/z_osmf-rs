@@ -22,9 +22,9 @@ pub struct FileReadBuilder<T> {
     client: reqwest::Client,
 
     #[endpoint(path)]
-    file_path: String,
+    file_path: Box<str>,
     #[endpoint(optional, query = "search", builder_fn = "build_search")]
-    search_pattern: Option<String>,
+    search_pattern: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     search_is_regex: bool,
     #[endpoint(optional, skip_builder)]
@@ -34,7 +34,7 @@ pub struct FileReadBuilder<T> {
     #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
-    encoding: Option<String>,
+    encoding: Option<Box<str>>,
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type_marker: PhantomData<T>,
 }
@@ -86,10 +86,10 @@ impl<T> FileReadBuilder<T> {
 }
 
 impl<'a> FileReadBuilder<Text> {
-    pub async fn build(self) -> anyhow::Result<FileRead<String>> {
+    pub async fn build(self) -> anyhow::Result<FileRead<Box<str>>> {
         let response = self.get_response().await?;
         let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.text().await?;
+        let data = response.text().await?.into();
 
         Ok(FileRead {
             data,

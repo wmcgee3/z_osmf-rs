@@ -16,13 +16,13 @@ pub struct DatasetDeleteBuilder {
     client: reqwest::Client,
 
     #[endpoint(path)]
-    dataset_name: String,
+    dataset_name: Box<str>,
     #[endpoint(optional, path, setter_fn = "set_volume")]
-    volume: String,
+    volume: Box<str>,
     #[endpoint(optional, path, setter_fn = "set_member")]
-    member: String,
+    member: Box<str>,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<String>,
+    dsname_encoding: Option<Box<str>>,
 }
 
 impl DatasetDeleteBuilder {
@@ -35,14 +35,14 @@ impl DatasetDeleteBuilder {
     }
 }
 
-fn set_volume(mut builder: DatasetDeleteBuilder, value: String) -> DatasetDeleteBuilder {
-    builder.volume = format!("-({})/", value);
+fn set_volume(mut builder: DatasetDeleteBuilder, value: Box<str>) -> DatasetDeleteBuilder {
+    builder.volume = format!("-({})/", value).into();
 
     builder
 }
 
-fn set_member(mut builder: DatasetDeleteBuilder, value: String) -> DatasetDeleteBuilder {
-    builder.member = format!("({})", value);
+fn set_member(mut builder: DatasetDeleteBuilder, value: Box<str>) -> DatasetDeleteBuilder {
+    builder.member = format!("({})", value).into();
 
     builder
 }

@@ -21,25 +21,25 @@ pub struct DatasetList<T> {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetBase {
     #[serde(rename = "dsname")]
-    name: String,
+    name: Box<str>,
     #[serde(rename = "blksz")]
-    block_size: Option<String>,
+    block_size: Option<Box<str>>,
     #[serde(rename = "catnm")]
-    catalog: Option<String>,
+    catalog: Option<Box<str>>,
     #[serde(rename = "cdate")]
-    creation_date: Option<String>,
+    creation_date: Option<Box<str>>,
     #[serde(rename = "dev")]
-    device_type: Option<String>,
+    device_type: Option<Box<str>>,
     #[serde(rename = "dsntp")]
-    dataset_type: Option<String>,
+    dataset_type: Option<Box<str>>,
     #[serde(rename = "dsorg")]
-    organization: Option<String>,
+    organization: Option<Box<str>>,
     #[serde(rename = "edate")]
-    expiration_date: Option<String>,
+    expiration_date: Option<Box<str>>,
     #[serde(rename = "extx")]
-    extents_used: Option<String>,
+    extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
-    logical_record_length: Option<String>,
+    logical_record_length: Option<Box<str>>,
     #[serde(
         rename = "migr",
         deserialize_with = "de_yes_no",
@@ -61,31 +61,31 @@ pub struct DatasetBase {
     )]
     space_overflow: Option<bool>,
     #[serde(rename = "rdate")]
-    last_referenced_date: Option<String>,
+    last_referenced_date: Option<Box<str>>,
     #[serde(rename = "recfm")]
-    record_format: Option<String>,
+    record_format: Option<Box<str>>,
     #[serde(rename = "sizex")]
-    size_in_tracks: Option<String>,
+    size_in_tracks: Option<Box<str>>,
     #[serde(rename = "spacu")]
-    space_units: Option<String>,
+    space_units: Option<Box<str>>,
     #[serde(rename = "used")]
-    percent_used: Option<String>,
+    percent_used: Option<Box<str>>,
     #[serde(rename = "vol")]
     volume: Volume,
     #[serde(rename = "vols")]
-    volumes: Option<String>,
+    volumes: Option<Box<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetName {
     #[serde(rename = "dsname")]
-    name: String,
+    name: Box<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetVol {
     #[serde(rename = "dsname")]
-    name: String,
+    name: Box<str>,
     #[serde(rename = "vol")]
     volume: Volume,
 }
@@ -94,7 +94,7 @@ pub struct DatasetVol {
 pub enum Volume {
     Alias,
     Migrated,
-    Volume(String),
+    Volume(Box<str>),
     Vsam,
 }
 
@@ -109,7 +109,7 @@ impl<'de> Deserialize<'de> for Volume {
             "*ALIAS" => Volume::Alias,
             "MIGRAT" => Volume::Migrated,
             "*VSAM*" => Volume::Vsam,
-            _ => Volume::Volume(s),
+            _ => Volume::Volume(s.into()),
         })
     }
 }
@@ -122,7 +122,7 @@ impl Serialize for Volume {
         serializer.serialize_str(match self {
             Volume::Alias => "*ALIAS",
             Volume::Migrated => "MIGRAT",
-            Volume::Volume(vol) => vol,
+            Volume::Volume(vol) => vol.as_ref(),
             Volume::Vsam => "*VSAM*",
         })
     }
@@ -138,11 +138,11 @@ where
     client: Client,
 
     #[endpoint(query = "dslevel")]
-    name_pattern: String,
+    name_pattern: Box<str>,
     #[endpoint(optional, query = "volser")]
-    volume: Option<String>,
+    volume: Option<Box<str>>,
     #[endpoint(optional, query = "start")]
-    start: Option<String>,
+    start: Option<Box<str>>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]

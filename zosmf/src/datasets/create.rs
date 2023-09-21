@@ -18,7 +18,7 @@ pub struct DatasetCreateBuilder {
     client: reqwest::Client,
 
     #[endpoint(path)]
-    dataset_name: String,
+    dataset_name: Box<str>,
 
     #[endpoint(optional, skip_setter, builder_fn = "build_json")]
     json: PhantomData<RequestJson<'static>>,

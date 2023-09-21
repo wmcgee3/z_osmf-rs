@@ -26,19 +26,19 @@ where
     client: reqwest::Client,
 
     #[endpoint(path)]
-    dataset_name: String,
+    dataset_name: Box<str>,
     #[endpoint(optional, path, setter_fn = "set_volume")]
-    volume: String,
+    volume: Box<str>,
     #[endpoint(optional, path, setter_fn = "set_member")]
-    member: String,
+    member: Box<str>,
     #[endpoint(optional, header = "If-Match")]
-    if_match: Option<String>,
+    if_match: Option<Box<str>>,
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_setter, builder_fn = "build_data")]
     data: Option<D>,
     #[endpoint(optional, skip_builder)]
-    encoding: Option<String>,
+    encoding: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     crlf_newlines: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
@@ -46,11 +46,11 @@ where
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<ObtainEnq>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
-    session_ref: Option<String>,
+    session_ref: Option<Box<str>>,
     #[endpoint(optional, builder_fn = "build_release_enq")]
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<String>,
+    dsname_encoding: Option<Box<str>>,
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type_marker: PhantomData<T>,
 }
@@ -194,24 +194,24 @@ where
 
 fn set_member<D, T>(
     mut builder: DatasetWriteBuilder<D, T>,
-    value: String,
+    value: Box<str>,
 ) -> DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
 {
-    builder.member = format!("({})", value);
+    builder.member = format!("({})", value).into();
 
     builder
 }
 
 fn set_volume<D, T>(
     mut builder: DatasetWriteBuilder<D, T>,
-    value: String,
+    value: Box<str>,
 ) -> DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
 {
-    builder.volume = format!("-({})/", value);
+    builder.volume = format!("-({})/", value).into();
 
     builder
 }

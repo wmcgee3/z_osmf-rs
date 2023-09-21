@@ -36,13 +36,13 @@ pub struct DatasetReadBuilder<T, I> {
     client: reqwest::Client,
 
     #[endpoint(path)]
-    dataset_name: String,
+    dataset_name: Box<str>,
     #[endpoint(optional, path, setter_fn = "set_volume")]
-    volume: String,
+    volume: Box<str>,
     #[endpoint(optional, path, setter_fn = "set_member")]
-    member: String,
+    member: Box<str>,
     #[endpoint(optional, query = "search", builder_fn = "build_search")]
-    search_pattern: Option<String>,
+    search_pattern: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     search_is_regex: bool,
     #[endpoint(optional, skip_builder)]
@@ -50,11 +50,11 @@ pub struct DatasetReadBuilder<T, I> {
     #[endpoint(optional, skip_builder)]
     search_max_return: Option<i32>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
-    if_none_match: Option<String>,
+    if_none_match: Option<Box<str>>,
     #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
-    encoding: Option<String>,
+    encoding: Option<Box<str>>,
     #[endpoint(optional, builder_fn = "build_return_etag")]
     return_etag: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
@@ -62,11 +62,11 @@ pub struct DatasetReadBuilder<T, I> {
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<ObtainEnq>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
-    session_ref: Option<String>,
+    session_ref: Option<Box<str>>,
     #[endpoint(optional, builder_fn = "build_release_enq")]
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<String>,
+    dsname_encoding: Option<Box<str>>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type_marker: PhantomData<T>,
@@ -152,7 +152,7 @@ impl<T, I> DatasetReadBuilder<T, I> {
 
     pub fn if_none_match<V>(self, value: V) -> DatasetReadBuilder<T, Etag>
     where
-        V: ToString,
+        V: Into<Box<str>>,
     {
         DatasetReadBuilder {
             base_url: self.base_url,
@@ -164,7 +164,7 @@ impl<T, I> DatasetReadBuilder<T, I> {
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            if_none_match: Some(value.to_string()),
+            if_none_match: Some(value.into()),
             data_type: self.data_type,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -264,18 +264,18 @@ where
 
 fn set_member<T, I>(
     mut dataset_read_builder: DatasetReadBuilder<T, I>,
-    value: String,
+    value: Box<str>,
 ) -> DatasetReadBuilder<T, I> {
-    dataset_read_builder.member = format!("({})", value);
+    dataset_read_builder.member = format!("({})", value).into();
 
     dataset_read_builder
 }
 
 fn set_volume<T, I>(
     mut dataset_read_builder: DatasetReadBuilder<T, I>,
-    value: String,
+    value: Box<str>,
 ) -> DatasetReadBuilder<T, I> {
-    dataset_read_builder.volume = format!("-({})/", value);
+    dataset_read_builder.volume = format!("-({})/", value).into();
 
     dataset_read_builder
 }

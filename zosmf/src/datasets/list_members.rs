@@ -27,7 +27,7 @@ pub enum MembersBase {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberFixedOrVariable {
     #[serde(rename = "member")]
-    name: String,
+    name: Box<str>,
     #[serde(rename = "vers")]
     version: Option<i32>,
     #[serde(rename = "mod")]
@@ -43,10 +43,10 @@ pub struct MemberFixedOrVariable {
     #[serde(rename = "mnorc")]
     modified_number_of_records: Option<i32>,
     #[serde(rename = "mtime")]
-    modified_time: Option<String>,
+    modified_time: Option<Box<str>>,
     #[serde(rename = "msec")]
-    modified_seconds: Option<String>,
-    user: Option<String>,
+    modified_seconds: Option<Box<str>>,
+    user: Option<Box<str>>,
     #[serde(
         default,
         rename = "sclm",
@@ -59,22 +59,22 @@ pub struct MemberFixedOrVariable {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberUndefined {
     #[serde(rename = "member")]
-    name: String,
+    name: Box<str>,
     #[serde(rename = "ac")]
-    authorization_code: String,
-    amode: Option<String>,
+    authorization_code: Box<str>,
+    amode: Option<Box<str>>,
     #[serde(rename = "attr")]
-    attributes: Option<String>,
-    rmode: Option<String>,
-    size: Option<String>,
-    ttr: Option<String>,
-    ssi: Option<String>,
+    attributes: Option<Box<str>>,
+    rmode: Option<Box<str>>,
+    size: Option<Box<str>>,
+    ttr: Option<Box<str>>,
+    ssi: Option<Box<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberName {
     #[serde(rename = "member")]
-    name: String,
+    name: Box<str>,
 }
 
 #[derive(Endpoint)]
@@ -84,11 +84,11 @@ pub struct MemberListBuilder<T> {
     client: reqwest::Client,
 
     #[endpoint(path)]
-    dataset_name: String,
+    dataset_name: Box<str>,
     #[endpoint(optional, query = "start")]
-    start: Option<String>,
+    start: Option<Box<str>>,
     #[endpoint(optional, query = "pattern")]
-    pattern: Option<String>,
+    pattern: Option<Box<str>>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]

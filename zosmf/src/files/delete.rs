@@ -16,7 +16,7 @@ pub struct FileDeleteBuilder {
     client: reqwest::Client,
 
     #[endpoint(path)]
-    file_path: String,
+    file_path: Box<str>,
     #[endpoint(optional, builder_fn = "build_recursive")]
     recursive: bool,
 }

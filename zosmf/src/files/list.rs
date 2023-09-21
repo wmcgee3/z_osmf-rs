@@ -16,16 +16,16 @@ pub struct FileList {
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileAttributes {
-    name: String,
-    mode: String,
+    name: Box<str>,
+    mode: Box<str>,
     size: i32,
     uid: i32,
-    user: String,
+    user: Box<str>,
     gid: i32,
-    group: String,
-    mtime: String,
+    group: Box<str>,
+    mtime: Box<str>,
     #[serde(default)]
-    target: Option<String>,
+    target: Option<Box<str>>,
 }
 
 #[derive(Endpoint)]
@@ -35,23 +35,23 @@ pub struct FileListBuilder {
     client: reqwest::Client,
 
     #[endpoint(query = "path")]
-    path: String,
+    path: Box<str>,
     #[endpoint(optional, builder_fn = "build_lstat")]
     lstat: bool,
     #[endpoint(optional, query = "group")]
-    group: Option<String>,
+    group: Option<Box<str>>,
     #[endpoint(optional, query = "mtime")]
-    mtime: Option<String>,
+    mtime: Option<Box<str>>,
     #[endpoint(optional, query = "name")]
-    name: Option<String>,
+    name: Option<Box<str>>,
     #[endpoint(optional, query = "size")]
-    size: Option<String>,
+    size: Option<Box<str>>,
     #[endpoint(optional, query = "perm")]
-    perm: Option<String>,
+    perm: Option<Box<str>>,
     #[endpoint(optional, query = "type")]
-    file_type: Option<String>,
+    file_type: Option<Box<str>>,
     #[endpoint(optional, query = "user")]
-    user: Option<String>,
+    user: Option<Box<str>>,
     #[endpoint(optional, query = "depth")]
     depth: Option<i32>,
     #[endpoint(optional, query = "limit")]
