@@ -1,5 +1,23 @@
 use quote::{format_ident, quote, ToTokens};
 
+pub(crate) fn extract_box_type(ty: &syn::Type) -> Option<syn::Type> {
+    if let syn::Type::Path(type_path) = &ty {
+        if let Some(path_segment) = type_path.path.segments.first() {
+            if path_segment.ident == format_ident!("{}", "Box") {
+                if let syn::PathArguments::AngleBracketed(angle_bracketed) = &path_segment.arguments
+                {
+                    let tokens = angle_bracketed.args.first().unwrap().to_token_stream();
+                    let new_ty = syn::parse::<syn::Type>(tokens.into()).unwrap();
+
+                    return Some(new_ty);
+                }
+            }
+        }
+    }
+
+    None
+}
+
 pub(crate) fn extract_optional_type(ty: &syn::Type) -> Option<syn::Type> {
     if let syn::Type::Path(type_path) = &ty {
         if let Some(path_segment) = type_path.path.segments.first() {

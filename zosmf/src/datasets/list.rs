@@ -15,7 +15,7 @@ pub struct DatasetList<T> {
     more_rows: Option<bool>,
     returned_rows: i32,
     total_rows: Option<i32>,
-    transaction_id: String,
+    transaction_id: Box<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]

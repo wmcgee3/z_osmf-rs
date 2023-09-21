@@ -6,7 +6,7 @@ use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Getters)]
 pub struct FileDelete {
-    transaction_id: String,
+    transaction_id: Box<str>,
 }
 
 #[derive(Endpoint)]

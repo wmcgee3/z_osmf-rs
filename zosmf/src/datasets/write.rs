@@ -12,8 +12,8 @@ use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetWrite {
-    etag: String,
-    transaction_id: String,
+    etag: Box<str>,
+    transaction_id: Box<str>,
 }
 
 #[derive(Clone, Debug, Endpoint)]

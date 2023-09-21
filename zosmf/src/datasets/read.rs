@@ -13,9 +13,9 @@ use crate::utils::*;
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
     data: T,
-    etag: Option<String>,
-    session_ref: Option<String>,
-    transaction_id: String,
+    etag: Option<Box<str>>,
+    session_ref: Option<Box<str>>,
+    transaction_id: Box<str>,
 }
 
 #[derive(Clone, Debug)]
@@ -26,7 +26,7 @@ pub enum DatasetReadIfNoneMatch<T> {
 
 #[derive(Clone, Debug, Getters)]
 pub struct DatasetReadNotModified {
-    transaction_id: String,
+    transaction_id: Box<str>,
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -360,7 +360,7 @@ fn build_return_etag<T, I>(
 
 fn get_headers(
     response: &reqwest::Response,
-) -> anyhow::Result<(Option<String>, Option<String>, String)> {
+) -> anyhow::Result<(Option<Box<str>>, Option<Box<str>>, Box<str>)> {
     Ok((
         get_etag(response)?,
         get_session_ref(response)?,

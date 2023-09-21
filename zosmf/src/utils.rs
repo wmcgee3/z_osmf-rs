@@ -2,31 +2,31 @@ use anyhow::Context;
 use reqwest::Response;
 use serde::Deserialize;
 
-pub(crate) fn get_etag(response: &Response) -> anyhow::Result<Option<String>> {
+pub(crate) fn get_etag(response: &Response) -> anyhow::Result<Option<Box<str>>> {
     Ok(response
         .headers()
         .get("Etag")
         .map(|v| v.to_str())
         .transpose()?
-        .map(|v| v.to_string()))
+        .map(|v| v.into()))
 }
 
-pub(crate) fn get_session_ref(response: &Response) -> anyhow::Result<Option<String>> {
+pub(crate) fn get_session_ref(response: &Response) -> anyhow::Result<Option<Box<str>>> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
         .map(|v| v.to_str())
         .transpose()?
-        .map(|v| v.to_string()))
+        .map(|v| v.into()))
 }
 
-pub(crate) fn get_transaction_id(response: &Response) -> anyhow::Result<String> {
+pub(crate) fn get_transaction_id(response: &Response) -> anyhow::Result<Box<str>> {
     Ok(response
         .headers()
         .get("X-IBM-Txid")
         .context("missing transaction id")?
         .to_str()?
-        .to_string())
+        .into())
 }
 
 pub(crate) fn de_yes_no<'de, D>(deserializer: D) -> Result<bool, D::Error>

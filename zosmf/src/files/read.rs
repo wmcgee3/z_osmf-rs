@@ -11,8 +11,8 @@ use crate::utils::*;
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
     data: T,
-    etag: Option<String>,
-    transaction_id: String,
+    etag: Option<Box<str>>,
+    transaction_id: Box<str>,
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -172,6 +172,6 @@ fn build_search<T>(
     request_builder
 }
 
-fn get_headers(response: &reqwest::Response) -> anyhow::Result<(Option<String>, String)> {
+fn get_headers(response: &reqwest::Response) -> anyhow::Result<(Option<Box<str>>, Box<str>)> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
 }
