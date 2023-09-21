@@ -358,9 +358,9 @@ fn build_return_etag<T, I>(
     request_builder
 }
 
-fn get_headers(
-    response: &reqwest::Response,
-) -> anyhow::Result<(Option<Box<str>>, Option<Box<str>>, Box<str>)> {
+type H = (Option<Box<str>>, Option<Box<str>>, Box<str>);
+
+fn get_headers(response: &reqwest::Response) -> anyhow::Result<H> {
     Ok((
         get_etag(response)?,
         get_session_ref(response)?,

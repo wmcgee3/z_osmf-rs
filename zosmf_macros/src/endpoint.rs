@@ -145,7 +145,7 @@ impl Endpoint {
                                 request_builder = request_builder.header(#header, value.clone());
                             }
                         }
-                        }
+                    }
                 } else if let Some(query) = query {
                     quote! {
                         if let Some(value) = &self.#ident {
