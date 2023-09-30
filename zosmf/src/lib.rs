@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
 
-pub mod data_type;
 pub mod if_match;
 
 #[cfg(feature = "datasets")]

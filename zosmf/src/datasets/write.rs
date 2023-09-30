@@ -4,9 +4,9 @@ use std::sync::Arc;
 use anyhow::Context;
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use zosmf_core::restfiles::data_type::*;
 use zosmf_macros::{Endpoint, Getters};
 
-use crate::data_type::*;
 use crate::datasets::utils::*;
 use crate::utils::*;
 

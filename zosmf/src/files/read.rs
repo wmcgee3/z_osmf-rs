@@ -5,8 +5,8 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use zosmf_macros::{Endpoint, Getters};
 
-use crate::data_type::*;
 use crate::utils::*;
+use zosmf_core::restfiles::data_type::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
@@ -99,10 +99,21 @@ impl<'a> FileReadBuilder<Text> {
     }
 }
 
-impl<B> FileReadBuilder<B>
-where
-    B: BytesDataType,
-{
+impl FileReadBuilder<Binary> {
+    pub async fn build(self) -> anyhow::Result<FileRead<Bytes>> {
+        let response = self.get_response().await?;
+        let (etag, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(FileRead {
+            data,
+            etag,
+            transaction_id,
+        })
+    }
+}
+
+impl FileReadBuilder<Record> {
     pub async fn build(self) -> anyhow::Result<FileRead<Bytes>> {
         let response = self.get_response().await?;
         let (etag, transaction_id) = get_headers(&response)?;

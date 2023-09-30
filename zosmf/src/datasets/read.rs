@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use zosmf_core::restfiles::data_type::*;
 use zosmf_macros::{Endpoint, Getters};
 
-use crate::data_type::*;
 use crate::datasets::utils::*;
 use crate::if_match::*;
 use crate::utils::*;
@@ -179,6 +179,36 @@ impl<T, I> DatasetReadBuilder<T, I> {
     }
 }
 
+impl DatasetReadBuilder<Binary, NoEtag> {
+    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
+        let response = self.get_response().await?.error_for_status()?;
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        })
+    }
+}
+
+impl DatasetReadBuilder<Record, NoEtag> {
+    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
+        let response = self.get_response().await?.error_for_status()?;
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        })
+    }
+}
+
 impl<'a> DatasetReadBuilder<Text, NoEtag> {
     pub async fn build(self) -> anyhow::Result<DatasetRead<String>> {
         let response = self.get_response().await?.error_for_status()?;
@@ -191,6 +221,52 @@ impl<'a> DatasetReadBuilder<Text, NoEtag> {
             session_ref,
             transaction_id,
         })
+    }
+}
+
+impl DatasetReadBuilder<Binary, Etag> {
+    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<Bytes>> {
+        let response = self.get_response().await?;
+        if response.status() == 304 {
+            let transaction_id = get_transaction_id(&response)?;
+
+            return Ok(DatasetReadIfNoneMatch::NotModified(
+                DatasetReadNotModified { transaction_id },
+            ));
+        }
+        let response = response.error_for_status()?;
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        }))
+    }
+}
+
+impl DatasetReadBuilder<Record, Etag> {
+    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<Bytes>> {
+        let response = self.get_response().await?;
+        if response.status() == 304 {
+            let transaction_id = get_transaction_id(&response)?;
+
+            return Ok(DatasetReadIfNoneMatch::NotModified(
+                DatasetReadNotModified { transaction_id },
+            ));
+        }
+        let response = response.error_for_status()?;
+        let (etag, session_ref, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        }))
     }
 }
 
@@ -208,50 +284,6 @@ impl<'a> DatasetReadBuilder<Text, Etag> {
 
         let (etag, session_ref, transaction_id) = get_headers(&response)?;
         let data = response.text().await?;
-
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        }))
-    }
-}
-
-impl<B> DatasetReadBuilder<B, NoEtag>
-where
-    B: BytesDataType,
-{
-    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
-        let response = self.get_response().await?.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
-
-        Ok(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        })
-    }
-}
-
-impl<B> DatasetReadBuilder<B, Etag>
-where
-    B: BytesDataType,
-{
-    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<Bytes>> {
-        let response = self.get_response().await?;
-        if response.status() == 304 {
-            let transaction_id = get_transaction_id(&response)?;
-
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-        let response = response.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
 
         Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
             data,

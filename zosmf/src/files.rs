@@ -8,7 +8,7 @@ pub use read::*;
 
 use std::sync::Arc;
 
-use crate::data_type::Text;
+use zosmf_core::restfiles::data_type::Text;
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {
