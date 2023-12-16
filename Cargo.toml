@@ -1,3 +1,3 @@
 [workspace]
-members = ["zosmf", "zosmf_core", "zosmf_macros"]
+members = ["z_osmf", "z_osmf_core", "z_osmf_macros"]
 resolver = "2"
