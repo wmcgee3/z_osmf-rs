@@ -19,16 +19,6 @@ use jobs::JobsClient;
 
 #[derive(Clone, Debug)]
 pub struct ZOsmf {
-    /// Attribute that holds the [DatasetsClient] sub-client.
-    #[cfg(feature = "datasets")]
-    pub datasets: DatasetsClient,
-    /// Attribute that holds the [FilesClient] sub-client.
-    #[cfg(feature = "files")]
-    pub files: FilesClient,
-    /// Attribute that holds the [JobsClient] sub-client.
-    #[cfg(feature = "jobs")]
-    pub jobs: JobsClient,
-
     base_url: Arc<str>,
     client: reqwest::Client,
 }
@@ -44,17 +34,7 @@ impl ZOsmf {
             .into();
         let client = client_builder.cookie_store(true).build()?;
 
-        Ok(ZOsmf {
-            #[cfg(feature = "datasets")]
-            datasets: DatasetsClient::new(base_url.clone(), client.clone()),
-            #[cfg(feature = "files")]
-            files: FilesClient::new(base_url.clone(), client.clone()),
-            #[cfg(feature = "jobs")]
-            jobs: JobsClient::new(base_url.clone(), client.clone()),
-
-            base_url,
-            client,
-        })
+        Ok(ZOsmf { base_url, client })
     }
 
     pub async fn login<U, P>(&self, username: U, password: P) -> anyhow::Result<()>
@@ -80,5 +60,20 @@ impl ZOsmf {
             .error_for_status()?;
 
         Ok(())
+    }
+
+    #[cfg(feature = "datasets")]
+    pub fn datasets(self) -> DatasetsClient {
+        DatasetsClient::new(self.base_url.clone(), self.client.clone())
+    }
+
+    #[cfg(feature = "files")]
+    pub fn files(self) -> FilesClient {
+        FilesClient::new(self.base_url.clone(), self.client.clone())
+    }
+
+    #[cfg(feature = "jobs")]
+    pub fn jobs(self) -> JobsClient {
+        JobsClient::new(self.base_url.clone(), self.client.clone())
     }
 }

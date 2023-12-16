@@ -25,9 +25,9 @@ use z_osmf_core::restfiles::data_type::Text;
 ///
 /// This client is intended to be accessed via the `datasets` attribute of the [z_osmf](crate::z_osmf) struct:
 /// ```
-/// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+/// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
 /// # use z_osmf::datasets::DatasetsClient;
-/// let _: DatasetsClient = z_osmf.datasets;
+/// let _: DatasetsClient = z_osmf.datasets();
 /// # Ok(())
 /// # }
 /// ```
@@ -46,17 +46,17 @@ impl DatasetsClient {
     ///
     /// Listing datasets:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
-    /// let list_datasets = z_osmf.datasets.list("IBMUSER.CONFIG.*").build().await?;
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_datasets = z_osmf.datasets().list("IBMUSER.CONFIG.*").build().await?;
     /// # Ok(())
     /// # }
     /// ```
     ///
     /// Listing the base attributes of uncataloged datasets:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets_base = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .list("**")
     ///     .volume("PEVTS2")
     ///     .attributes_base()
@@ -73,17 +73,17 @@ impl DatasetsClient {
     ///
     /// Listing PDS members:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
-    /// let list_members = z_osmf.datasets.list_members("SYS1.PROCLIB").build().await?;
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_members = z_osmf.datasets().list_members("SYS1.PROCLIB").build().await?;
     /// # Ok(())
     /// # }
     /// ```
     ///
     /// Listing the base attributes of PDS members:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members_base = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .list_members("SYS1.PROCLIB")
     ///     .attributes_base()
     ///     .build()
@@ -103,9 +103,9 @@ impl DatasetsClient {
     ///
     /// Reading a PDS member:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_member = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .read("SYS1.PARMLIB")
     ///     .member("SMFPRM00")
     ///     .build()
@@ -116,8 +116,8 @@ impl DatasetsClient {
     ///
     /// Reading a sequential dataset:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
-    /// let read_dataset = z_osmf.datasets.read("JIAHJ.REST.SRVMP").build().await?;
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let read_dataset = z_osmf.datasets().read("JIAHJ.REST.SRVMP").build().await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -129,10 +129,10 @@ impl DatasetsClient {
     ///
     /// Writing to a PDS member:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// # let string_data = "".to_string();
     /// let write_dataset = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .write("SYS1.PARMLIB")
     ///     .member("SMFPRM00")
     ///     .if_match("B5C6454F783590AA8EC15BD88E29EA63")
@@ -150,9 +150,9 @@ impl DatasetsClient {
     ///
     /// Creating a sequential dataset:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_dataset = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .create("JIAHJ.REST.TEST.NEWDS")
     ///     .volume("zmf046")
     ///     .device_type("3390")
@@ -172,9 +172,9 @@ impl DatasetsClient {
     ///
     /// Creating a partitioned dataset (PDS):
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pds = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .create("JIAHJ.REST.TEST.NEWDS02")
     ///     .volume("zmf046")
     ///     .device_type("3390")
@@ -195,9 +195,9 @@ impl DatasetsClient {
     ///
     /// Creating a library / partitioned dataset extended (PDS-E):
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pdse = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .create("JIAHJ.REST.TEST.NEWDS02")
     ///     .volume("zmf046")
     ///     .device_type("3390")
@@ -224,9 +224,9 @@ impl DatasetsClient {
     ///
     /// Deleting a sequential dataset:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_dataset = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .delete("JIAHJ.REST.TEST.DATASET")
     ///     .build()
     ///     .await?;
@@ -236,9 +236,9 @@ impl DatasetsClient {
     ///
     /// Deleting an uncataloged sequential dataset:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .delete("JIAHJ.REST.TEST.DATASET2")
     ///     .volume("ZMF046")
     ///     .build()
@@ -249,9 +249,9 @@ impl DatasetsClient {
     ///
     /// Deleting a PDS member:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_member = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .delete("JIAHJ.REST.TEST.PDS")
     ///     .member("MEMBER01")
     ///     .build()
@@ -262,9 +262,9 @@ impl DatasetsClient {
     ///
     /// Deleting an uncataloged PDS member:
     /// ```
-    /// # async fn example(z_osmf: z_osmf::z_osmf) -> anyhow::Result<()> {
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged_member = z_osmf
-    ///     .datasets
+    ///     .datasets()
     ///     .delete("JIAHJ.REST.TEST.PDS.UNCAT")
     ///     .member("MEMBER01")
     ///     .volume("ZMF046")

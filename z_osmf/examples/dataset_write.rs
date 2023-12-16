@@ -3,7 +3,7 @@ mod _setup;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let z_osmf = _setup::get_z_osmf().await?;
+    let datasets_client = _setup::get_z_osmf().await?.datasets();
 
     let data = r#"
 /******************************************************/
@@ -40,8 +40,7 @@ async fn main() -> anyhow::Result<()> {
     STC ADDRESS SPACE SO IEFU29 MUST BE ON FOR STC. USE ALL OTHER   00280000
     SYS PARAMETERS AS A DEFAULT  */                                 00290000"#;
 
-    let write_dataset = z_osmf
-        .datasets
+    let write_dataset = datasets_client
         .write("SYS1.PARMLIB")
         .member("SMFPRM00")
         .if_match("B5C6454F783590AA8EC15BD88E29EA63")

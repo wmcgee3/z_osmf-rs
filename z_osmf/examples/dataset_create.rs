@@ -3,10 +3,9 @@ mod _setup;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let z_osmf = _setup::get_z_osmf().await?;
+    let datasets_client = _setup::get_z_osmf().await?.datasets();
 
-    let create_dataset = z_osmf
-        .datasets
+    let create_dataset = datasets_client
         .create("JIAHJ.REST.TEST.NEWDS")
         .volume("zmf046")
         .device_type("3390")
@@ -23,8 +22,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("{:#?}", create_dataset);
 
-    let create_pds = z_osmf
-        .datasets
+    let create_pds = datasets_client
         .create("JIAHJ.REST.TEST.NEWDS02")
         .volume("zmf046")
         .device_type("3390")
@@ -42,8 +40,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("{:#?}", create_pds);
 
-    let create_pdse = z_osmf
-        .datasets
+    let create_pdse = datasets_client
         .create("JIAHJ.REST.TEST.NEWDS02")
         .volume("zmf046")
         .device_type("3390")

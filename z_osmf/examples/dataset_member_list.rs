@@ -3,14 +3,13 @@ mod _setup;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let z_osmf = _setup::get_z_osmf().await?;
+    let datasets_client = _setup::get_z_osmf().await?.datasets();
 
-    let list_members = z_osmf.datasets.list_members("SYS1.PROCLIB").build().await?;
+    let list_members = datasets_client.list_members("SYS1.PROCLIB").build().await?;
 
     println!("{:#?}", list_members);
 
-    let list_members_base = z_osmf
-        .datasets
+    let list_members_base = datasets_client
         .list_members("SYS1.PROCLIB")
         .attributes_base()
         .build()

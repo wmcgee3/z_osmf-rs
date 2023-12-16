@@ -3,14 +3,13 @@ mod _setup;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let z_osmf = _setup::get_z_osmf().await?;
+    let datasets_client = _setup::get_z_osmf().await?.datasets();
 
-    let list_datasets = z_osmf.datasets.list("IBMUSER.CONFIG.*").build().await?;
+    let list_datasets = datasets_client.list("IBMUSER.CONFIG.*").build().await?;
 
     println!("{:#?}", list_datasets);
 
-    let list_datasets_base = z_osmf
-        .datasets
+    let list_datasets_base = datasets_client
         .list("**")
         .volume("PEVTS2")
         .attributes_base()

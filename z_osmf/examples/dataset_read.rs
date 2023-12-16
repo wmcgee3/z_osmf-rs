@@ -3,10 +3,9 @@ mod _setup;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let z_osmf = _setup::get_z_osmf().await?;
+    let datasets_client = _setup::get_z_osmf().await?.datasets();
 
-    let read_member = z_osmf
-        .datasets
+    let read_member = datasets_client
         .read("SYS1.PARMLIB")
         .member("SMFPRM00")
         .build()
@@ -14,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
 
     println!("{}", read_member.data());
 
-    let read_dataset = z_osmf.datasets.read("JIAHJ.REST.SRVMP").build().await?;
+    let read_dataset = datasets_client.read("JIAHJ.REST.SRVMP").build().await?;
 
     println!("{}", read_dataset.data());
 
