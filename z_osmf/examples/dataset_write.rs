@@ -3,7 +3,7 @@ mod _setup;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let datasets_client = _setup::get_z_osmf().await?.datasets();
+    let datasets_client = _setup::get_zosmf().await?.datasets();
 
     let data = r#"
 /******************************************************/

@@ -1,4 +1,4 @@
-pub async fn get_z_osmf() -> anyhow::Result<z_osmf::ZOsmf> {
+pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
     let _ = dotenvy::dotenv();
 
     let base_url = std::env::var("z_osmf_BASE_URL")?;
@@ -14,9 +14,9 @@ pub async fn get_z_osmf() -> anyhow::Result<z_osmf::ZOsmf> {
         client_builder = client_builder.use_rustls_tls().add_root_certificate(cert);
     }
 
-    let z_osmf = z_osmf::ZOsmf::new(client_builder, base_url)?;
+    let zosmf = z_osmf::ZOsmf::new(client_builder, base_url)?;
 
-    z_osmf.login(&username, password).await?;
+    zosmf.login(&username, password).await?;
 
-    Ok(z_osmf)
+    Ok(zosmf)
 }

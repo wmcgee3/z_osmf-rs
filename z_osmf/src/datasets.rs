@@ -23,7 +23,7 @@ use z_osmf_core::restfiles::data_type::Text;
 ///
 /// A sub-client for organizing the dataset functionality of the z/OSMF Rest APIs.
 ///
-/// This client is intended to be accessed via the `datasets` attribute of the [z_osmf](crate::z_osmf) struct:
+/// This client is intended to be accessed via the `datasets` attribute of the [ZOsmf](crate::ZOsmf) struct:
 /// ```
 /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
 /// # use z_osmf::datasets::DatasetsClient;
