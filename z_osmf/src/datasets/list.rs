@@ -1,65 +1,100 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
-use anyhow::Context;
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
-use zosmf_macros::{Endpoint, Getter};
+use z_osmf_macros::{Endpoint, Getters};
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
-pub struct DatasetList<A>
-where
-    A: Attr,
-{
-    items: Vec<A>,
+use crate::utils::*;
+
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+pub struct DatasetList<T> {
+    items: Vec<T>,
     json_version: i32,
     more_rows: Option<bool>,
     returned_rows: i32,
     total_rows: Option<i32>,
-    transaction_id: String,
+    transaction_id: Box<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetBase {
-    dsname: String,
-    blksz: Option<String>,
-    catnm: Option<String>,
-    cdate: Option<String>,
-    dev: Option<String>,
-    dsntp: Option<String>,
-    dsorg: Option<String>,
-    edate: Option<String>,
-    extx: Option<String>,
-    lrecl: Option<String>,
-    #[serde(deserialize_with = "de_migrated", serialize_with = "ser_migrated")]
-    migr: bool,
-    mvol: Option<String>,
-    ovf: Option<String>,
-    rdate: Option<String>,
-    recfm: Option<String>,
-    sizex: Option<String>,
-    spacu: Option<String>,
-    used: Option<String>,
-    vol: Volume,
-    vols: Option<String>,
+    #[serde(rename = "dsname")]
+    name: Box<str>,
+    #[serde(rename = "blksz")]
+    block_size: Option<Box<str>>,
+    #[serde(rename = "catnm")]
+    catalog: Option<Box<str>>,
+    #[serde(rename = "cdate")]
+    creation_date: Option<Box<str>>,
+    #[serde(rename = "dev")]
+    device_type: Option<Box<str>>,
+    #[serde(rename = "dsntp")]
+    dataset_type: Option<Box<str>>,
+    #[serde(rename = "dsorg")]
+    organization: Option<Box<str>>,
+    #[serde(rename = "edate")]
+    expiration_date: Option<Box<str>>,
+    #[serde(rename = "extx")]
+    extents_used: Option<Box<str>>,
+    #[serde(rename = "lrecl")]
+    logical_record_length: Option<Box<str>>,
+    #[serde(
+        rename = "migr",
+        deserialize_with = "de_yes_no",
+        serialize_with = "ser_yes_no"
+    )]
+    migrated: bool,
+    #[serde(
+        default,
+        rename = "mvol",
+        deserialize_with = "de_optional_y_n",
+        serialize_with = "ser_optional_y_n"
+    )]
+    multi_volume: Option<bool>,
+    #[serde(
+        default,
+        rename = "ovf",
+        deserialize_with = "de_optional_yes_no",
+        serialize_with = "ser_optional_yes_no"
+    )]
+    space_overflow: Option<bool>,
+    #[serde(rename = "rdate")]
+    last_referenced_date: Option<Box<str>>,
+    #[serde(rename = "recfm")]
+    record_format: Option<Box<str>>,
+    #[serde(rename = "sizex")]
+    size_in_tracks: Option<Box<str>>,
+    #[serde(rename = "spacu")]
+    space_units: Option<Box<str>>,
+    #[serde(rename = "used")]
+    percent_used: Option<Box<str>>,
+    #[serde(rename = "vol")]
+    volume: Volume,
+    #[serde(rename = "vols")]
+    volumes: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetName {
-    dsname: String,
+    #[serde(rename = "dsname")]
+    name: Box<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getter, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetVol {
-    dsname: String,
-    vol: Volume,
+    #[serde(rename = "dsname")]
+    name: Box<str>,
+    #[serde(rename = "vol")]
+    volume: Volume,
 }
 
 #[derive(Clone, Debug)]
 pub enum Volume {
     Alias,
-    Migrate,
-    Volume(String),
+    Migrated,
+    Volume(Box<str>),
     Vsam,
 }
 
@@ -72,9 +107,9 @@ impl<'de> Deserialize<'de> for Volume {
 
         Ok(match s.as_str() {
             "*ALIAS" => Volume::Alias,
-            "MIGRAT" => Volume::Migrate,
+            "MIGRAT" => Volume::Migrated,
             "*VSAM*" => Volume::Vsam,
-            _ => Volume::Volume(s),
+            _ => Volume::Volume(s.into()),
         })
     }
 }
@@ -86,28 +121,28 @@ impl Serialize for Volume {
     {
         serializer.serialize_str(match self {
             Volume::Alias => "*ALIAS",
-            Volume::Migrate => "MIGRAT",
-            Volume::Volume(vol) => vol,
+            Volume::Migrated => "MIGRAT",
+            Volume::Volume(vol) => vol.as_ref(),
             Volume::Vsam => "*VSAM*",
         })
     }
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<'a, A>
+#[endpoint(method = get, path = "/z_osmf/restfiles/ds")]
+pub struct DatasetListBuilder<T>
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
-    base_url: &'a str,
-    client: &'a Client,
+    base_url: Arc<str>,
+    client: Client,
 
     #[endpoint(query = "dslevel")]
-    name_pattern: String,
+    name_pattern: Box<str>,
     #[endpoint(optional, query = "volser")]
-    volume: Option<String>,
+    volume: Option<Box<str>>,
     #[endpoint(optional, query = "start")]
-    start: Option<String>,
+    start: Option<Box<str>>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]
@@ -115,14 +150,14 @@ where
     #[endpoint(optional, skip_builder)]
     include_total: bool,
     #[endpoint(optional, skip_setter, skip_builder)]
-    attrs: PhantomData<A>,
+    attributes_marker: PhantomData<T>,
 }
 
-impl<'a, A> DatasetListBuilder<'a, A>
+impl<T> DatasetListBuilder<T>
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
-    pub fn attributes_base(self) -> DatasetListBuilder<'a, DatasetBase> {
+    pub fn attributes_base(self) -> DatasetListBuilder<DatasetBase> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -132,11 +167,11 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Base),
             include_total: self.include_total,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetListBuilder<'a, DatasetName> {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetName> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -146,11 +181,11 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Dsname),
             include_total: self.include_total,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<'a, DatasetVol> {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetVol> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -160,19 +195,14 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Vol),
             include_total: self.include_total,
-            attrs: PhantomData,
+            attributes_marker: PhantomData,
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<DatasetList<A>> {
+    pub async fn build(self) -> anyhow::Result<DatasetList<T>> {
         let response = self.get_response().await?;
 
-        let transaction_id = response
-            .headers()
-            .get("X-IBM-Txid")
-            .context("missing transaction id")?
-            .to_str()?
-            .to_string();
+        let transaction_id = get_transaction_id(&response)?;
 
         let ResponseJson {
             items,
@@ -192,11 +222,6 @@ where
         })
     }
 }
-
-pub trait Attr {}
-impl Attr for DatasetBase {}
-impl Attr for DatasetName {}
-impl Attr for DatasetVol {}
 
 #[derive(Clone, Copy, Debug)]
 enum Attrs {
@@ -221,11 +246,8 @@ impl std::fmt::Display for Attrs {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ResponseJson<A>
-where
-    A: Attr,
-{
-    items: Vec<A>,
+struct ResponseJson<T> {
+    items: Vec<T>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,
@@ -235,12 +257,12 @@ where
     json_version: i32,
 }
 
-fn build_attributes<A>(
+fn build_attributes<T>(
     request_builder: RequestBuilder,
-    list_builder: &DatasetListBuilder<A>,
+    list_builder: &DatasetListBuilder<T>,
 ) -> RequestBuilder
 where
-    A: Attr + for<'de> Deserialize<'de>,
+    T: for<'de> Deserialize<'de>,
 {
     match (list_builder.attributes, list_builder.include_total) {
         (None, false) => request_builder,
@@ -254,20 +276,4 @@ where
             ),
         ),
     }
-}
-
-fn de_migrated<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-
-    Ok(s == "YES")
-}
-
-fn ser_migrated<S>(migr: &bool, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    serializer.serialize_str(if *migr { "YES" } else { "NO" })
 }

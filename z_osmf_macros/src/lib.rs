@@ -40,8 +40,8 @@ pub fn derive_endpoint(input: TokenStream) -> TokenStream {
     .into()
 }
 
-#[proc_macro_derive(Getter, attributes(getter))]
-pub fn derive_getter(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Getters, attributes(getter))]
+pub fn derive_getters(input: TokenStream) -> TokenStream {
     let input = &syn::parse_macro_input!(input as syn::DeriveInput);
     let getter = Getter::from_derive_input(input).unwrap();
 

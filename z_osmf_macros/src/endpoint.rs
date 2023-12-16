@@ -1,7 +1,7 @@
 use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 
 use crate::utils::extract_optional_type;
 
@@ -124,6 +124,7 @@ impl Endpoint {
                     query,
                     header,
                     builder_fn,
+                    ty,
                     ..
                 } = f;
 
@@ -132,9 +133,17 @@ impl Endpoint {
                         request_builder = #builder_fn(request_builder, &self);
                     }
                 } else if let Some(header) = header {
-                    quote! {
-                        if let Some(value) = &self.#ident {
-                            request_builder = request_builder.header(#header, *value);
+                    if ty.to_token_stream().to_string() == "Option < Box < str > >" {
+                        quote! {
+                            if let Some(value) = &self.#ident {
+                                request_builder = request_builder.header(#header, value.as_ref());
+                            }
+                        }
+                    } else {
+                        quote! {
+                            if let Some(value) = &self.#ident {
+                                request_builder = request_builder.header(#header, value.clone());
+                            }
                         }
                     }
                 } else if let Some(query) = query {
