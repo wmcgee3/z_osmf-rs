@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 description = "The Rust z/OSMF Client"
 license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/z_osmf"
+homepage = "https://crates.io/crates/z_osmf"
+repository = "https://github.com/wmcgee3/z_osmf-rs"
 
 
 [dependencies]
