@@ -2,6 +2,7 @@
 name = "z_osmf_core"
 version = "0.1.0"
 edition = "2021"
+authors = ["Billy McGee <william.j.mcgee3@gmail.com>"]
 description = "Common components used by z_osmf and z_osmf_macros"
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/z_osmf_core"
