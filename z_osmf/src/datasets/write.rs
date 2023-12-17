@@ -59,7 +59,10 @@ impl<D, T> DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
 {
-    pub fn data_type_binary(self, data: Bytes) -> DatasetWriteBuilder<Bytes, Binary> {
+    pub fn data_type_binary<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Binary>
+    where
+        B: Into<Bytes>,
+    {
         DatasetWriteBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -68,7 +71,7 @@ where
             member: self.member,
             if_match: self.if_match,
             data_type: Some(DataType::Binary),
-            data: Some(data),
+            data: Some(data.into()),
             encoding: self.encoding,
             crlf_newlines: self.crlf_newlines,
             migrated_recall: self.migrated_recall,
@@ -80,7 +83,10 @@ where
         }
     }
 
-    pub fn data_type_record(self, data: Bytes) -> DatasetWriteBuilder<Bytes, Record> {
+    pub fn data_type_record<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Record>
+    where
+        B: Into<Bytes>,
+    {
         DatasetWriteBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -89,7 +95,7 @@ where
             member: self.member,
             if_match: self.if_match,
             data_type: Some(DataType::Record),
-            data: Some(data),
+            data: Some(data.into()),
             encoding: self.encoding,
             crlf_newlines: self.crlf_newlines,
             migrated_recall: self.migrated_recall,
@@ -101,7 +107,10 @@ where
         }
     }
 
-    pub fn data_type_text(self, data: String) -> DatasetWriteBuilder<String, Text> {
+    pub fn data_type_text<S>(self, data: S) -> DatasetWriteBuilder<String, Text>
+    where
+        S: ToString,
+    {
         DatasetWriteBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -110,7 +119,7 @@ where
             member: self.member,
             if_match: self.if_match,
             data_type: Some(DataType::Text),
-            data: Some(data),
+            data: Some(data.to_string()),
             encoding: self.encoding,
             crlf_newlines: self.crlf_newlines,
             migrated_recall: self.migrated_recall,
