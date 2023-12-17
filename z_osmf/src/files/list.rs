@@ -7,7 +7,7 @@ use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileList {
-    items: Vec<FileAttributes>,
+    items: Box<[FileAttributes]>,
     returned_rows: i32,
     total_rows: i32,
     json_version: i32,
@@ -102,7 +102,7 @@ pub enum SymLinks {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    items: Vec<FileAttributes>,
+    items: Box<[FileAttributes]>,
     returned_rows: i32,
     total_rows: i32,
     #[serde(rename = "JSONversion")]

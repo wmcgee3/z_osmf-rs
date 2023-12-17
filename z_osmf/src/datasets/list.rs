@@ -10,7 +10,7 @@ use crate::utils::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {
-    items: Vec<T>,
+    items: Box<[T]>,
     json_version: i32,
     more_rows: Option<bool>,
     returned_rows: i32,
@@ -247,7 +247,7 @@ impl std::fmt::Display for Attrs {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson<T> {
-    items: Vec<T>,
+    items: Box<[T]>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,
