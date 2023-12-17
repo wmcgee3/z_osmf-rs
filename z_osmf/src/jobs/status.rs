@@ -2,7 +2,7 @@ use z_osmf_core::jobs::{Identifier, Status};
 use z_osmf_macros::Endpoint;
 
 #[derive(Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restjobs/jobs/{subsystem}{identifier}")]
+#[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
 pub struct JobStatusBuilder {
     base_url: Box<str>,
     client: reqwest::Client,

@@ -10,7 +10,7 @@ pub struct FileDelete {
 }
 
 #[derive(Endpoint)]
-#[endpoint(method = delete, path = "/z_osmf/restfiles/fs{file_path}")]
+#[endpoint(method = delete, path = "/zosmf/restfiles/fs{file_path}")]
 pub struct FileDeleteBuilder {
     base_url: Arc<str>,
     client: reqwest::Client,

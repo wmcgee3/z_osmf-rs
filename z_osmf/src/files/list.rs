@@ -29,7 +29,7 @@ pub struct FileAttributes {
 }
 
 #[derive(Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restfiles/fs")]
+#[endpoint(method = get, path = "/zosmf/restfiles/fs")]
 pub struct FileListBuilder {
     base_url: Arc<str>,
     client: reqwest::Client,

@@ -87,7 +87,7 @@ impl ZOsmf {
         P: std::fmt::Display,
     {
         self.client
-            .post(format!("{}/z_osmf/services/authenticate", self.base_url))
+            .post(format!("{}/zosmf/services/authenticate", self.base_url))
             .basic_auth(username, Some(password))
             .send()
             .await?
@@ -112,7 +112,7 @@ impl ZOsmf {
     /// ```
     pub async fn logout(&self) -> anyhow::Result<()> {
         self.client
-            .delete(format!("{}/z_osmf/services/authenticate", self.base_url))
+            .delete(format!("{}/zosmf/services/authenticate", self.base_url))
             .send()
             .await?
             .error_for_status()?;

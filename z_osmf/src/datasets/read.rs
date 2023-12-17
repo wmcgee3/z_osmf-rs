@@ -30,7 +30,7 @@ pub struct DatasetReadNotModified {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restfiles/ds/{volume}{dataset_name}{member}")]
+#[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
 pub struct DatasetReadBuilder<T, I> {
     base_url: Arc<str>,
     client: reqwest::Client,

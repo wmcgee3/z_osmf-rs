@@ -12,7 +12,7 @@ pub struct JobsList<T> {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restjobs")]
+#[endpoint(method = get, path = "/zosmf/restjobs")]
 pub struct JobsListBuilder {
     base_url: Arc<str>,
     client: reqwest::Client,

@@ -17,7 +17,7 @@ pub struct DatasetWrite {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/z_osmf/restfiles/ds/{volume}{dataset_name}{member}")]
+#[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
 pub struct DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,

@@ -129,7 +129,7 @@ impl Serialize for Volume {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restfiles/ds")]
+#[endpoint(method = get, path = "/zosmf/restfiles/ds")]
 pub struct DatasetListBuilder<T>
 where
     T: for<'de> Deserialize<'de>,

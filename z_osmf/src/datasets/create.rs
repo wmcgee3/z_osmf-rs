@@ -12,7 +12,7 @@ pub struct DatasetCreate {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = post, path = "/z_osmf/restfiles/ds/{dataset_name}")]
+#[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
 pub struct DatasetCreateBuilder {
     base_url: Arc<str>,
     client: reqwest::Client,

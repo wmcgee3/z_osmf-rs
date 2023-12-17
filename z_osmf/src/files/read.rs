@@ -16,7 +16,7 @@ pub struct FileRead<T> {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restfiles/fs{file_path}")]
+#[endpoint(method = get, path = "/zosmf/restfiles/fs{file_path}")]
 pub struct FileReadBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,

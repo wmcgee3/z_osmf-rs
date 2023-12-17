@@ -78,7 +78,7 @@ pub struct MemberName {
 }
 
 #[derive(Endpoint)]
-#[endpoint(method = get, path = "/z_osmf/restfiles/ds/{dataset_name}/member")]
+#[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
 pub struct MemberListBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,
