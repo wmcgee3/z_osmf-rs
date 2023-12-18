@@ -1,5 +1,9 @@
 #![forbid(unsafe_code)]
 
+//! # z_osmf
+//!
+//! The (work in progress) Rust z/OSMF Client.
+
 pub mod if_match;
 
 #[cfg(feature = "datasets")]

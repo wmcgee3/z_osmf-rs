@@ -85,20 +85,6 @@ impl<T> FileReadBuilder<T> {
     }
 }
 
-impl<'a> FileReadBuilder<Text> {
-    pub async fn build(self) -> anyhow::Result<FileRead<Box<str>>> {
-        let response = self.get_response().await?;
-        let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.text().await?.into();
-
-        Ok(FileRead {
-            data,
-            etag,
-            transaction_id,
-        })
-    }
-}
-
 impl FileReadBuilder<Binary> {
     pub async fn build(self) -> anyhow::Result<FileRead<Bytes>> {
         let response = self.get_response().await?;
@@ -118,6 +104,20 @@ impl FileReadBuilder<Record> {
         let response = self.get_response().await?;
         let (etag, transaction_id) = get_headers(&response)?;
         let data = response.bytes().await?;
+
+        Ok(FileRead {
+            data,
+            etag,
+            transaction_id,
+        })
+    }
+}
+
+impl<'a> FileReadBuilder<Text> {
+    pub async fn build(self) -> anyhow::Result<FileRead<Box<str>>> {
+        let response = self.get_response().await?;
+        let (etag, transaction_id) = get_headers(&response)?;
+        let data = response.text().await?.into();
 
         Ok(FileRead {
             data,

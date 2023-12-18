@@ -1,3 +1,3 @@
-# z_osmf-rs
+# z_osmf
 
-The Rust z/OSMF Client.
+The (work in progress) Rust z/OSMF Client.
