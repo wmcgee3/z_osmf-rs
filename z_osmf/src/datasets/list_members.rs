@@ -20,55 +20,49 @@ pub struct MemberList<T> {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum MembersBase {
-    Undefined(Vec<MemberUndefined>),
-    FixedOrVariable(Vec<MemberFixedOrVariable>),
-}
-
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberFixedOrVariable {
-    #[serde(rename = "member")]
-    name: Box<str>,
-    #[serde(rename = "vers")]
-    version: Option<i32>,
-    #[serde(rename = "mod")]
-    modification_level: Option<i32>,
-    #[serde(rename = "c4date")]
-    creation_year: Option<i32>,
-    #[serde(rename = "m4date")]
-    modification_year: Option<i32>,
-    #[serde(rename = "cnorc")]
-    current_number_of_records: Option<i32>,
-    #[serde(rename = "inorc")]
-    initial_number_of_records: Option<i32>,
-    #[serde(rename = "mnorc")]
-    modified_number_of_records: Option<i32>,
-    #[serde(rename = "mtime")]
-    modified_time: Option<Box<str>>,
-    #[serde(rename = "msec")]
-    modified_seconds: Option<Box<str>>,
-    user: Option<Box<str>>,
-    #[serde(
-        default,
-        rename = "sclm",
-        deserialize_with = "de_optional_y_n",
-        serialize_with = "ser_optional_y_n"
-    )]
-    modified_by_sclm: Option<bool>,
-}
-
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberUndefined {
-    #[serde(rename = "member")]
-    name: Box<str>,
-    #[serde(rename = "ac")]
-    authorization_code: Box<str>,
-    amode: Option<Box<str>>,
-    #[serde(rename = "attr")]
-    attributes: Option<Box<str>>,
-    rmode: Option<Box<str>>,
-    size: Option<Box<str>>,
-    ttr: Option<Box<str>>,
-    ssi: Option<Box<str>>,
+    Undefined {
+        #[serde(rename = "member")]
+        name: Box<str>,
+        #[serde(rename = "ac")]
+        authorization_code: Box<str>,
+        amode: Option<Box<str>>,
+        #[serde(rename = "attr")]
+        attributes: Option<Box<str>>,
+        rmode: Option<Box<str>>,
+        size: Option<Box<str>>,
+        ttr: Option<Box<str>>,
+        ssi: Option<Box<str>>,
+    },
+    FixedOrVariable {
+        #[serde(rename = "member")]
+        name: Box<str>,
+        #[serde(rename = "vers")]
+        version: i32,
+        #[serde(rename = "mod")]
+        modification_level: i32,
+        #[serde(rename = "c4date")]
+        creation_date: Box<str>,
+        #[serde(rename = "m4date")]
+        modification_date: Box<str>,
+        #[serde(rename = "cnorc")]
+        current_number_of_records: i32,
+        #[serde(rename = "inorc")]
+        initial_number_of_records: i32,
+        #[serde(rename = "mnorc")]
+        modified_number_of_records: i32,
+        #[serde(rename = "mtime")]
+        modified_time: Box<str>,
+        #[serde(rename = "msec")]
+        modified_seconds: Box<str>,
+        user: Box<str>,
+        #[serde(
+            default,
+            rename = "sclm",
+            deserialize_with = "de_optional_y_n",
+            serialize_with = "ser_optional_y_n"
+        )]
+        modified_by_sclm: Option<bool>,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
@@ -120,7 +114,7 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> MemberListBuilder<Vec<MemberName>> {
+    pub fn attributes_member(self) -> MemberListBuilder<Box<[MemberName]>> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,

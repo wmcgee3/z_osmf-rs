@@ -198,7 +198,14 @@ impl Endpoint {
 
                 #( #optional_builders )*
 
-                Ok(request_builder.send().await?.error_for_status()?)
+                let response = request_builder.send().await?;
+
+                let status = response.status();
+                if status.is_client_error() | status.is_server_error() {
+                    return Err(anyhow::Error::msg(format!("{}\n{}", status, response.text().await?)));
+                }
+
+                Ok(response)
             }
         }
     }

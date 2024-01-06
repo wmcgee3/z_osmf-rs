@@ -1,13 +1,13 @@
 pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
     let _ = dotenvy::dotenv();
 
-    let base_url = std::env::var("z_osmf_BASE_URL")?;
-    let username = std::env::var("z_osmf_USERNAME")?;
-    let password = std::env::var("z_osmf_PASSWORD")?;
+    let base_url = std::env::var("ZOSMF_BASE_URL")?;
+    let username = std::env::var("ZOSMF_USERNAME")?;
+    let password = std::env::var("ZOSMF_PASSWORD")?;
 
     let mut client_builder = reqwest::Client::builder();
 
-    if let Ok(cert_path) = std::env::var("z_osmf_CERT_PATH") {
+    if let Ok(cert_path) = std::env::var("ZOSMF_CERT_PATH") {
         let text = std::fs::read_to_string(cert_path)?;
         let cert = reqwest::Certificate::from_pem(text.as_bytes())?;
 
