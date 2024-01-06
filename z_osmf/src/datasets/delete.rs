@@ -10,7 +10,7 @@ pub struct DatasetDelete {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = delete, path = "/zosmf/restifles/ds/{volume}{dataset_name}{member}")]
+#[endpoint(method = delete, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
 pub struct DatasetDeleteBuilder {
     base_url: Arc<str>,
     client: reqwest::Client,

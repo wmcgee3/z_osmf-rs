@@ -2,10 +2,11 @@ pub struct Binary;
 pub struct Record;
 pub struct Text;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum DataType {
     Binary,
     Record,
+    #[default]
     Text,
 }
 

@@ -44,110 +44,6 @@ impl DatasetsClient {
 
     /// # Examples
     ///
-    /// Listing datasets:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_datasets = z_osmf.datasets().list("IBMUSER.CONFIG.*").build().await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// Listing the base attributes of uncataloged datasets:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_datasets_base = z_osmf
-    ///     .datasets()
-    ///     .list("**")
-    ///     .volume("PEVTS2")
-    ///     .attributes_base()
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetName> {
-        DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
-    }
-
-    /// # Examples
-    ///
-    /// Listing PDS members:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_members = z_osmf.datasets().list_members("SYS1.PROCLIB").build().await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// Listing the base attributes of PDS members:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_members_base = z_osmf
-    ///     .datasets()
-    ///     .list_members("SYS1.PROCLIB")
-    ///     .attributes_base()
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberName> {
-        MemberListBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            dataset_name.to_string(),
-        )
-    }
-
-    /// # Examples
-    ///
-    /// Reading a PDS member:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let read_member = z_osmf
-    ///     .datasets()
-    ///     .read("SYS1.PARMLIB")
-    ///     .member("SMFPRM00")
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// Reading a sequential dataset:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let read_dataset = z_osmf.datasets().read("JIAHJ.REST.SRVMP").build().await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<Text, NoEtag> {
-        DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
-    }
-
-    /// # Examples
-    ///
-    /// Writing to a PDS member:
-    /// ```
-    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # let string_data = "".to_string();
-    /// let write_dataset = z_osmf
-    ///     .datasets()
-    ///     .write("SYS1.PARMLIB")
-    ///     .member("SMFPRM00")
-    ///     .if_match("B5C6454F783590AA8EC15BD88E29EA63")
-    ///     .data_type_text(string_data)
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<String, Text> {
-        DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
-    }
-
-    /// # Examples
-    ///
     /// Creating a sequential dataset:
     /// ```
     /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
@@ -275,5 +171,109 @@ impl DatasetsClient {
     /// ```
     pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder {
         DatasetDeleteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    }
+
+    /// # Examples
+    ///
+    /// Listing datasets:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_datasets = z_osmf.datasets().list("IBMUSER.CONFIG.*").build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Listing the base attributes of uncataloged datasets:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_datasets_base = z_osmf
+    ///     .datasets()
+    ///     .list("**")
+    ///     .volume("PEVTS2")
+    ///     .attributes_base()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetName> {
+        DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
+    }
+
+    /// # Examples
+    ///
+    /// Listing PDS members:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_members = z_osmf.datasets().list_members("SYS1.PROCLIB").build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Listing the base attributes of PDS members:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_members_base = z_osmf
+    ///     .datasets()
+    ///     .list_members("SYS1.PROCLIB")
+    ///     .attributes_base()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberName> {
+        MemberListBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            dataset_name.to_string(),
+        )
+    }
+
+    /// # Examples
+    ///
+    /// Reading a PDS member:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let read_member = z_osmf
+    ///     .datasets()
+    ///     .read("SYS1.PARMLIB")
+    ///     .member("SMFPRM00")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Reading a sequential dataset:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let read_dataset = z_osmf.datasets().read("JIAHJ.REST.SRVMP").build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<Text, NoEtag> {
+        DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    }
+
+    /// # Examples
+    ///
+    /// Writing to a PDS member:
+    /// ```
+    /// # async fn example(z_osmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # let string_data = "".to_string();
+    /// let write_dataset = z_osmf
+    ///     .datasets()
+    ///     .write("SYS1.PARMLIB")
+    ///     .member("SMFPRM00")
+    ///     .if_match("B5C6454F783590AA8EC15BD88E29EA63")
+    ///     .text(string_data)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<String, Text> {
+        DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 }

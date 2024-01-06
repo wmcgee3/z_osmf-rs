@@ -33,10 +33,10 @@ where
     member: Box<str>,
     #[endpoint(optional, header = "If-Match")]
     if_match: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    data_type: Option<DataType>,
     #[endpoint(optional, skip_setter, builder_fn = "build_data")]
     data: Option<D>,
+    #[endpoint(optional, skip_setter, skip_builder)]
+    data_type: DataType,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
@@ -59,7 +59,7 @@ impl<D, T> DatasetWriteBuilder<D, T>
 where
     D: Into<reqwest::Body> + Clone,
 {
-    pub fn data_type_binary<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Binary>
+    pub fn binary<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Binary>
     where
         B: Into<Bytes>,
     {
@@ -70,7 +70,7 @@ where
             volume: self.volume,
             member: self.member,
             if_match: self.if_match,
-            data_type: Some(DataType::Binary),
+            data_type: DataType::Binary,
             data: Some(data.into()),
             encoding: self.encoding,
             crlf_newlines: self.crlf_newlines,
@@ -83,7 +83,7 @@ where
         }
     }
 
-    pub fn data_type_record<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Record>
+    pub fn record<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Record>
     where
         B: Into<Bytes>,
     {
@@ -94,7 +94,7 @@ where
             volume: self.volume,
             member: self.member,
             if_match: self.if_match,
-            data_type: Some(DataType::Record),
+            data_type: DataType::Record,
             data: Some(data.into()),
             encoding: self.encoding,
             crlf_newlines: self.crlf_newlines,
@@ -107,7 +107,7 @@ where
         }
     }
 
-    pub fn data_type_text<S>(self, data: S) -> DatasetWriteBuilder<String, Text>
+    pub fn text<S>(self, data: S) -> DatasetWriteBuilder<String, Text>
     where
         S: ToString,
     {
@@ -118,7 +118,7 @@ where
             volume: self.volume,
             member: self.member,
             if_match: self.if_match,
-            data_type: Some(DataType::Text),
+            data_type: DataType::Text,
             data: Some(data.to_string()),
             encoding: self.encoding,
             crlf_newlines: self.crlf_newlines,
@@ -161,24 +161,19 @@ where
     } = builder;
 
     request_builder = match (data_type, encoding, crlf_newlines) {
-        (data_type, encoding, crlf)
-            if data_type.is_none() || *data_type == Some(DataType::Text) =>
-        {
-            request_builder.header(
-                key,
-                format!(
-                    "text{}{}",
-                    if let Some(encoding) = encoding {
-                        format!(";fileEncoding={}", encoding)
-                    } else {
-                        "".to_string()
-                    },
-                    if *crlf { ";crlf=true" } else { "" }
-                ),
-            )
-        }
-        (Some(data_type), _, _) => request_builder.header(key, format!("{}", data_type)),
-        _ => request_builder,
+        (&DataType::Text, encoding, crlf) => request_builder.header(
+            key,
+            format!(
+                "text{}{}",
+                if let Some(encoding) = encoding {
+                    format!(";fileEncoding={}", encoding)
+                } else {
+                    "".to_string()
+                },
+                if *crlf { ";crlf=true" } else { "" }
+            ),
+        ),
+        (data_type, _, _) => request_builder.header(key, format!("{}", data_type)),
     };
     if let Some(value) = data {
         request_builder = request_builder.body(value.clone());

@@ -16,13 +16,13 @@ pub struct FileRead<T> {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restfiles/fs{file_path}")]
+#[endpoint(method = get, path = "/zosmf/restfiles/fs{path}")]
 pub struct FileReadBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
     #[endpoint(path)]
-    file_path: Box<str>,
+    path: Box<str>,
     #[endpoint(optional, query = "search", builder_fn = "build_search")]
     search_pattern: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
@@ -44,7 +44,7 @@ impl<T> FileReadBuilder<T> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
-            file_path: self.file_path,
+            path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -59,7 +59,7 @@ impl<T> FileReadBuilder<T> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
-            file_path: self.file_path,
+            path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -73,7 +73,7 @@ impl<T> FileReadBuilder<T> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
-            file_path: self.file_path,
+            path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
