@@ -17,6 +17,22 @@ impl JobsClient {
         JobsClient { base_url, client }
     }
 
+    /// # Examples
+    ///
+    /// List jobs with exec-data by owner and prefix:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_jobs = zosmf
+    ///     .jobs()
+    ///     .list()
+    ///     .owner("IBMUSER")
+    ///     .prefix("TESTJOB*")
+    ///     .exec_data(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn list(&self) -> JobsListBuilder {
         JobsListBuilder::new(self.base_url.clone(), self.client.clone())
     }
