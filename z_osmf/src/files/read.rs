@@ -3,10 +3,11 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use z_osmf_core::restfiles::data_type::*;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::if_match::*;
 use crate::utils::*;
-use z_osmf_core::restfiles::data_type::*;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
@@ -15,9 +16,20 @@ pub struct FileRead<T> {
     transaction_id: Box<str>,
 }
 
+#[derive(Clone, Debug)]
+pub enum FileReadIfNoneMatch<T> {
+    Modified(FileRead<T>),
+    NotModified(FileReadNotModified),
+}
+
+#[derive(Clone, Debug, Getters)]
+pub struct FileReadNotModified {
+    transaction_id: Box<str>,
+}
+
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileReadBuilder<T> {
+pub struct FileReadBuilder<T, I> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -35,12 +47,16 @@ pub struct FileReadBuilder<T> {
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
+    #[endpoint(optional, header = "If-None-Match", skip_setter)]
+    etag: Option<Box<str>>,
     #[endpoint(optional, skip_setter, skip_builder)]
     data_type_marker: PhantomData<T>,
+    #[endpoint(optional, skip_setter, skip_builder)]
+    if_none_match_marker: PhantomData<I>,
 }
 
-impl<T> FileReadBuilder<T> {
-    pub fn data_type_binary(self) -> FileReadBuilder<Binary> {
+impl<T, I> FileReadBuilder<T, I> {
+    pub fn binary(self) -> FileReadBuilder<Binary, I> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -49,13 +65,15 @@ impl<T> FileReadBuilder<T> {
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: self.data_type,
+            data_type: Some(DataType::Binary),
             encoding: self.encoding,
+            etag: self.etag,
             data_type_marker: PhantomData,
+            if_none_match_marker: self.if_none_match_marker,
         }
     }
 
-    pub fn data_type_record(self) -> FileReadBuilder<Record> {
+    pub fn text(self) -> FileReadBuilder<Text, I> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -64,12 +82,18 @@ impl<T> FileReadBuilder<T> {
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: self.data_type,
+            data_type: Some(DataType::Text),
             encoding: self.encoding,
+            etag: self.etag,
             data_type_marker: PhantomData,
+            if_none_match_marker: self.if_none_match_marker,
         }
     }
-    pub fn data_type_text(self) -> FileReadBuilder<Text> {
+
+    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<T, Etag>
+    where
+        E: Into<Box<str>>,
+    {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -80,12 +104,14 @@ impl<T> FileReadBuilder<T> {
             search_max_return: self.search_max_return,
             data_type: self.data_type,
             encoding: self.encoding,
-            data_type_marker: PhantomData,
+            etag: Some(etag.into()),
+            data_type_marker: self.data_type_marker,
+            if_none_match_marker: PhantomData,
         }
     }
 }
 
-impl FileReadBuilder<Binary> {
+impl FileReadBuilder<Binary, NoEtag> {
     pub async fn build(self) -> anyhow::Result<FileRead<Bytes>> {
         let response = self.get_response().await?;
         let (etag, transaction_id) = get_headers(&response)?;
@@ -99,21 +125,7 @@ impl FileReadBuilder<Binary> {
     }
 }
 
-impl FileReadBuilder<Record> {
-    pub async fn build(self) -> anyhow::Result<FileRead<Bytes>> {
-        let response = self.get_response().await?;
-        let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
-
-        Ok(FileRead {
-            data,
-            etag,
-            transaction_id,
-        })
-    }
-}
-
-impl<'a> FileReadBuilder<Text> {
+impl FileReadBuilder<Text, NoEtag> {
     pub async fn build(self) -> anyhow::Result<FileRead<Box<str>>> {
         let response = self.get_response().await?;
         let (etag, transaction_id) = get_headers(&response)?;
@@ -127,9 +139,54 @@ impl<'a> FileReadBuilder<Text> {
     }
 }
 
-fn build_data_type<T>(
+impl FileReadBuilder<Binary, Etag> {
+    pub async fn build(self) -> anyhow::Result<FileReadIfNoneMatch<Bytes>> {
+        let response = self.get_response().await?;
+        if response.status() == 304 {
+            let transaction_id = get_transaction_id(&response)?;
+
+            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
+                transaction_id,
+            }));
+        }
+        let response = response.error_for_status()?;
+        let (etag, transaction_id) = get_headers(&response)?;
+        let data = response.bytes().await?;
+
+        Ok(FileReadIfNoneMatch::Modified(FileRead {
+            data,
+            etag,
+            transaction_id,
+        }))
+    }
+}
+
+impl<'a> FileReadBuilder<Text, Etag> {
+    pub async fn build(self) -> anyhow::Result<FileReadIfNoneMatch<String>> {
+        let response = self.get_response().await?;
+
+        if response.status() == 304 {
+            let transaction_id = get_transaction_id(&response)?;
+
+            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
+                transaction_id,
+            }));
+        }
+
+        let (etag, transaction_id) = get_headers(&response)?;
+        let data = response.text().await?;
+
+        Ok(FileReadIfNoneMatch::Modified(FileRead {
+            data,
+            etag,
+            transaction_id,
+        }))
+    }
+}
+
+fn build_data_type<T, I>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T>,
+    dataset_read_builder: &FileReadBuilder<T, I>,
 ) -> reqwest::RequestBuilder {
     let FileReadBuilder {
         data_type,
@@ -151,9 +208,9 @@ fn build_data_type<T>(
     }
 }
 
-fn build_search<T>(
+fn build_search<T, I>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T>,
+    dataset_read_builder: &FileReadBuilder<T, I>,
 ) -> reqwest::RequestBuilder {
     let FileReadBuilder {
         search_pattern,

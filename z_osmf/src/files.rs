@@ -14,6 +14,8 @@ use std::sync::Arc;
 
 use z_osmf_core::restfiles::data_type::Text;
 
+use crate::if_match::NoEtag;
+
 #[derive(Clone, Debug)]
 pub struct FilesClient {
     base_url: Arc<str>,
@@ -144,7 +146,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, path: &str) -> FileReadBuilder<Text> {
+    pub fn read(&self, path: &str) -> FileReadBuilder<Text, NoEtag> {
         FileReadBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 

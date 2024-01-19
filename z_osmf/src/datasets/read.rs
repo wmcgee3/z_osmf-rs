@@ -75,7 +75,7 @@ pub struct DatasetReadBuilder<T, I> {
 }
 
 impl<T, I> DatasetReadBuilder<T, I> {
-    pub fn data_type_binary(self) -> DatasetReadBuilder<Binary, I> {
+    pub fn binary(self) -> DatasetReadBuilder<Binary, I> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -100,7 +100,7 @@ impl<T, I> DatasetReadBuilder<T, I> {
         }
     }
 
-    pub fn data_type_record(self) -> DatasetReadBuilder<Record, I> {
+    pub fn record(self) -> DatasetReadBuilder<Record, I> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -125,7 +125,7 @@ impl<T, I> DatasetReadBuilder<T, I> {
         }
     }
 
-    pub fn data_type_text(self) -> DatasetReadBuilder<Text, I> {
+    pub fn text(self) -> DatasetReadBuilder<Text, I> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -150,7 +150,7 @@ impl<T, I> DatasetReadBuilder<T, I> {
         }
     }
 
-    pub fn if_none_match<V>(self, value: V) -> DatasetReadBuilder<T, Etag>
+    pub fn if_none_match<V>(self, etag: V) -> DatasetReadBuilder<T, Etag>
     where
         V: Into<Box<str>>,
     {
@@ -164,7 +164,7 @@ impl<T, I> DatasetReadBuilder<T, I> {
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            if_none_match: Some(value.into()),
+            if_none_match: Some(etag.into()),
             data_type: self.data_type,
             encoding: self.encoding,
             return_etag: self.return_etag,
