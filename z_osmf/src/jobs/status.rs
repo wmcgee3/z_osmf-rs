@@ -1,3 +1,4 @@
+use z_osmf_core::error::Error;
 use z_osmf_core::jobs::{Identifier, Status};
 use z_osmf_macros::Endpoint;
 
@@ -18,7 +19,7 @@ pub struct JobStatusBuilder {
 }
 
 impl JobStatusBuilder {
-    pub async fn build(self) -> anyhow::Result<Status> {
+    pub async fn build(self) -> Result<Status, Error> {
         let response = self.get_response().await?.error_for_status()?;
 
         Ok(response.json().await?)

@@ -183,7 +183,7 @@ impl Endpoint {
             .collect::<Vec<_>>();
 
         quote! {
-            async fn get_response(&self) -> anyhow::Result<reqwest::Response> {
+            async fn get_response(&self) -> Result<reqwest::Response, z_osmf_core::error::Error> {
                 let path = {
                     let Self {
                         #( #path_idents, )*
@@ -200,12 +200,7 @@ impl Endpoint {
 
                 let response = request_builder.send().await?;
 
-                let status = response.status();
-                if status.is_client_error() | status.is_server_error() {
-                    return Err(anyhow::Error::msg(format!("{}\n{}", status, response.text().await?)));
-                }
-
-                Ok(response)
+                Ok(response.error_for_status()?)
             }
         }
     }

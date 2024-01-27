@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -7,6 +8,16 @@ use crate::utils::get_transaction_id;
 #[derive(Clone, Debug, Getters)]
 pub struct FileDelete {
     transaction_id: Box<str>,
+}
+
+impl TryFrom<reqwest::Response> for FileDelete {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(FileDelete { transaction_id })
+    }
 }
 
 #[derive(Endpoint)]
@@ -22,12 +33,10 @@ pub struct FileDeleteBuilder {
 }
 
 impl FileDeleteBuilder {
-    pub async fn build(self) -> anyhow::Result<FileDelete> {
+    pub async fn build(self) -> Result<FileDelete, Error> {
         let response = self.get_response().await?;
 
-        let transaction_id = get_transaction_id(&response)?;
-
-        Ok(FileDelete { transaction_id })
+        response.try_into()
     }
 }
 

@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::Serialize;
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -9,6 +10,16 @@ use crate::utils::get_transaction_id;
 #[derive(Clone, Debug, Getters)]
 pub struct DatasetCreate {
     transaction_id: Box<str>,
+}
+
+impl TryFrom<reqwest::Response> for DatasetCreate {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(DatasetCreate { transaction_id })
+    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -58,12 +69,10 @@ pub struct DatasetCreateBuilder {
 }
 
 impl DatasetCreateBuilder {
-    pub async fn build(self) -> anyhow::Result<DatasetCreate> {
+    pub async fn build(self) -> Result<DatasetCreate, Error> {
         let response = self.get_response().await?;
 
-        let transaction_id = get_transaction_id(&response)?;
-
-        Ok(DatasetCreate { transaction_id })
+        response.try_into()
     }
 }
 

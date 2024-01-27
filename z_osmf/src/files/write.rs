@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use anyhow::Context;
 use bytes::Bytes;
+use z_osmf_core::error::Error;
 use z_osmf_core::restfiles::data_type::{Binary, DataType, Text};
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -12,6 +12,20 @@ use crate::utils::{get_etag, get_transaction_id};
 pub struct FileWrite {
     etag: Box<str>,
     transaction_id: Box<str>,
+}
+
+impl TryFrom<reqwest::Response> for FileWrite {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(FileWrite {
+            etag,
+            transaction_id,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -78,16 +92,10 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<FileWrite> {
+    pub async fn build(self) -> Result<FileWrite, Error> {
         let response = self.get_response().await?;
 
-        let etag = get_etag(&response)?.context("missing etag")?;
-        let transaction_id = get_transaction_id(&response)?;
-
-        Ok(FileWrite {
-            etag,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 

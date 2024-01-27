@@ -4,6 +4,8 @@
 //!
 //! The (work in progress) Rust z/OSMF Client.
 
+pub use z_osmf_core::error::Error;
+
 pub mod if_match;
 
 #[cfg(feature = "datasets")]
@@ -26,7 +28,7 @@ use jobs::JobsClient;
 /// Client for interacting with z/OSMF.
 ///
 /// ```
-/// # async fn example() -> anyhow::Result<()> {
+/// # async fn example() -> Result<()> {
 /// # use z_osmf::ZOsmf;
 /// let client_builder = reqwest::ClientBuilder::new();
 /// let base_url = "https://zosmf.mainframe.my-company.com";
@@ -54,7 +56,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example() -> anyhow::Result<()> {
+    /// # async fn example() -> Result<(), Error> {
     /// # use z_osmf::ZOsmf;
     /// let client_builder = reqwest::ClientBuilder::new();
     /// let base_url = "https://zosmf.mainframe.my-company.com";
@@ -63,7 +65,7 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new<B>(client_builder: reqwest::ClientBuilder, base_url: B) -> anyhow::Result<Self>
+    pub fn new<B>(client_builder: reqwest::ClientBuilder, base_url: B) -> Result<Self, Error>
     where
         B: std::fmt::Display,
     {
@@ -80,12 +82,12 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
     /// zosmf.login("USERNAME", "PASSWORD").await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn login<U, P>(&self, username: U, password: P) -> anyhow::Result<()>
+    pub async fn login<U, P>(&self, username: U, password: P) -> Result<(), Error>
     where
         U: std::fmt::Display,
         P: std::fmt::Display,
@@ -109,12 +111,12 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
     /// zosmf.logout().await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn logout(&self) -> anyhow::Result<()> {
+    pub async fn logout(&self) -> Result<(), Error> {
         self.client
             .delete(format!("{}/zosmf/services/authenticate", self.base_url))
             .send()
@@ -128,7 +130,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
     /// let dataset_client = zosmf.datasets();
     /// # Ok(())
     /// # }
@@ -142,7 +144,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
     /// let files_client = zosmf.files();
     /// # Ok(())
     /// # }
@@ -156,7 +158,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
     /// let jobs_client = zosmf.jobs();
     /// # Ok(())
     /// # }
