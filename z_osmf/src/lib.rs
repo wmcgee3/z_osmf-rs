@@ -28,7 +28,7 @@ use jobs::JobsClient;
 /// Client for interacting with z/OSMF.
 ///
 /// ```
-/// # async fn example() -> Result<()> {
+/// # async fn example() -> Result<(), z_osmf::Error> {
 /// # use z_osmf::ZOsmf;
 /// let client_builder = reqwest::ClientBuilder::new();
 /// let base_url = "https://zosmf.mainframe.my-company.com";
@@ -56,7 +56,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example() -> Result<(), Error> {
+    /// # async fn example() -> Result<(), z_osmf::Error> {
     /// # use z_osmf::ZOsmf;
     /// let client_builder = reqwest::ClientBuilder::new();
     /// let base_url = "https://zosmf.mainframe.my-company.com";
@@ -82,7 +82,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
     /// zosmf.login("USERNAME", "PASSWORD").await?;
     /// # Ok(())
     /// # }
@@ -111,7 +111,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
     /// zosmf.logout().await?;
     /// # Ok(())
     /// # }
@@ -130,7 +130,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
     /// let dataset_client = zosmf.datasets();
     /// # Ok(())
     /// # }
@@ -144,7 +144,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
     /// let files_client = zosmf.files();
     /// # Ok(())
     /// # }
@@ -158,7 +158,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<()> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
     /// let jobs_client = zosmf.jobs();
     /// # Ok(())
     /// # }
