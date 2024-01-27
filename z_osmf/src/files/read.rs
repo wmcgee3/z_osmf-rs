@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Handle;
+use z_osmf_core::error::Error;
 use z_osmf_core::restfiles::data_type::*;
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -16,10 +18,88 @@ pub struct FileRead<T> {
     transaction_id: Box<str>,
 }
 
+impl TryFrom<reqwest::Response> for FileRead<Bytes> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let (etag, transaction_id) = get_headers(&value)?;
+
+        let data = Handle::current().block_on(value.bytes())?;
+
+        Ok(FileRead {
+            data,
+            etag,
+            transaction_id,
+        })
+    }
+}
+
+impl TryFrom<reqwest::Response> for FileRead<Box<str>> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let (etag, transaction_id) = get_headers(&value)?;
+
+        let data = Handle::current().block_on(value.text())?.into();
+
+        Ok(FileRead {
+            data,
+            etag,
+            transaction_id,
+        })
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum FileReadIfNoneMatch<T> {
     Modified(FileRead<T>),
     NotModified(FileReadNotModified),
+}
+
+impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Bytes> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        if value.status() == 304 {
+            let transaction_id = get_transaction_id(&value)?;
+
+            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
+                transaction_id,
+            }));
+        }
+
+        let (etag, transaction_id) = get_headers(&value)?;
+        let data = Handle::current().block_on(value.bytes())?;
+
+        Ok(FileReadIfNoneMatch::Modified(FileRead {
+            data,
+            etag,
+            transaction_id,
+        }))
+    }
+}
+
+impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Box<str>> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        if value.status() == 304 {
+            let transaction_id = get_transaction_id(&value)?;
+
+            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
+                transaction_id,
+            }));
+        }
+
+        let (etag, transaction_id) = get_headers(&value)?;
+        let data = Handle::current().block_on(value.text())?.into();
+
+        Ok(FileReadIfNoneMatch::Modified(FileRead {
+            data,
+            etag,
+            transaction_id,
+        }))
+    }
 }
 
 #[derive(Clone, Debug, Getters)]
@@ -112,75 +192,34 @@ impl<T, I> FileReadBuilder<T, I> {
 }
 
 impl FileReadBuilder<Binary, NoEtag> {
-    pub async fn build(self) -> anyhow::Result<FileRead<Bytes>> {
+    pub async fn build(self) -> Result<FileRead<Bytes>, Error> {
         let response = self.get_response().await?;
-        let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
 
-        Ok(FileRead {
-            data,
-            etag,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 
 impl FileReadBuilder<Text, NoEtag> {
-    pub async fn build(self) -> anyhow::Result<FileRead<Box<str>>> {
+    pub async fn build(self) -> Result<FileRead<Box<str>>, Error> {
         let response = self.get_response().await?;
-        let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.text().await?.into();
 
-        Ok(FileRead {
-            data,
-            etag,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 
 impl FileReadBuilder<Binary, Etag> {
-    pub async fn build(self) -> anyhow::Result<FileReadIfNoneMatch<Bytes>> {
+    pub async fn build(self) -> Result<FileReadIfNoneMatch<Bytes>, Error> {
         let response = self.get_response().await?;
-        if response.status() == 304 {
-            let transaction_id = get_transaction_id(&response)?;
 
-            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
-                transaction_id,
-            }));
-        }
-        let response = response.error_for_status()?;
-        let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
-
-        Ok(FileReadIfNoneMatch::Modified(FileRead {
-            data,
-            etag,
-            transaction_id,
-        }))
+        response.try_into()
     }
 }
 
 impl<'a> FileReadBuilder<Text, Etag> {
-    pub async fn build(self) -> anyhow::Result<FileReadIfNoneMatch<String>> {
+    pub async fn build(self) -> Result<FileReadIfNoneMatch<Box<str>>, Error> {
         let response = self.get_response().await?;
 
-        if response.status() == 304 {
-            let transaction_id = get_transaction_id(&response)?;
-
-            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
-                transaction_id,
-            }));
-        }
-
-        let (etag, transaction_id) = get_headers(&response)?;
-        let data = response.text().await?;
-
-        Ok(FileReadIfNoneMatch::Modified(FileRead {
-            data,
-            etag,
-            transaction_id,
-        }))
+        response.try_into()
     }
 }
 
@@ -240,6 +279,6 @@ fn build_search<T, I>(
     request_builder
 }
 
-fn get_headers(response: &reqwest::Response) -> anyhow::Result<(Option<Box<str>>, Box<str>)> {
+fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>), Error> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
 }

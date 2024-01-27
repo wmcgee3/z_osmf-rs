@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use anyhow::Context;
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use z_osmf_core::error::Error;
 use z_osmf_core::restfiles::data_type::*;
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -14,6 +14,20 @@ use crate::utils::*;
 pub struct DatasetWrite {
     etag: Box<str>,
     transaction_id: Box<str>,
+}
+
+impl TryFrom<reqwest::Response> for DatasetWrite {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(DatasetWrite {
+            etag,
+            transaction_id,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -131,16 +145,10 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<DatasetWrite> {
+    pub async fn build(self) -> Result<DatasetWrite, Error> {
         let response = self.get_response().await?;
 
-        let etag = get_etag(&response)?.context("missing etag")?;
-        let transaction_id = get_transaction_id(&response)?;
-
-        Ok(DatasetWrite {
-            etag,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 

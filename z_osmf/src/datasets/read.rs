@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Handle;
+use z_osmf_core::error::Error;
 use z_osmf_core::restfiles::data_type::*;
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -18,10 +20,100 @@ pub struct DatasetRead<T> {
     transaction_id: Box<str>,
 }
 
+impl TryFrom<reqwest::Response> for DatasetRead<Bytes> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let (etag, session_ref, transaction_id) = get_headers(&value)?;
+
+        let data = Handle::current().block_on(value.bytes())?;
+
+        Ok(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        })
+    }
+}
+
+impl TryFrom<reqwest::Response> for DatasetRead<Box<str>> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let (etag, session_ref, transaction_id) = get_headers(&value)?;
+
+        let rt = Handle::current();
+
+        let data = rt.block_on(value.text())?.into();
+
+        Ok(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        })
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum DatasetReadIfNoneMatch<T> {
     Modified(DatasetRead<T>),
     NotModified(DatasetReadNotModified),
+}
+
+impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Bytes> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        if value.status() == 304 {
+            let transaction_id = get_transaction_id(&value)?;
+
+            return Ok(DatasetReadIfNoneMatch::NotModified(
+                DatasetReadNotModified { transaction_id },
+            ));
+        }
+
+        let (etag, session_ref, transaction_id) = get_headers(&value)?;
+
+        let rt = Handle::current();
+
+        let data = rt.block_on(value.bytes())?;
+
+        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        }))
+    }
+}
+
+impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Box<str>> {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        if value.status() == 304 {
+            let transaction_id = get_transaction_id(&value)?;
+
+            return Ok(DatasetReadIfNoneMatch::NotModified(
+                DatasetReadNotModified { transaction_id },
+            ));
+        }
+
+        let (etag, session_ref, transaction_id) = get_headers(&value)?;
+
+        let rt = Handle::current();
+
+        let data = rt.block_on(value.text())?.into();
+
+        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        }))
+    }
 }
 
 #[derive(Clone, Debug, Getters)]
@@ -180,117 +272,50 @@ impl<T, I> DatasetReadBuilder<T, I> {
 }
 
 impl DatasetReadBuilder<Binary, NoEtag> {
-    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
+    pub async fn build(self) -> Result<DatasetRead<Bytes>, Error> {
         let response = self.get_response().await?.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
 
-        Ok(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 
 impl DatasetReadBuilder<Record, NoEtag> {
-    pub async fn build(self) -> anyhow::Result<DatasetRead<Bytes>> {
+    pub async fn build(self) -> Result<DatasetRead<Bytes>, Error> {
         let response = self.get_response().await?.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
 
-        Ok(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 
 impl<'a> DatasetReadBuilder<Text, NoEtag> {
-    pub async fn build(self) -> anyhow::Result<DatasetRead<String>> {
+    pub async fn build(self) -> Result<DatasetRead<Box<str>>, Error> {
         let response = self.get_response().await?.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.text().await?;
 
-        Ok(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 
 impl DatasetReadBuilder<Binary, Etag> {
-    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<Bytes>> {
+    pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Bytes>, Error> {
         let response = self.get_response().await?;
-        if response.status() == 304 {
-            let transaction_id = get_transaction_id(&response)?;
 
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-        let response = response.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
-
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        }))
+        response.try_into()
     }
 }
 
 impl DatasetReadBuilder<Record, Etag> {
-    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<Bytes>> {
+    pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Bytes>, Error> {
         let response = self.get_response().await?;
-        if response.status() == 304 {
-            let transaction_id = get_transaction_id(&response)?;
 
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-        let response = response.error_for_status()?;
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.bytes().await?;
-
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        }))
+        response.try_into()
     }
 }
 
 impl<'a> DatasetReadBuilder<Text, Etag> {
-    pub async fn build(self) -> anyhow::Result<DatasetReadIfNoneMatch<String>> {
+    pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Box<str>>, Error> {
         let response = self.get_response().await?;
 
-        if response.status() == 304 {
-            let transaction_id = get_transaction_id(&response)?;
-
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-
-        let (etag, session_ref, transaction_id) = get_headers(&response)?;
-        let data = response.text().await?;
-
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        }))
+        response.try_into()
     }
 }
 
@@ -392,7 +417,7 @@ fn build_return_etag<T, I>(
 
 type H = (Option<Box<str>>, Option<Box<str>>, Box<str>);
 
-fn get_headers(response: &reqwest::Response) -> anyhow::Result<H> {
+fn get_headers(response: &reqwest::Response) -> Result<H, Error> {
     Ok((
         get_etag(response)?,
         get_session_ref(response)?,

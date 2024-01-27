@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -7,6 +8,16 @@ use crate::utils::get_transaction_id;
 #[derive(Clone, Debug, Getters)]
 pub struct DatasetDelete {
     transaction_id: Box<str>,
+}
+
+impl TryFrom<reqwest::Response> for DatasetDelete {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(DatasetDelete { transaction_id })
+    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -26,12 +37,10 @@ pub struct DatasetDeleteBuilder {
 }
 
 impl DatasetDeleteBuilder {
-    pub async fn build(self) -> anyhow::Result<DatasetDelete> {
+    pub async fn build(self) -> Result<DatasetDelete, Error> {
         let response = self.get_response().await?;
 
-        let transaction_id = get_transaction_id(&response)?;
-
-        Ok(DatasetDelete { transaction_id })
+        response.try_into()
     }
 }
 

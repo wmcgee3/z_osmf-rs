@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Handle;
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -14,13 +16,39 @@ pub struct FileList {
     transaction_id: Box<str>,
 }
 
+impl TryFrom<reqwest::Response> for FileList {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        let json = Handle::current().block_on(value.json())?;
+
+        let ResponseJson {
+            items,
+            returned_rows,
+            total_rows,
+            json_version,
+        } = json;
+
+        Ok(FileList {
+            items,
+            returned_rows,
+            total_rows,
+            json_version,
+            transaction_id,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileAttributes {
     name: Box<str>,
     mode: Box<str>,
     size: i32,
     uid: i32,
-    user: Box<str>,
+    #[serde(default)]
+    user: Option<Box<str>>,
     gid: i32,
     group: Box<str>,
     mtime: Box<str>,
@@ -63,25 +91,10 @@ pub struct FileListBuilder {
 }
 
 impl FileListBuilder {
-    pub async fn build(self) -> anyhow::Result<FileList> {
+    pub async fn build(self) -> Result<FileList, Error> {
         let response = self.get_response().await?;
 
-        let transaction_id = get_transaction_id(&response)?;
-
-        let ResponseJson {
-            items,
-            returned_rows,
-            total_rows,
-            json_version,
-        } = response.json().await?;
-
-        Ok(FileList {
-            items,
-            returned_rows,
-            total_rows,
-            json_version,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 

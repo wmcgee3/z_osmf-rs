@@ -2,7 +2,8 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-
+use tokio::runtime::Handle;
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::datasets::utils::MigratedRecall;
@@ -15,6 +16,31 @@ pub struct MemberList<T> {
     more_rows: Option<bool>,
     returned_rows: i32,
     total_rows: Option<i32>,
+}
+
+impl<T> TryFrom<reqwest::Response> for MemberList<T>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let ResponseJson {
+            items,
+            returned_rows,
+            more_rows,
+            total_rows,
+            json_version,
+        } = Handle::current().block_on(value.json())?;
+
+        Ok(MemberList {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -129,24 +155,10 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<MemberList<T>> {
+    pub async fn build(self) -> Result<MemberList<T>, Error> {
         let response = self.get_response().await?;
 
-        let ResponseJson {
-            items,
-            returned_rows,
-            more_rows,
-            total_rows,
-            json_version,
-        } = response.json().await?;
-
-        Ok(MemberList {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-        })
+        response.try_into()
     }
 }
 

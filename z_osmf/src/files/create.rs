@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use reqwest::RequestBuilder;
 use serde::Serialize;
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::utils::get_transaction_id;
@@ -10,6 +11,16 @@ use crate::utils::get_transaction_id;
 #[derive(Clone, Debug, Getters)]
 pub struct FileCreate {
     transaction_id: Box<str>,
+}
+
+impl TryFrom<reqwest::Response> for FileCreate {
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(FileCreate { transaction_id })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -38,12 +49,10 @@ pub struct FileCreateBuilder {
 }
 
 impl FileCreateBuilder {
-    pub async fn build(self) -> anyhow::Result<FileCreate> {
+    pub async fn build(self) -> Result<FileCreate, Error> {
         let response = self.get_response().await?;
 
-        let transaction_id = get_transaction_id(&response)?;
-
-        Ok(FileCreate { transaction_id })
+        response.try_into()
     }
 }
 

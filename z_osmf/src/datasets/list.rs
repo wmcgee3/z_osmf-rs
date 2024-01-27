@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
-
+use tokio::runtime::Handle;
+use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::utils::*;
@@ -16,6 +17,34 @@ pub struct DatasetList<T> {
     returned_rows: i32,
     total_rows: Option<i32>,
     transaction_id: Box<str>,
+}
+
+impl<T> TryFrom<reqwest::Response> for DatasetList<T>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    type Error = Error;
+
+    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        let ResponseJson {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+        } = Handle::current().block_on(value.json())?;
+
+        Ok(DatasetList {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+            transaction_id,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
@@ -199,27 +228,10 @@ where
         }
     }
 
-    pub async fn build(self) -> anyhow::Result<DatasetList<T>> {
+    pub async fn build(self) -> Result<DatasetList<T>, Error> {
         let response = self.get_response().await?;
 
-        let transaction_id = get_transaction_id(&response)?;
-
-        let ResponseJson {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-        } = response.json().await?;
-
-        Ok(DatasetList {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-            transaction_id,
-        })
+        response.try_into()
     }
 }
 

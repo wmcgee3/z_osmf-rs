@@ -1,8 +1,8 @@
-use anyhow::Context;
 use reqwest::Response;
 use serde::Deserialize;
+use z_osmf_core::error::Error;
 
-pub(crate) fn get_etag(response: &Response) -> anyhow::Result<Option<Box<str>>> {
+pub(crate) fn get_etag(response: &Response) -> Result<Option<Box<str>>, Error> {
     Ok(response
         .headers()
         .get("Etag")
@@ -11,7 +11,7 @@ pub(crate) fn get_etag(response: &Response) -> anyhow::Result<Option<Box<str>>> 
         .map(|v| v.into()))
 }
 
-pub(crate) fn get_session_ref(response: &Response) -> anyhow::Result<Option<Box<str>>> {
+pub(crate) fn get_session_ref(response: &Response) -> Result<Option<Box<str>>, Error> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
@@ -20,16 +20,16 @@ pub(crate) fn get_session_ref(response: &Response) -> anyhow::Result<Option<Box<
         .map(|v| v.into()))
 }
 
-pub(crate) fn get_transaction_id(response: &Response) -> anyhow::Result<Box<str>> {
+pub(crate) fn get_transaction_id(response: &Response) -> Result<Box<str>, Error> {
     Ok(response
         .headers()
         .get("X-IBM-Txid")
-        .context("missing transaction id")?
+        .ok_or(Error::MissingTransactionId)?
         .to_str()?
         .into())
 }
 
-pub(crate) fn de_yes_no<'de, D>(deserializer: D) -> Result<bool, D::Error>
+pub(crate) fn de_yes_no<'de, D>(deserializer: D) -> core::result::Result<bool, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -38,21 +38,26 @@ where
     Ok(s == "YES")
 }
 
-pub(crate) fn ser_yes_no<S>(v: &bool, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn ser_yes_no<S>(v: &bool, serializer: S) -> core::result::Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     serializer.serialize_str(if *v { "YES" } else { "NO" })
 }
 
-pub(crate) fn de_optional_y_n<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+pub(crate) fn de_optional_y_n<'de, D>(
+    deserializer: D,
+) -> core::result::Result<Option<bool>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     Ok(Option::<String>::deserialize(deserializer)?.map(|s| s == "Y"))
 }
 
-pub(crate) fn ser_optional_y_n<S>(v: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn ser_optional_y_n<S>(
+    v: &Option<bool>,
+    serializer: S,
+) -> core::result::Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -62,14 +67,19 @@ where
     }
 }
 
-pub(crate) fn de_optional_yes_no<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+pub(crate) fn de_optional_yes_no<'de, D>(
+    deserializer: D,
+) -> core::result::Result<Option<bool>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     Ok(Option::<String>::deserialize(deserializer)?.map(|s| s == "YES"))
 }
 
-pub(crate) fn ser_optional_yes_no<S>(v: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
+pub(crate) fn ser_optional_yes_no<S>(
+    v: &Option<bool>,
+    serializer: S,
+) -> core::result::Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
