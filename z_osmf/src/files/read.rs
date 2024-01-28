@@ -4,18 +4,18 @@ use std::sync::Arc;
 use bytes::Bytes;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::files::DataType;
 use crate::restfiles::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileRead<T> {
-    data: T,
-    etag: Option<Box<str>>,
-    transaction_id: Box<str>,
+    pub data: T,
+    pub etag: Option<Box<str>>,
+    pub transaction_id: Box<str>,
 }
 
 impl TryFromResponse for FileRead<Box<str>> {

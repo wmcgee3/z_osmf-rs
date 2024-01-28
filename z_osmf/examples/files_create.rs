@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
         .mode("RWXRW-RW-")
         .build()
         .await?;
-    println!("{}", file_create.transaction_id());
+    println!("{}", file_create.transaction_id);
 
     Ok(())
 }

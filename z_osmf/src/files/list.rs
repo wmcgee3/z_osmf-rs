@@ -2,19 +2,19 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::restfiles::get_transaction_id;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileList {
-    items: Box<[FileAttributes]>,
-    returned_rows: i32,
-    total_rows: i32,
-    json_version: i32,
-    transaction_id: Box<str>,
+    pub items: Box<[FileAttributes]>,
+    pub returned_rows: i32,
+    pub total_rows: i32,
+    pub json_version: i32,
+    pub transaction_id: Box<str>,
 }
 
 impl TryFromResponse for FileList {
@@ -38,19 +38,19 @@ impl TryFromResponse for FileList {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileAttributes {
-    name: Box<str>,
-    mode: Box<str>,
-    size: i32,
-    uid: i32,
+    pub name: Box<str>,
+    pub mode: Box<str>,
+    pub size: i32,
+    pub uid: i32,
     #[serde(default)]
-    user: Option<Box<str>>,
-    gid: i32,
-    group: Box<str>,
-    mtime: Box<str>,
+    pub user: Option<Box<str>>,
+    pub gid: i32,
+    pub group: Box<str>,
+    pub mtime: Box<str>,
     #[serde(default)]
-    target: Option<Box<str>>,
+    pub target: Option<Box<str>>,
 }
 
 #[derive(Endpoint)]
@@ -107,14 +107,14 @@ pub enum SymLinks {
     Report,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    items: Box<[FileAttributes]>,
-    returned_rows: i32,
-    total_rows: i32,
+    pub items: Box<[FileAttributes]>,
+    pub returned_rows: i32,
+    pub total_rows: i32,
     #[serde(rename = "JSONversion")]
-    json_version: i32,
+    pub json_version: i32,
 }
 
 fn build_lstat<T>(

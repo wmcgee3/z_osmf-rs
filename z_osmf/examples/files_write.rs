@@ -48,8 +48,8 @@ ssh       stream tcp nowait IBMUSER  /usr/sbin/sshd sshd -i
         .text(data)
         .build()
         .await?;
-    println!("{}", file_write.etag());
-    println!("{}", file_write.transaction_id());
+    println!("{}", file_write.etag);
+    println!("{}", file_write.transaction_id);
 
     Ok(())
 }

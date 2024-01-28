@@ -2,16 +2,17 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use z_osmf_macros::{Endpoint, Getters};
+use serde::{Deserialize, Serialize};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileWrite {
-    etag: Box<str>,
-    transaction_id: Box<str>,
+    pub etag: Box<str>,
+    pub transaction_id: Box<str>,
 }
 
 impl TryFromResponse for FileWrite {
@@ -28,7 +29,10 @@ impl TryFromResponse for FileWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileWriteBuilder<T> where T: TryFromResponse {
+pub struct FileWriteBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -71,7 +75,10 @@ impl FileWriteBuilder<FileWrite> {
 fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &FileWriteBuilder<T>,
-) -> reqwest::RequestBuilder where T: TryFromResponse {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let key = "X-IBM-Data-Type";
     let FileWriteBuilder {
         crlf_newlines,

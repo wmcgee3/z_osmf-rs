@@ -4,19 +4,19 @@ use std::sync::Arc;
 use bytes::Bytes;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq};
 use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetRead<T> {
-    data: T,
-    etag: Option<Box<str>>,
-    session_ref: Option<Box<str>>,
-    transaction_id: Box<str>,
+    pub data: T,
+    pub etag: Option<Box<str>>,
+    pub session_ref: Option<Box<str>>,
+    pub transaction_id: Box<str>,
 }
 
 impl TryFromResponse for DatasetRead<Box<str>> {

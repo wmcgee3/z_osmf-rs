@@ -11,11 +11,11 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
-    println!("{}", read_member.data());
+    println!("{}", read_member.data);
 
     let read_dataset = datasets_client.read("JIAHJ.REST.SRVMP").build().await?;
 
-    println!("{}", read_dataset.data());
+    println!("{}", read_dataset.data);
 
     Ok(())
 }

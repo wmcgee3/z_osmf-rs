@@ -3,15 +3,15 @@ use std::sync::Arc;
 
 use reqwest::RequestBuilder;
 use serde::Serialize;
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::restfiles::get_transaction_id;
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug)]
 pub struct FileCreate {
-    transaction_id: Box<str>,
+    pub transaction_id: Box<str>,
 }
 
 impl TryFromResponse for FileCreate {

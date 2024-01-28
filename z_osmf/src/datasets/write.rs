@@ -3,17 +3,17 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::{MigratedRecall, ObtainEnq};
 use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetWrite {
-    etag: Box<str>,
-    transaction_id: Box<str>,
+    pub etag: Box<str>,
+    pub transaction_id: Box<str>,
 }
 
 impl TryFromResponse for DatasetWrite {
