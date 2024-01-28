@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Handle;
-use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::datasets::utils::MigratedRecall;
-use crate::utils::*;
+use crate::error::Error;
+use crate::utils::{de_optional_y_n, ser_optional_y_n};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberList<T> {

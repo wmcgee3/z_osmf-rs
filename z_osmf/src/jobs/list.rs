@@ -2,16 +2,14 @@ use std::sync::Arc;
 
 use serde::Deserialize;
 use tokio::runtime::Handle;
-use z_osmf_core::error::Error;
-use z_osmf_core::jobs::JobData;
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::utils::get_transaction_id;
+use crate::error::Error;
+use crate::jobs::JobData;
 
 #[derive(Clone, Debug, Getters)]
 pub struct JobsList<T> {
     items: Box<[T]>,
-    transaction_id: Box<str>,
 }
 
 impl<T> TryFrom<reqwest::Response> for JobsList<T>
@@ -21,19 +19,14 @@ where
     type Error = Error;
 
     fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
         let items = Handle::current().block_on(value.json())?;
 
-        Ok(JobsList {
-            items,
-            transaction_id,
-        })
+        Ok(JobsList { items })
     }
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restjobs")]
+#[endpoint(method = get, path = "/zosmf/restjobs/jobs")]
 pub struct JobsListBuilder {
     base_url: Arc<str>,
     client: reqwest::Client,

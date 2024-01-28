@@ -4,10 +4,13 @@ use std::sync::Arc;
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Handle;
-use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::utils::*;
+use crate::error::Error;
+use crate::utils::{
+    de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
+    ser_optional_yes_no, ser_yes_no,
+};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {

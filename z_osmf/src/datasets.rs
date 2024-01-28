@@ -16,8 +16,7 @@ mod utils;
 
 use std::sync::Arc;
 
-use crate::if_match::NoEtag;
-use z_osmf_core::restfiles::data_type::Text;
+use crate::restfiles::{NoEtag, Text};
 
 /// # DatasetsClient
 ///

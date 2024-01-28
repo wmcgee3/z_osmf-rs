@@ -183,7 +183,7 @@ impl Endpoint {
             .collect::<Vec<_>>();
 
         quote! {
-            async fn get_response(&self) -> Result<reqwest::Response, z_osmf_core::error::Error> {
+            async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
                 let path = {
                     let Self {
                         #( #path_idents, )*

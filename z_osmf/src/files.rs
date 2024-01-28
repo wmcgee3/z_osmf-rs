@@ -12,9 +12,7 @@ pub use write::*;
 
 use std::sync::Arc;
 
-use z_osmf_core::restfiles::data_type::Text;
-
-use crate::if_match::NoEtag;
+use crate::restfiles::{NoEtag, Text};
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {

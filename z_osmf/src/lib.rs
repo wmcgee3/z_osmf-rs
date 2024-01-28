@@ -4,9 +4,10 @@
 //!
 //! The (work in progress) Rust z/OSMF Client.
 
-pub use z_osmf_core::error::Error;
+pub use crate::error::Error;
 
-pub mod if_match;
+pub mod restfiles;
+pub mod error;
 
 #[cfg(feature = "datasets")]
 pub mod datasets;

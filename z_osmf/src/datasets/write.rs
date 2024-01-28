@@ -3,12 +3,12 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use z_osmf_core::error::Error;
-use z_osmf_core::restfiles::data_type::*;
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::datasets::utils::*;
-use crate::utils::*;
+use crate::datasets::utils::{MigratedRecall, ObtainEnq};
+use crate::error::Error;
+use crate::restfiles::{Binary, DataType, Record, Text};
+use crate::utils::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetWrite {

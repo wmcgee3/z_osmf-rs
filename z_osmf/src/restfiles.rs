@@ -23,3 +23,6 @@ impl std::fmt::Display for DataType {
         )
     }
 }
+
+pub struct Etag;
+pub struct NoEtag;

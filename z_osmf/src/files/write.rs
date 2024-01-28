@@ -2,10 +2,10 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use z_osmf_core::error::Error;
-use z_osmf_core::restfiles::data_type::{Binary, DataType, Text};
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::error::Error;
+use crate::restfiles::{Binary, DataType, Text};
 use crate::utils::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Getters)]

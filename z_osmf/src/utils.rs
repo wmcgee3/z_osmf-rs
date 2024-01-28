@@ -1,6 +1,7 @@
 use reqwest::Response;
 use serde::Deserialize;
-use z_osmf_core::error::Error;
+
+use crate::error::Error;
 
 pub(crate) fn get_etag(response: &Response) -> Result<Option<Box<str>>, Error> {
     Ok(response

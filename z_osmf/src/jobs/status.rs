@@ -1,6 +1,7 @@
-use z_osmf_core::error::Error;
-use z_osmf_core::jobs::{Identifier, Status};
 use z_osmf_macros::Endpoint;
+
+use crate::error::Error;
+use crate::jobs::{Identifier, JobData};
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
@@ -19,7 +20,7 @@ pub struct JobStatusBuilder {
 }
 
 impl JobStatusBuilder {
-    pub async fn build(self) -> Result<Status, Error> {
+    pub async fn build(self) -> Result<JobData, Error> {
         let response = self.get_response().await?.error_for_status()?;
 
         Ok(response.json().await?)

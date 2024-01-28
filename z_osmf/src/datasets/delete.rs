@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use z_osmf_core::error::Error;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Getters)]
