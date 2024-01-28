@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -16,21 +17,6 @@ pub struct DatasetRead<T> {
     etag: Option<Box<str>>,
     session_ref: Option<Box<str>>,
     transaction_id: Box<str>,
-}
-
-impl TryFromResponse for DatasetRead<Bytes> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let (etag, session_ref, transaction_id) = get_headers(&value)?;
-
-        let data = value.bytes().await?;
-
-        Ok(DatasetRead {
-            data,
-            etag,
-            session_ref,
-            transaction_id,
-        })
-    }
 }
 
 impl TryFromResponse for DatasetRead<Box<str>> {
@@ -48,61 +34,57 @@ impl TryFromResponse for DatasetRead<Box<str>> {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum DatasetReadIfNoneMatch<T> {
-    Modified(DatasetRead<T>),
-    NotModified(DatasetReadNotModified),
-}
-
-impl TryFromResponse for DatasetReadIfNoneMatch<Bytes> {
+impl TryFromResponse for DatasetRead<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        if value.status() == 304 {
-            let transaction_id = get_transaction_id(&value)?;
-
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
 
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
             transaction_id,
-        }))
+        })
     }
 }
 
-impl TryFromResponse for DatasetReadIfNoneMatch<Box<str>> {
+impl TryFromResponse for DatasetRead<Option<Box<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        if value.status() == 304 {
-            let transaction_id = get_transaction_id(&value)?;
-
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let data = value.text().await?.into();
+        let data = if value.status() == StatusCode::NOT_MODIFIED {
+            None
+        } else {
+            Some(value.text().await?.into())
+        };
 
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
             transaction_id,
-        }))
+        })
     }
 }
 
-#[derive(Clone, Debug, Getters)]
-pub struct DatasetReadNotModified {
-    transaction_id: Box<str>,
+impl TryFromResponse for DatasetRead<Option<Bytes>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        let (etag, session_ref, transaction_id) = get_headers(&value)?;
+
+        let data = if value.status() == StatusCode::NOT_MODIFIED {
+            None
+        } else {
+            Some(value.bytes().await?)
+        };
+
+        Ok(DatasetRead {
+            data,
+            etag,
+            session_ref,
+            transaction_id,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -154,7 +136,7 @@ where
 impl<U> DatasetReadBuilder<DatasetRead<U>>
 where
     DatasetRead<U>: TryFromResponse,
-    DatasetReadIfNoneMatch<U>: TryFromResponse,
+    DatasetRead<Option<U>>: TryFromResponse,
 {
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
@@ -228,7 +210,7 @@ where
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> DatasetReadBuilder<DatasetReadIfNoneMatch<U>>
+    pub fn if_none_match<E>(self, etag: E) -> DatasetReadBuilder<DatasetRead<Option<U>>>
     where
         E: Into<Box<str>>,
     {
@@ -256,12 +238,11 @@ where
     }
 }
 
-impl<U> DatasetReadBuilder<DatasetReadIfNoneMatch<U>>
+impl<V> DatasetReadBuilder<DatasetRead<Option<V>>>
 where
-    DatasetRead<U>: TryFromResponse,
-    DatasetReadIfNoneMatch<U>: TryFromResponse,
+    DatasetRead<Option<V>>: TryFromResponse,
 {
-    pub fn binary(self) -> DatasetReadBuilder<DatasetReadIfNoneMatch<Bytes>> {
+    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -285,7 +266,7 @@ where
         }
     }
 
-    pub fn record(self) -> DatasetReadBuilder<DatasetReadIfNoneMatch<Bytes>> {
+    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -309,7 +290,7 @@ where
         }
     }
 
-    pub fn text(self) -> DatasetReadBuilder<DatasetReadIfNoneMatch<Box<str>>> {
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,

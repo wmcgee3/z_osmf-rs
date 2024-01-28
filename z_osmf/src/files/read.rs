@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -15,20 +16,6 @@ pub struct FileRead<T> {
     data: T,
     etag: Option<Box<str>>,
     transaction_id: Box<str>,
-}
-
-impl TryFromResponse for FileRead<Bytes> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let (etag, transaction_id) = get_headers(&value)?;
-
-        let data = value.bytes().await?;
-
-        Ok(FileRead {
-            data,
-            etag,
-            transaction_id,
-        })
-    }
 }
 
 impl TryFromResponse for FileRead<Box<str>> {
@@ -45,57 +32,54 @@ impl TryFromResponse for FileRead<Box<str>> {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum FileReadIfNoneMatch<T> {
-    Modified(FileRead<T>),
-    NotModified(FileReadNotModified),
-}
-
-impl TryFromResponse for FileReadIfNoneMatch<Bytes> {
+impl TryFromResponse for FileRead<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        if value.status() == 304 {
-            let transaction_id = get_transaction_id(&value)?;
-
-            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
-                transaction_id,
-            }));
-        }
-
         let (etag, transaction_id) = get_headers(&value)?;
+
         let data = value.bytes().await?;
 
-        Ok(FileReadIfNoneMatch::Modified(FileRead {
+        Ok(FileRead {
             data,
             etag,
             transaction_id,
-        }))
+        })
     }
 }
 
-impl TryFromResponse for FileReadIfNoneMatch<Box<str>> {
+impl TryFromResponse for FileRead<Option<Box<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        if value.status() == 304 {
-            let transaction_id = get_transaction_id(&value)?;
-
-            return Ok(FileReadIfNoneMatch::NotModified(FileReadNotModified {
-                transaction_id,
-            }));
-        }
-
         let (etag, transaction_id) = get_headers(&value)?;
-        let data = value.text().await?.into();
 
-        Ok(FileReadIfNoneMatch::Modified(FileRead {
+        let data = if value.status() == StatusCode::NOT_MODIFIED {
+            None
+        } else {
+            Some(value.text().await?.into())
+        };
+
+        Ok(FileRead {
             data,
             etag,
             transaction_id,
-        }))
+        })
     }
 }
 
-#[derive(Clone, Debug, Getters)]
-pub struct FileReadNotModified {
-    transaction_id: Box<str>,
+impl TryFromResponse for FileRead<Option<Bytes>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        let (etag, transaction_id) = get_headers(&value)?;
+
+        let data = if value.status() == StatusCode::NOT_MODIFIED {
+            None
+        } else {
+            Some(value.bytes().await?)
+        };
+
+        Ok(FileRead {
+            data,
+            etag,
+            transaction_id,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -131,7 +115,7 @@ where
 impl<U> FileReadBuilder<FileRead<U>>
 where
     FileRead<U>: TryFromResponse,
-    FileReadIfNoneMatch<U>: TryFromResponse,
+    FileRead<Option<U>>: TryFromResponse,
 {
     pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
         FileReadBuilder {
@@ -165,7 +149,7 @@ where
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<FileReadIfNoneMatch<U>>
+    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<FileRead<Option<U>>>
     where
         E: Into<Box<str>>,
     {
@@ -185,12 +169,11 @@ where
     }
 }
 
-impl<U> FileReadBuilder<FileReadIfNoneMatch<U>>
+impl<U> FileReadBuilder<FileRead<Option<U>>>
 where
-    FileRead<U>: TryFromResponse,
-    FileReadIfNoneMatch<U>: TryFromResponse,
+    FileRead<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> FileReadBuilder<FileReadIfNoneMatch<Bytes>> {
+    pub fn binary(self) -> FileReadBuilder<FileRead<Option<Bytes>>> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -206,7 +189,7 @@ where
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileReadIfNoneMatch<Box<str>>> {
+    pub fn text(self) -> FileReadBuilder<FileRead<Option<Box<str>>>> {
         FileReadBuilder {
             base_url: self.base_url,
             client: self.client,
