@@ -4,8 +4,6 @@
 //!
 //! The (work in progress) Rust z/OSMF Client.
 
-pub use crate::error::Error;
-
 pub mod error;
 
 #[cfg(feature = "datasets")]
@@ -15,13 +13,19 @@ pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
+pub use crate::error::Error;
+
+#[cfg(any(feature = "datasets", feature = "files"))]
 mod restfiles;
 mod utils;
 
 use std::sync::Arc;
 
+#[cfg(feature = "datasets")]
 use datasets::DatasetsClient;
+#[cfg(feature = "files")]
 use files::FilesClient;
+#[cfg(feature = "jobs")]
 use jobs::JobsClient;
 
 /// # ZOsmf
