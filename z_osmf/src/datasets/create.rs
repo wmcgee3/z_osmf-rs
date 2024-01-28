@@ -23,7 +23,10 @@ impl TryFromResponse for DatasetCreate {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
-pub struct DatasetCreateBuilder<T> {
+pub struct DatasetCreateBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -70,15 +73,6 @@ pub struct DatasetCreateBuilder<T> {
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetCreateBuilder<T>
-where
-    T: TryFromResponse,
-{
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
-}
-
 #[derive(Clone, Debug, Default, Serialize)]
 struct RequestJson<'a> {
     #[serde(rename = "volser", skip_serializing_if = "Option::is_none")]
@@ -118,7 +112,10 @@ struct RequestJson<'a> {
 fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &DatasetCreateBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let DatasetCreateBuilder {
         volume,
         device_type,

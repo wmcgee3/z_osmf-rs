@@ -161,7 +161,10 @@ impl Serialize for Volume {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<T> {
+pub struct DatasetListBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: Client,
 
@@ -227,10 +230,6 @@ where
             target_type: PhantomData,
         }
     }
-
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -270,7 +269,10 @@ struct ResponseJson<T> {
 fn build_attributes<T>(
     request_builder: RequestBuilder,
     list_builder: &DatasetListBuilder<T>,
-) -> RequestBuilder {
+) -> RequestBuilder
+where
+    T: TryFromResponse,
+{
     match (list_builder.attributes, list_builder.include_total) {
         (None, false) => request_builder,
         (None, true) => request_builder.header("X-IBM-Attributes", "dsname,total"),

@@ -35,6 +35,10 @@ pub fn derive_endpoint(input: TokenStream) -> TokenStream {
             #( #setter_fns )*
 
             #get_response_fn
+
+            pub async fn build(self) -> Result<T, crate::error::Error> {
+                self.get_response().await?.try_into_target().await
+            }
         }
     }
     .into()

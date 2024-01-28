@@ -55,7 +55,10 @@ pub struct FileAttributes {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
-pub struct FileListBuilder<T> {
+pub struct FileListBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -90,15 +93,6 @@ pub struct FileListBuilder<T> {
     target_type: PhantomData<T>,
 }
 
-impl<T> FileListBuilder<T>
-where
-    T: TryFromResponse,
-{
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileSys {
@@ -126,7 +120,10 @@ struct ResponseJson {
 fn build_lstat<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &FileListBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.lstat {
         request_builder = request_builder.header("X-IBM-Lstat", "true");
     }

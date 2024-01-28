@@ -18,7 +18,6 @@ use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::restfiles::{NoEtag, Text};
 
 /// # DatasetsClient
 ///
@@ -253,7 +252,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<Text, NoEtag> {
+    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
@@ -278,8 +277,6 @@ impl DatasetsClient {
         DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 }
-
-pub struct Record;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum DataType {

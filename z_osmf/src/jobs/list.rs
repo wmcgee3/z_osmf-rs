@@ -26,7 +26,10 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct JobsListBuilder<T> {
+pub struct JobsListBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -76,16 +79,15 @@ where
             target_type: PhantomData,
         }
     }
-
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
 }
 
 fn build_active_only<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &JobsListBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.active_only {
         request_builder = request_builder.query(&[("status", "active")]);
     }
@@ -96,7 +98,10 @@ fn build_active_only<T>(
 fn build_exec_data<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &JobsListBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.exec_data {
         request_builder = request_builder.query(&[("exec-data", "Y")]);
     }
@@ -104,7 +109,10 @@ fn build_exec_data<T>(
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: JobsListBuilder<T>, value: Box<str>) -> JobsListBuilder<T> {
+fn set_subsystem<T>(mut builder: JobsListBuilder<T>, value: Box<str>) -> JobsListBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.subsystem = format!("/-{}", value).into();
 
     builder

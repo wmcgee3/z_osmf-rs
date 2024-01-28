@@ -30,7 +30,10 @@ impl TryFromResponse for DatasetWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetWriteBuilder<T> {
+pub struct DatasetWriteBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -96,16 +99,15 @@ where
             ..self
         }
     }
-
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
 }
 
 fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &DatasetWriteBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let key = "X-IBM-Data-Type";
     let DatasetWriteBuilder {
         data,
@@ -144,7 +146,10 @@ fn build_data<T>(
 fn build_release_enq<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &DatasetWriteBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.release_enq {
         request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
     }
@@ -152,13 +157,19 @@ fn build_release_enq<T>(
     request_builder
 }
 
-fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T> {
+fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.member = format!("({})", value).into();
 
     builder
 }
 
-fn set_volume<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T> {
+fn set_volume<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.volume = format!("-({})/", value).into();
 
     builder

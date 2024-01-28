@@ -97,7 +97,10 @@ pub struct MemberName {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct MemberListBuilder<T> {
+pub struct MemberListBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -153,10 +156,6 @@ where
             target_type: PhantomData,
         }
     }
-
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -194,7 +193,10 @@ struct ResponseJson<T> {
 fn build_attributes<T>(
     request_builder: reqwest::RequestBuilder,
     member_list_builder: &MemberListBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let MemberListBuilder {
         attributes,
         include_total,

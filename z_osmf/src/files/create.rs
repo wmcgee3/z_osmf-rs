@@ -31,7 +31,10 @@ pub enum FileType {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileCreateBuilder<T> {
+pub struct FileCreateBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -50,15 +53,6 @@ pub struct FileCreateBuilder<T> {
     target_type: PhantomData<T>,
 }
 
-impl<T> FileCreateBuilder<T>
-where
-    T: TryFromResponse,
-{
-    pub async fn build(self) -> Result<FileCreate, Error> {
-        self.get_response().await?.try_into_target().await
-    }
-}
-
 #[derive(Serialize)]
 struct RequestJson<'a> {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
@@ -70,7 +64,10 @@ struct RequestJson<'a> {
 fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &FileCreateBuilder<T>,
-) -> RequestBuilder {
+) -> RequestBuilder
+where
+    T: TryFromResponse,
+{
     let FileCreateBuilder {
         file_type, mode, ..
     } = builder;

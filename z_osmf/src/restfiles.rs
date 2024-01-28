@@ -1,13 +1,5 @@
 use crate::error::Error;
 
-// data type PhantomData markers
-pub struct Binary;
-pub struct Text;
-
-// etag PhantomData markers
-pub struct Etag;
-pub struct NoEtag;
-
 pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
     Ok(response
         .headers()

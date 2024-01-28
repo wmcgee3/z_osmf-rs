@@ -3,13 +3,12 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::TryFromResponse;
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::files::DataType;
-use crate::restfiles::{get_etag, get_transaction_id, Binary, Etag, NoEtag, Text};
+use crate::restfiles::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
@@ -52,10 +51,8 @@ pub enum FileReadIfNoneMatch<T> {
     NotModified(FileReadNotModified),
 }
 
-impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Bytes> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileReadIfNoneMatch<Bytes> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         if value.status() == 304 {
             let transaction_id = get_transaction_id(&value)?;
 
@@ -65,7 +62,7 @@ impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Bytes> {
         }
 
         let (etag, transaction_id) = get_headers(&value)?;
-        let data = Handle::current().block_on(value.bytes())?;
+        let data = value.bytes().await?;
 
         Ok(FileReadIfNoneMatch::Modified(FileRead {
             data,
@@ -75,10 +72,8 @@ impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Bytes> {
     }
 }
 
-impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Box<str>> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileReadIfNoneMatch<Box<str>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         if value.status() == 304 {
             let transaction_id = get_transaction_id(&value)?;
 
@@ -88,7 +83,7 @@ impl TryFrom<reqwest::Response> for FileReadIfNoneMatch<Box<str>> {
         }
 
         let (etag, transaction_id) = get_headers(&value)?;
-        let data = Handle::current().block_on(value.text())?.into();
+        let data = value.text().await?.into();
 
         Ok(FileReadIfNoneMatch::Modified(FileRead {
             data,
@@ -105,7 +100,10 @@ pub struct FileReadNotModified {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileReadBuilder<T> {
+pub struct FileReadBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -130,22 +128,44 @@ pub struct FileReadBuilder<T> {
     target_type: PhantomData<T>,
 }
 
-impl<T> FileReadBuilder<T> {
+impl<U> FileReadBuilder<FileRead<U>>
+where
+    FileRead<U>: TryFromResponse,
+    FileReadIfNoneMatch<U>: TryFromResponse,
+{
     pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
         FileReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            path: self.path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
             data_type: Some(DataType::Binary),
-            ..self
+            encoding: self.encoding,
+            etag: self.etag,
+            target_type: PhantomData,
         }
     }
 
     pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            path: self.path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
             data_type: Some(DataType::Text),
-            ..self
+            encoding: self.encoding,
+            etag: self.etag,
+            target_type: PhantomData,
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<T, Etag>
+    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<FileReadIfNoneMatch<U>>
     where
         E: Into<Box<str>>,
     {
@@ -160,25 +180,56 @@ impl<T> FileReadBuilder<T> {
             data_type: self.data_type,
             encoding: self.encoding,
             etag: Some(etag.into()),
-            data_type_marker: self.data_type_marker,
-            if_none_match_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 }
 
-impl<T> FileReadBuilder<T>
+impl<U> FileReadBuilder<FileReadIfNoneMatch<U>>
 where
-    T: TryFromResponse,
+    FileRead<U>: TryFromResponse,
+    FileReadIfNoneMatch<U>: TryFromResponse,
 {
-    pub async fn build(self) -> Result<FileRead<Bytes>, Error> {
-        self.get_response().await?.try_into_target().await
+    pub fn binary(self) -> FileReadBuilder<FileReadIfNoneMatch<Bytes>> {
+        FileReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            path: self.path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
+            data_type: Some(DataType::Binary),
+            encoding: self.encoding,
+            etag: self.etag,
+            target_type: PhantomData,
+        }
+    }
+
+    pub fn text(self) -> FileReadBuilder<FileReadIfNoneMatch<Box<str>>> {
+        FileReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            path: self.path,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
+            data_type: Some(DataType::Text),
+            encoding: self.encoding,
+            etag: self.etag,
+            target_type: PhantomData,
+        }
     }
 }
 
-fn build_data_type<T, I>(
+fn build_data_type<T>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T, I>,
-) -> reqwest::RequestBuilder {
+    dataset_read_builder: &FileReadBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let FileReadBuilder {
         data_type,
         encoding,
@@ -199,10 +250,13 @@ fn build_data_type<T, I>(
     }
 }
 
-fn build_search<T, I>(
+fn build_search<T>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T, I>,
-) -> reqwest::RequestBuilder {
+    dataset_read_builder: &FileReadBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let FileReadBuilder {
         search_pattern,
         search_is_regex,

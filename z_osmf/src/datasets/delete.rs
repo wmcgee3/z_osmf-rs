@@ -22,7 +22,10 @@ impl TryFromResponse for DatasetDelete {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetDeleteBuilder<T> {
+pub struct DatasetDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -39,21 +42,19 @@ pub struct DatasetDeleteBuilder<T> {
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetDeleteBuilder<T> {
-    pub async fn build(self) -> Result<DatasetDelete, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into_target().await
-    }
-}
-
-fn set_volume<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T> {
+fn set_volume<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.volume = format!("-({})/", value).into();
 
     builder
 }
 
-fn set_member<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T> {
+fn set_member<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.member = format!("({})", value).into();
 
     builder

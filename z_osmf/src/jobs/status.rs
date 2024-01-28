@@ -4,14 +4,16 @@ use std::sync::Arc;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
-use crate::error::Error;
 use crate::jobs::{Identifier, JobData};
 
 use super::{JobExecData, JobExecStepData, JobStepData};
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct JobStatusBuilder<T> {
+pub struct JobStatusBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -28,15 +30,6 @@ pub struct JobStatusBuilder<T> {
 
     #[endpoint(optional, skip_builder, skip_setter)]
     target_type: PhantomData<T>,
-}
-
-impl<T> JobStatusBuilder<T>
-where
-    T: TryFromResponse,
-{
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
 }
 
 impl JobStatusBuilder<JobData> {
@@ -100,7 +93,10 @@ impl JobStatusBuilder<JobStepData> {
 fn build_exec_data<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &JobStatusBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.step_data {
         request_builder = request_builder.query(&[("exec-data", "Y")]);
     }
@@ -111,7 +107,10 @@ fn build_exec_data<T>(
 fn build_step_data<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &JobStatusBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.step_data {
         request_builder = request_builder.query(&[("step-data", "Y")]);
     }
@@ -119,7 +118,10 @@ fn build_step_data<T>(
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: JobStatusBuilder<T>, value: Box<str>) -> JobStatusBuilder<T> {
+fn set_subsystem<T>(mut builder: JobStatusBuilder<T>, value: Box<str>) -> JobStatusBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.subsystem = format!("-{}/", value).into();
 
     builder

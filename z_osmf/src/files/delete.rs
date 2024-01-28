@@ -22,7 +22,10 @@ impl TryFromResponse for FileDelete {
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileDeleteBuilder<T> {
+pub struct FileDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -35,19 +38,13 @@ pub struct FileDeleteBuilder<T> {
     target_type: PhantomData<T>,
 }
 
-impl<T> FileDeleteBuilder<T>
-where
-    T: TryFromResponse,
-{
-    pub async fn build(self) -> Result<T, Error> {
-        self.get_response().await?.try_into_target().await
-    }
-}
-
 fn build_recursive<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &FileDeleteBuilder<T>,
-) -> reqwest::RequestBuilder {
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.recursive {
         request_builder = request_builder.header("X-IBM-Option", "recursive");
     }

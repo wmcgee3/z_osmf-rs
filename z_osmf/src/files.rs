@@ -12,8 +12,6 @@ pub use self::write::*;
 
 use std::sync::Arc;
 
-use crate::restfiles::{NoEtag, Text};
-
 #[derive(Clone, Debug)]
 pub struct FilesClient {
     base_url: Arc<str>,
@@ -144,7 +142,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, path: &str) -> FileReadBuilder<Text, NoEtag> {
+    pub fn read(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -163,7 +161,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, path: &str) -> FileWriteBuilder<String, Text> {
+    pub fn write(&self, path: &str) -> FileWriteBuilder<FileWrite> {
         FileWriteBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 }
