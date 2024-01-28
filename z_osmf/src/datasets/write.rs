@@ -39,13 +39,13 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_volume")]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_member")]
+    #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
     #[endpoint(optional, header = "If-Match")]
     if_match: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_data")]
+    #[endpoint(optional, skip_setter, builder_fn = build_data)]
     data: Option<Data>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
@@ -57,7 +57,7 @@ where
     obtain_enq: Option<ObtainEnq>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = "build_release_enq")]
+    #[endpoint(optional, builder_fn = build_release_enq)]
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,

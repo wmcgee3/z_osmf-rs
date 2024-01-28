@@ -64,7 +64,7 @@ where
 
     #[endpoint(query = "path")]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = "build_lstat")]
+    #[endpoint(optional, builder_fn = build_lstat)]
     lstat: bool,
     #[endpoint(optional, query = "group")]
     group: Option<Box<str>>,

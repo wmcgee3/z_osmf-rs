@@ -31,9 +31,9 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_volume")]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_member")]
+    #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,

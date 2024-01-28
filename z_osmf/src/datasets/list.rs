@@ -176,7 +176,7 @@ where
     start: Option<Box<str>>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]
+    #[endpoint(optional, skip_setter, builder_fn = build_attributes)]
     attributes: Option<Attrs>,
     #[endpoint(optional, skip_builder)]
     include_total: bool,

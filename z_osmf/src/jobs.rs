@@ -1,7 +1,11 @@
 pub mod list;
+pub mod list_files;
+pub mod read_file;
 pub mod status;
 
 pub use self::list::*;
+pub use self::list_files::*;
+pub use self::read_file::*;
 pub use self::status::*;
 
 use std::sync::Arc;
@@ -24,26 +28,6 @@ impl JobsClient {
 
     /// # Examples
     ///
-    /// List jobs with exec-data by owner and prefix:
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_jobs = zosmf
-    ///     .jobs()
-    ///     .list()
-    ///     .owner("IBMUSER")
-    ///     .prefix("TESTJOB*")
-    ///     .exec_data()
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn list(&self) -> JobsListBuilder<JobsList<JobData>> {
-        JobsListBuilder::new(self.base_url.clone(), self.client.clone())
-    }
-
-    /// # Examples
-    ///
     /// Obtain the status of the job BLSJPRMI, job ID STC00052:
     /// ```
     /// # use z_osmf::jobs::Identifier;
@@ -61,6 +45,104 @@ impl JobsClient {
     /// ```
     pub fn status(&self, identifier: Identifier) -> JobStatusBuilder<JobData> {
         JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    }
+
+    /// # Examples
+    ///
+    /// List jobs with exec-data by owner and prefix:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let job_list = zosmf
+    ///     .jobs()
+    ///     .list()
+    ///     .owner("IBMUSER")
+    ///     .prefix("TESTJOB*")
+    ///     .exec_data()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list(&self) -> JobsListBuilder<JobsList<JobData>> {
+        JobsListBuilder::new(self.base_url.clone(), self.client.clone())
+    }
+
+    /// # Examples
+    ///
+    /// List the spool files for job TESTJOB1 with ID JOB00023:
+    /// ```
+    /// # use z_osmf::jobs::Identifier;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = Identifier::NameId("TESTJOB1".into(), "JOB00023".into());
+    ///
+    /// let job_files = zosmf
+    ///     .jobs()
+    ///     .list_files(identifier)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list_files(&self, identifier: Identifier) -> JobsFileListBuilder<JobsFileList> {
+        JobsFileListBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    }
+
+    /// # Examples
+    ///
+    /// Read file 1 for job TESTJOBJ with ID JOB00023:
+    /// ```
+    /// # use z_osmf::jobs::{Identifier, JobFileID};
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let file_id = JobFileID::ID(1);
+    ///
+    /// let job_file = zosmf
+    ///     .jobs()
+    ///     .read_file(identifier, file_id)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Read a range of records (the first 250) of file 8 for job TESTJOBJ with ID JOB00023:
+    /// ```
+    /// # use z_osmf::jobs::{Identifier, JobFileID};
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let file_id = JobFileID::ID(8);
+    ///
+    /// let job_file = zosmf
+    ///     .jobs()
+    ///     .read_file(identifier, file_id)
+    ///     .record_range("0-249")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Read the JCL for job TESTJOBJ with ID JOB00060:
+    /// ```
+    /// # use z_osmf::jobs::{Identifier, JobFileID};
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let file_id = JobFileID::JCL;
+    ///
+    /// let job_file = zosmf
+    ///     .jobs()
+    ///     .read_file(identifier, file_id)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn read_file(
+        &self,
+        identifier: Identifier,
+        id: JobFileID,
+    ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
+        JobFileReadBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
     }
 }
 
@@ -210,6 +292,7 @@ impl TryFromResponse for JobStepData {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum Identifier {
     NameId(Box<str>, Box<str>),
     Correlator(Box<str>),

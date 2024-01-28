@@ -93,7 +93,7 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, query = "search", builder_fn = "build_search")]
+    #[endpoint(optional, query = "search", builder_fn = build_search)]
     search_pattern: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     search_is_regex: bool,
@@ -101,7 +101,7 @@ where
     search_case_sensitive: bool,
     #[endpoint(optional, skip_builder)]
     search_max_return: Option<i32>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
+    #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,

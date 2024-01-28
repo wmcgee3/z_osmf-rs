@@ -41,7 +41,7 @@ where
     #[endpoint(path)]
     path: Box<str>,
 
-    #[endpoint(optional, skip_setter, builder_fn = "build_json")]
+    #[endpoint(optional, skip_setter, builder_fn = build_json)]
     json: PhantomData<RequestJson<'static>>,
 
     #[endpoint(optional, skip_builder)]

@@ -33,7 +33,7 @@ where
     base_url: Arc<str>,
     client: reqwest::Client,
 
-    #[endpoint(optional, path, setter_fn = "set_subsystem")]
+    #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(optional, query = "owner")]
     owner: Option<Box<str>>,
@@ -45,9 +45,9 @@ where
     max_jobs: Option<i32>,
     #[endpoint(optional, query = "user-correlator")]
     user_correlator: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_exec_data")]
+    #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
     exec_data: bool,
-    #[endpoint(optional, skip_setter, builder_fn = "build_active_only")]
+    #[endpoint(optional, skip_setter, builder_fn = build_active_only)]
     active_only: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]

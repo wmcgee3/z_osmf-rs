@@ -98,11 +98,11 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_volume")]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_member")]
+    #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
-    #[endpoint(optional, query = "search", builder_fn = "build_search")]
+    #[endpoint(optional, query = "search", builder_fn = build_search)]
     search_pattern: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     search_is_regex: bool,
@@ -112,11 +112,11 @@ where
     search_max_return: Option<i32>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
     if_none_match: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
+    #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = "build_return_etag")]
+    #[endpoint(optional, builder_fn = build_return_etag)]
     return_etag: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
@@ -124,7 +124,7 @@ where
     obtain_enq: Option<ObtainEnq>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = "build_release_enq")]
+    #[endpoint(optional, builder_fn = build_release_enq)]
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,

@@ -41,7 +41,7 @@ where
 
     #[endpoint(optional, skip_builder)]
     crlf_newlines: bool,
-    #[endpoint(optional, skip_setter, builder_fn = "build_data")]
+    #[endpoint(optional, skip_setter, builder_fn = build_data)]
     data: Option<Data>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,

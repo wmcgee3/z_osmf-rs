@@ -17,13 +17,13 @@ where
     base_url: Arc<str>,
     client: reqwest::Client,
 
-    #[endpoint(optional, path, setter_fn = "set_subsystem")]
+    #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
     identifier: Identifier,
-    #[endpoint(optional, skip_setter, builder_fn = "build_exec_data")]
+    #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
     exec_data: bool,
-    #[endpoint(optional, skip_setter, builder_fn = "build_step_data")]
+    #[endpoint(optional, skip_setter, builder_fn = build_step_data)]
     step_data: bool,
     #[endpoint(optional, query = "user-correlator")]
     user_correlator: Option<Box<str>>,

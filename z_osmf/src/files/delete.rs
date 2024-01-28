@@ -31,7 +31,7 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = "build_recursive")]
+    #[endpoint(optional, builder_fn = build_recursive)]
     recursive: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]
