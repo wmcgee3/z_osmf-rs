@@ -30,14 +30,35 @@ impl JobsClient {
     ///     .list()
     ///     .owner("IBMUSER")
     ///     .prefix("TESTJOB*")
-    ///     .exec_data(true)
+    ///     .exec_data()
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self) -> JobsListBuilder {
+    pub fn list(&self) -> JobsListBuilder<JobData> {
         JobsListBuilder::new(self.base_url.clone(), self.client.clone())
+    }
+
+    /// # Examples
+    ///
+    /// Obtain the status of the job BLSJPRMI, job ID STC00052:
+    /// ```
+    /// # use z_osmf::jobs::Identifier;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = Identifier::NameId("BLSJPRMI".into(), "STC00052".into());
+    ///
+    /// let job_status = zosmf
+    ///     .jobs()
+    ///     .status(identifier)
+    ///     .exec_data()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn status(&self, identifier: Identifier) -> JobStatusBuilder<JobData> {
+        JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
 }
 

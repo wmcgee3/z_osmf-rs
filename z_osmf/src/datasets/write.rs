@@ -5,9 +5,9 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::datasets::{DataType, MigratedRecall, ObtainEnq};
+use crate::datasets::{DataType, MigratedRecall, ObtainEnq, Record};
 use crate::error::Error;
-use crate::restfiles::{get_etag, get_transaction_id, Binary, Record, Text};
+use crate::restfiles::{get_etag, get_transaction_id, Binary, Text};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetWrite {

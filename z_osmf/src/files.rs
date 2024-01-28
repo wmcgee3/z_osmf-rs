@@ -9,9 +9,10 @@ pub use crate::files::delete::*;
 pub use crate::files::list::*;
 pub use crate::files::read::*;
 pub use crate::files::write::*;
-pub use crate::restfiles::{Binary, Etag, NoEtag, Text};
 
 use std::sync::Arc;
+
+use crate::restfiles::{NoEtag, Text};
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {

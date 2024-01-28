@@ -1,9 +1,10 @@
 use crate::error::Error;
 
+// data type PhantomData markers
 pub struct Binary;
-pub struct Record;
 pub struct Text;
 
+// etag PhantomData markers
 pub struct Etag;
 pub struct NoEtag;
 

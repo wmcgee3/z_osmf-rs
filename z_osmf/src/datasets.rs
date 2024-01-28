@@ -11,7 +11,6 @@ pub use crate::datasets::list::*;
 pub use crate::datasets::list_members::*;
 pub use crate::datasets::read::*;
 pub use crate::datasets::write::*;
-pub use crate::restfiles::{Binary, Etag, NoEtag, Record, Text};
 
 use std::sync::Arc;
 
@@ -19,6 +18,7 @@ use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
+use crate::restfiles::{NoEtag, Text};
 
 /// # DatasetsClient
 ///
@@ -278,6 +278,8 @@ impl DatasetsClient {
         DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 }
+
+pub struct Record;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum DataType {
