@@ -5,8 +5,8 @@ use bytes::Bytes;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::error::Error;
-use crate::restfiles::{Binary, DataType, Text};
-use crate::utils::{get_etag, get_transaction_id};
+use crate::files::DataType;
+use crate::restfiles::{get_etag, get_transaction_id, Binary, Text};
 
 #[derive(Clone, Debug, Getters)]
 pub struct FileWrite {

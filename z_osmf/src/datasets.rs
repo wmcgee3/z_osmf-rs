@@ -5,18 +5,20 @@ pub mod list_members;
 pub mod read;
 pub mod write;
 
-pub use create::*;
-pub use delete::*;
-pub use list::*;
-pub use list_members::*;
-pub use read::*;
-pub use write::*;
-
-mod utils;
+pub use crate::datasets::create::*;
+pub use crate::datasets::delete::*;
+pub use crate::datasets::list::*;
+pub use crate::datasets::list_members::*;
+pub use crate::datasets::read::*;
+pub use crate::datasets::write::*;
+pub use crate::restfiles::{Binary, Etag, NoEtag, Record, Text};
 
 use std::sync::Arc;
 
-use crate::restfiles::{NoEtag, Text};
+use reqwest::header::HeaderValue;
+use serde::{Deserialize, Serialize};
+
+use crate::error::Error;
 
 /// # DatasetsClient
 ///
@@ -275,4 +277,71 @@ impl DatasetsClient {
     pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<String, Text> {
         DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum DataType {
+    Binary,
+    Record,
+    #[default]
+    Text,
+}
+
+impl std::fmt::Display for DataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                DataType::Binary => "binary",
+                DataType::Record => "record",
+                DataType::Text => "text",
+            }
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum MigratedRecall {
+    Error,
+    NoWait,
+    Wait,
+}
+
+impl From<MigratedRecall> for HeaderValue {
+    fn from(val: MigratedRecall) -> HeaderValue {
+        match val {
+            MigratedRecall::Error => "error",
+            MigratedRecall::NoWait => "nowait",
+            MigratedRecall::Wait => "wait",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum ObtainEnq {
+    Exclusive,
+    SharedReadWrite,
+}
+
+impl From<ObtainEnq> for HeaderValue {
+    fn from(val: ObtainEnq) -> HeaderValue {
+        match val {
+            ObtainEnq::Exclusive => "EXCLU",
+            ObtainEnq::SharedReadWrite => "SHRW",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
+pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
+    Ok(response
+        .headers()
+        .get("X-IBM-Session-Ref")
+        .map(|v| v.to_str())
+        .transpose()?
+        .map(|v| v.into()))
 }

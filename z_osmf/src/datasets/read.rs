@@ -6,10 +6,9 @@ use serde::{Deserialize, Serialize};
 use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::datasets::utils::{MigratedRecall, ObtainEnq};
+use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq};
 use crate::error::Error;
-use crate::restfiles::{Binary, DataType, Etag, NoEtag, Record, Text};
-use crate::utils::{get_etag, get_session_ref, get_transaction_id};
+use crate::restfiles::{get_etag, get_transaction_id, Binary, Etag, NoEtag, Record, Text};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {

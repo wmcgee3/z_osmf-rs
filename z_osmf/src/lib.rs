@@ -6,7 +6,6 @@
 
 pub use crate::error::Error;
 
-pub mod restfiles;
 pub mod error;
 
 #[cfg(feature = "datasets")]
@@ -16,6 +15,7 @@ pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
+mod restfiles;
 mod utils;
 
 use std::sync::Arc;

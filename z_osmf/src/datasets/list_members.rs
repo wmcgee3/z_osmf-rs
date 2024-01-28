@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::datasets::utils::MigratedRecall;
+use crate::datasets::MigratedRecall;
 use crate::error::Error;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
 

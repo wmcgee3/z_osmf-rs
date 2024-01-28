@@ -1,34 +1,4 @@
-use reqwest::Response;
 use serde::Deserialize;
-
-use crate::error::Error;
-
-pub(crate) fn get_etag(response: &Response) -> Result<Option<Box<str>>, Error> {
-    Ok(response
-        .headers()
-        .get("Etag")
-        .map(|v| v.to_str())
-        .transpose()?
-        .map(|v| v.into()))
-}
-
-pub(crate) fn get_session_ref(response: &Response) -> Result<Option<Box<str>>, Error> {
-    Ok(response
-        .headers()
-        .get("X-IBM-Session-Ref")
-        .map(|v| v.to_str())
-        .transpose()?
-        .map(|v| v.into()))
-}
-
-pub(crate) fn get_transaction_id(response: &Response) -> Result<Box<str>, Error> {
-    Ok(response
-        .headers()
-        .get("X-IBM-Txid")
-        .ok_or(Error::MissingTransactionId)?
-        .to_str()?
-        .into())
-}
 
 pub(crate) fn de_yes_no<'de, D>(deserializer: D) -> core::result::Result<bool, D::Error>
 where

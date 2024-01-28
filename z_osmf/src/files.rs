@@ -4,15 +4,14 @@ pub mod list;
 pub mod read;
 pub mod write;
 
-pub use create::*;
-pub use delete::*;
-pub use list::*;
-pub use read::*;
-pub use write::*;
+pub use crate::files::create::*;
+pub use crate::files::delete::*;
+pub use crate::files::list::*;
+pub use crate::files::read::*;
+pub use crate::files::write::*;
+pub use crate::restfiles::{Binary, Etag, NoEtag, Text};
 
 use std::sync::Arc;
-
-use crate::restfiles::{NoEtag, Text};
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {
@@ -165,5 +164,25 @@ impl FilesClient {
     /// ```
     pub fn write(&self, path: &str) -> FileWriteBuilder<String, Text> {
         FileWriteBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum DataType {
+    Binary,
+    #[default]
+    Text,
+}
+
+impl std::fmt::Display for DataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                DataType::Binary => "binary",
+                DataType::Text => "text",
+            }
+        )
     }
 }

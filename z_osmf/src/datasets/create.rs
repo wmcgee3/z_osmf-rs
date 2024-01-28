@@ -5,7 +5,7 @@ use serde::Serialize;
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::error::Error;
-use crate::utils::get_transaction_id;
+use crate::restfiles::get_transaction_id;
 
 #[derive(Clone, Debug, Getters)]
 pub struct DatasetCreate {
