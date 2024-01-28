@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::files::DataType;
 use crate::restfiles::{get_etag, get_transaction_id, Binary, Etag, NoEtag, Text};
@@ -17,13 +18,11 @@ pub struct FileRead<T> {
     transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for FileRead<Bytes> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileRead<Bytes> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
-        let data = Handle::current().block_on(value.bytes())?;
+        let data = value.bytes().await?;
 
         Ok(FileRead {
             data,
@@ -33,13 +32,11 @@ impl TryFrom<reqwest::Response> for FileRead<Bytes> {
     }
 }
 
-impl TryFrom<reqwest::Response> for FileRead<Box<str>> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileRead<Box<str>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
-        let data = Handle::current().block_on(value.text())?.into();
+        let data = value.text().await?.into();
 
         Ok(FileRead {
             data,
@@ -108,7 +105,7 @@ pub struct FileReadNotModified {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileReadBuilder<T, I> {
+pub struct FileReadBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -128,44 +125,23 @@ pub struct FileReadBuilder<T, I> {
     encoding: Option<Box<str>>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
     etag: Option<Box<str>>,
+
     #[endpoint(optional, skip_setter, skip_builder)]
-    data_type_marker: PhantomData<T>,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    if_none_match_marker: PhantomData<I>,
+    target_type: PhantomData<T>,
 }
 
-impl<T, I> FileReadBuilder<T, I> {
-    pub fn binary(self) -> FileReadBuilder<Binary, I> {
+impl<T> FileReadBuilder<T> {
+    pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
-            search_case_sensitive: self.search_case_sensitive,
-            search_max_return: self.search_max_return,
             data_type: Some(DataType::Binary),
-            encoding: self.encoding,
-            etag: self.etag,
-            data_type_marker: PhantomData,
-            if_none_match_marker: self.if_none_match_marker,
+            ..self
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<Text, I> {
+    pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
-            search_case_sensitive: self.search_case_sensitive,
-            search_max_return: self.search_max_return,
             data_type: Some(DataType::Text),
-            encoding: self.encoding,
-            etag: self.etag,
-            data_type_marker: PhantomData,
-            if_none_match_marker: self.if_none_match_marker,
+            ..self
         }
     }
 
@@ -190,35 +166,12 @@ impl<T, I> FileReadBuilder<T, I> {
     }
 }
 
-impl FileReadBuilder<Binary, NoEtag> {
+impl<T> FileReadBuilder<T>
+where
+    T: TryFromResponse,
+{
     pub async fn build(self) -> Result<FileRead<Bytes>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-impl FileReadBuilder<Text, NoEtag> {
-    pub async fn build(self) -> Result<FileRead<Box<str>>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-impl FileReadBuilder<Binary, Etag> {
-    pub async fn build(self) -> Result<FileReadIfNoneMatch<Bytes>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-impl<'a> FileReadBuilder<Text, Etag> {
-    pub async fn build(self) -> Result<FileReadIfNoneMatch<Box<str>>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 

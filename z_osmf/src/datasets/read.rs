@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq, Record};
 use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id, Binary, Etag, NoEtag, Text};
@@ -18,13 +18,11 @@ pub struct DatasetRead<T> {
     transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for DatasetRead<Bytes> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetRead<Bytes> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let data = Handle::current().block_on(value.bytes())?;
+        let data = value.bytes().await?;
 
         Ok(DatasetRead {
             data,
@@ -35,15 +33,11 @@ impl TryFrom<reqwest::Response> for DatasetRead<Bytes> {
     }
 }
 
-impl TryFrom<reqwest::Response> for DatasetRead<Box<str>> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetRead<Box<str>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let rt = Handle::current();
-
-        let data = rt.block_on(value.text())?.into();
+        let data = value.text().await?.into();
 
         Ok(DatasetRead {
             data,
@@ -60,10 +54,8 @@ pub enum DatasetReadIfNoneMatch<T> {
     NotModified(DatasetReadNotModified),
 }
 
-impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Bytes> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetReadIfNoneMatch<Bytes> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         if value.status() == 304 {
             let transaction_id = get_transaction_id(&value)?;
 
@@ -74,9 +66,7 @@ impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Bytes> {
 
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let rt = Handle::current();
-
-        let data = rt.block_on(value.bytes())?;
+        let data = value.bytes().await?;
 
         Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
             data,
@@ -87,10 +77,8 @@ impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Bytes> {
     }
 }
 
-impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Box<str>> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetReadIfNoneMatch<Box<str>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         if value.status() == 304 {
             let transaction_id = get_transaction_id(&value)?;
 
@@ -101,9 +89,7 @@ impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Box<str>> {
 
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let rt = Handle::current();
-
-        let data = rt.block_on(value.text())?.into();
+        let data = value.text().await?.into();
 
         Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
             data,
@@ -271,49 +257,37 @@ impl<T, I> DatasetReadBuilder<T, I> {
 
 impl DatasetReadBuilder<Binary, NoEtag> {
     pub async fn build(self) -> Result<DatasetRead<Bytes>, Error> {
-        let response = self.get_response().await?.error_for_status()?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 
 impl DatasetReadBuilder<Record, NoEtag> {
     pub async fn build(self) -> Result<DatasetRead<Bytes>, Error> {
-        let response = self.get_response().await?.error_for_status()?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 
-impl<'a> DatasetReadBuilder<Text, NoEtag> {
+impl DatasetReadBuilder<Text, NoEtag> {
     pub async fn build(self) -> Result<DatasetRead<Box<str>>, Error> {
-        let response = self.get_response().await?.error_for_status()?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 
 impl DatasetReadBuilder<Binary, Etag> {
     pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Bytes>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 
 impl DatasetReadBuilder<Record, Etag> {
     pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Bytes>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 
-impl<'a> DatasetReadBuilder<Text, Etag> {
+impl DatasetReadBuilder<Text, Etag> {
     pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Box<str>>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 

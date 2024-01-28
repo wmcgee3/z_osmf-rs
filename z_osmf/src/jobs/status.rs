@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use serde::Deserialize;
 use z_osmf_macros::Endpoint;
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::jobs::{Identifier, JobData};
 
@@ -27,17 +27,15 @@ pub struct JobStatusBuilder<T> {
     user_correlator: Option<Box<str>>,
 
     #[endpoint(optional, skip_builder, skip_setter)]
-    job_data: PhantomData<T>,
+    target_type: PhantomData<T>,
 }
 
 impl<T> JobStatusBuilder<T>
 where
-    T: for<'de> Deserialize<'de>,
+    T: TryFromResponse,
 {
     pub async fn build(self) -> Result<T, Error> {
-        let response = self.get_response().await?;
-
-        Ok(response.json().await?)
+        self.get_response().await?.try_into_target().await
     }
 }
 
@@ -51,7 +49,7 @@ impl JobStatusBuilder<JobData> {
             exec_data: true,
             step_data: self.step_data,
             user_correlator: self.user_correlator,
-            job_data: PhantomData,
+            target_type: PhantomData,
         }
     }
 
@@ -64,7 +62,7 @@ impl JobStatusBuilder<JobData> {
             exec_data: self.exec_data,
             step_data: true,
             user_correlator: self.user_correlator,
-            job_data: PhantomData,
+            target_type: PhantomData,
         }
     }
 }
@@ -79,7 +77,7 @@ impl JobStatusBuilder<JobExecData> {
             exec_data: self.exec_data,
             step_data: true,
             user_correlator: self.user_correlator,
-            job_data: PhantomData,
+            target_type: PhantomData,
         }
     }
 }
@@ -94,7 +92,7 @@ impl JobStatusBuilder<JobStepData> {
             exec_data: true,
             step_data: self.step_data,
             user_correlator: self.user_correlator,
-            job_data: PhantomData,
+            target_type: PhantomData,
         }
     }
 }

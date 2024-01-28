@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::MigratedRecall;
 use crate::error::Error;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
@@ -18,20 +18,18 @@ pub struct MemberList<T> {
     total_rows: Option<i32>,
 }
 
-impl<T> TryFrom<reqwest::Response> for MemberList<T>
+impl<T> TryFromResponse for MemberList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let ResponseJson {
             items,
             returned_rows,
             more_rows,
             total_rows,
             json_version,
-        } = Handle::current().block_on(value.json())?;
+        } = value.json().await?;
 
         Ok(MemberList {
             items,
@@ -117,15 +115,16 @@ pub struct MemberListBuilder<T> {
     include_total: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
+
     #[endpoint(optional, skip_setter, skip_builder)]
-    attributes_marker: PhantomData<T>,
+    target_type: PhantomData<T>,
 }
 
 impl<T> MemberListBuilder<T>
 where
-    T: for<'de> Deserialize<'de>,
+    T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> MemberListBuilder<MembersBase> {
+    pub fn attributes_base(self) -> MemberListBuilder<MemberList<MembersBase>> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -136,11 +135,11 @@ where
             attributes: Some(Attrs::Base),
             include_total: self.include_total,
             migrated_recall: self.migrated_recall,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub fn attributes_member(self) -> MemberListBuilder<Box<[MemberName]>> {
+    pub fn attributes_member(self) -> MemberListBuilder<MemberList<MemberName>> {
         MemberListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -151,14 +150,12 @@ where
             attributes: Some(Attrs::Member),
             include_total: self.include_total,
             migrated_recall: self.migrated_recall,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub async fn build(self) -> Result<MemberList<T>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+    pub async fn build(self) -> Result<T, Error> {
+        self.get_response().await?.try_into_target().await
     }
 }
 

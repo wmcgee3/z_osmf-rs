@@ -1,13 +1,16 @@
 pub mod list;
 pub mod status;
 
-pub use list::*;
-pub use status::*;
-use z_osmf_macros::Getters;
+pub use self::list::*;
+pub use self::status::*;
 
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
+use z_osmf_macros::Getters;
+
+use crate::convert::TryFromResponse;
+use crate::error::Error;
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
@@ -36,7 +39,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self) -> JobsListBuilder<JobData> {
+    pub fn list(&self) -> JobsListBuilder<JobsList<JobData>> {
         JobsListBuilder::new(self.base_url.clone(), self.client.clone())
     }
 
@@ -90,6 +93,12 @@ impl JobData {
     }
 }
 
+impl TryFromResponse for JobData {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        Ok(value.json().await?)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecData {
@@ -119,6 +128,12 @@ pub struct JobExecData {
 impl JobExecData {
     pub fn identifier(&self) -> Identifier {
         Identifier::NameId(self.name().into(), self.id().into())
+    }
+}
+
+impl TryFromResponse for JobExecData {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        Ok(value.json().await?)
     }
 }
 
@@ -155,6 +170,12 @@ impl JobExecStepData {
     }
 }
 
+impl TryFromResponse for JobExecStepData {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        Ok(value.json().await?)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobStepData {
@@ -181,6 +202,12 @@ pub struct JobStepData {
 impl JobStepData {
     pub fn identifier(&self) -> Identifier {
         Identifier::NameId(self.name().into(), self.id().into())
+    }
+}
+
+impl TryFromResponse for JobStepData {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        Ok(value.json().await?)
     }
 }
 

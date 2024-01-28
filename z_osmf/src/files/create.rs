@@ -5,6 +5,7 @@ use reqwest::RequestBuilder;
 use serde::Serialize;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::restfiles::get_transaction_id;
 
@@ -13,10 +14,8 @@ pub struct FileCreate {
     transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for FileCreate {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileCreate {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         Ok(FileCreate { transaction_id })
@@ -32,7 +31,7 @@ pub enum FileType {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileCreateBuilder {
+pub struct FileCreateBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -46,13 +45,17 @@ pub struct FileCreateBuilder {
     file_type: Option<FileType>,
     #[endpoint(optional, skip_builder)]
     mode: Option<Box<str>>,
+
+    #[endpoint(optional, skip_setter, skip_builder)]
+    target_type: PhantomData<T>,
 }
 
-impl FileCreateBuilder {
+impl<T> FileCreateBuilder<T>
+where
+    T: TryFromResponse,
+{
     pub async fn build(self) -> Result<FileCreate, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+        self.get_response().await?.try_into_target().await
     }
 }
 
@@ -64,9 +67,9 @@ struct RequestJson<'a> {
     mode: Option<&'a str>,
 }
 
-fn build_json(
+fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileCreateBuilder,
+    builder: &FileCreateBuilder<T>,
 ) -> RequestBuilder {
     let FileCreateBuilder {
         file_type, mode, ..

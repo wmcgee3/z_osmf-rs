@@ -4,11 +4,11 @@ pub mod list;
 pub mod read;
 pub mod write;
 
-pub use crate::files::create::*;
-pub use crate::files::delete::*;
-pub use crate::files::list::*;
-pub use crate::files::read::*;
-pub use crate::files::write::*;
+pub use self::create::*;
+pub use self::delete::*;
+pub use self::list::*;
+pub use self::read::*;
+pub use self::write::*;
 
 use std::sync::Arc;
 
@@ -56,7 +56,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, path: &str) -> FileCreateBuilder {
+    pub fn create(&self, path: &str) -> FileCreateBuilder<FileCreate> {
         FileCreateBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -85,7 +85,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, path: &str) -> FileDeleteBuilder {
+    pub fn delete(&self, path: &str) -> FileDeleteBuilder<FileDelete> {
         FileDeleteBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -127,7 +127,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, path: &str) -> FileListBuilder {
+    pub fn list(&self, path: &str) -> FileListBuilder<FileList> {
         FileListBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 

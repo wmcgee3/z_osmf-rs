@@ -5,9 +5,10 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::datasets::{DataType, MigratedRecall, ObtainEnq, Record};
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::datasets::{MigratedRecall, ObtainEnq};
 use crate::error::Error;
-use crate::restfiles::{get_etag, get_transaction_id, Binary, Text};
+use crate::restfiles::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetWrite {
@@ -15,10 +16,8 @@ pub struct DatasetWrite {
     transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for DatasetWrite {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetWrite {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
         let transaction_id = get_transaction_id(&value)?;
 
@@ -31,10 +30,7 @@ impl TryFrom<reqwest::Response> for DatasetWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetWriteBuilder<D, T>
-where
-    D: Into<reqwest::Body> + Clone,
-{
+pub struct DatasetWriteBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -47,9 +43,7 @@ where
     #[endpoint(optional, header = "If-Match")]
     if_match: Option<Box<str>>,
     #[endpoint(optional, skip_setter, builder_fn = "build_data")]
-    data: Option<D>,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    data_type: DataType,
+    data: Option<Data>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
@@ -64,111 +58,66 @@ where
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,
+
     #[endpoint(optional, skip_setter, skip_builder)]
-    data_type_marker: PhantomData<T>,
+    target_type: PhantomData<T>,
 }
 
-impl<D, T> DatasetWriteBuilder<D, T>
+impl<T> DatasetWriteBuilder<T>
 where
-    D: Into<reqwest::Body> + Clone,
+    T: TryFromResponse,
 {
-    pub fn binary<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Binary>
+    pub fn binary<B>(self, data: B) -> Self
     where
         B: Into<Bytes>,
     {
         DatasetWriteBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            dataset_name: self.dataset_name,
-            volume: self.volume,
-            member: self.member,
-            if_match: self.if_match,
-            data_type: DataType::Binary,
-            data: Some(data.into()),
-            encoding: self.encoding,
-            crlf_newlines: self.crlf_newlines,
-            migrated_recall: self.migrated_recall,
-            obtain_enq: self.obtain_enq,
-            session_ref: self.session_ref,
-            release_enq: self.release_enq,
-            dsname_encoding: self.dsname_encoding,
-            data_type_marker: PhantomData,
+            data: Some(Data::Binary(data.into())),
+            ..self
         }
     }
 
-    pub fn record<B>(self, data: B) -> DatasetWriteBuilder<Bytes, Record>
+    pub fn record<B>(self, data: B) -> Self
     where
         B: Into<Bytes>,
     {
         DatasetWriteBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            dataset_name: self.dataset_name,
-            volume: self.volume,
-            member: self.member,
-            if_match: self.if_match,
-            data_type: DataType::Record,
-            data: Some(data.into()),
-            encoding: self.encoding,
-            crlf_newlines: self.crlf_newlines,
-            migrated_recall: self.migrated_recall,
-            obtain_enq: self.obtain_enq,
-            session_ref: self.session_ref,
-            release_enq: self.release_enq,
-            dsname_encoding: self.dsname_encoding,
-            data_type_marker: PhantomData,
+            data: Some(Data::Record(data.into())),
+            ..self
         }
     }
 
-    pub fn text<S>(self, data: S) -> DatasetWriteBuilder<String, Text>
+    pub fn text<S>(self, data: S) -> Self
     where
         S: ToString,
     {
         DatasetWriteBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            dataset_name: self.dataset_name,
-            volume: self.volume,
-            member: self.member,
-            if_match: self.if_match,
-            data_type: DataType::Text,
-            data: Some(data.to_string()),
-            encoding: self.encoding,
-            crlf_newlines: self.crlf_newlines,
-            migrated_recall: self.migrated_recall,
-            obtain_enq: self.obtain_enq,
-            session_ref: self.session_ref,
-            release_enq: self.release_enq,
-            dsname_encoding: self.dsname_encoding,
-            data_type_marker: PhantomData,
+            data: Some(Data::Text(data.to_string())),
+            ..self
         }
     }
 
-    pub async fn build(self) -> Result<DatasetWrite, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+    pub async fn build(self) -> Result<T, Error> {
+        self.get_response().await?.try_into_target().await
     }
 }
 
-fn build_data<D, T>(
+fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DatasetWriteBuilder<D, T>,
-) -> reqwest::RequestBuilder
-where
-    D: Into<reqwest::Body> + Clone,
-{
+    builder: &DatasetWriteBuilder<T>,
+) -> reqwest::RequestBuilder {
     let key = "X-IBM-Data-Type";
     let DatasetWriteBuilder {
-        data_type,
         data,
         encoding,
         crlf_newlines,
         ..
     } = builder;
 
-    request_builder = match (data_type, encoding, crlf_newlines) {
-        (&DataType::Text, encoding, crlf) => request_builder.header(
+    request_builder = match (data, encoding, crlf_newlines) {
+        (Some(Data::Binary(_)), _, _) => request_builder.header(key, "binary"),
+        (Some(Data::Record(_)), _, _) => request_builder.header(key, "record"),
+        (Some(Data::Text(_)), encoding, crlf) => request_builder.header(
             key,
             format!(
                 "text{}{}",
@@ -180,22 +129,22 @@ where
                 if *crlf { ";crlf=true" } else { "" }
             ),
         ),
-        (data_type, _, _) => request_builder.header(key, format!("{}", data_type)),
+        _ => request_builder,
     };
-    if let Some(value) = data {
-        request_builder = request_builder.body(value.clone());
-    }
+    request_builder = match data {
+        Some(Data::Binary(binary)) => request_builder.body(binary.clone()),
+        Some(Data::Record(record)) => request_builder.body(record.clone()),
+        Some(Data::Text(text)) => request_builder.body(text.clone()),
+        None => request_builder,
+    };
 
     request_builder
 }
 
-fn build_release_enq<D, T>(
+fn build_release_enq<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DatasetWriteBuilder<D, T>,
-) -> reqwest::RequestBuilder
-where
-    D: Into<reqwest::Body> + Clone,
-{
+    builder: &DatasetWriteBuilder<T>,
+) -> reqwest::RequestBuilder {
     if builder.release_enq {
         request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
     }
@@ -203,26 +152,21 @@ where
     request_builder
 }
 
-fn set_member<D, T>(
-    mut builder: DatasetWriteBuilder<D, T>,
-    value: Box<str>,
-) -> DatasetWriteBuilder<D, T>
-where
-    D: Into<reqwest::Body> + Clone,
-{
+fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T> {
     builder.member = format!("({})", value).into();
 
     builder
 }
 
-fn set_volume<D, T>(
-    mut builder: DatasetWriteBuilder<D, T>,
-    value: Box<str>,
-) -> DatasetWriteBuilder<D, T>
-where
-    D: Into<reqwest::Body> + Clone,
-{
+fn set_volume<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T> {
     builder.volume = format!("-({})/", value).into();
 
     builder
+}
+
+#[derive(Clone, Debug)]
+enum Data {
+    Binary(Bytes),
+    Record(Bytes),
+    Text(String),
 }

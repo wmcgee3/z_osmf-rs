@@ -5,12 +5,12 @@ pub mod list_members;
 pub mod read;
 pub mod write;
 
-pub use crate::datasets::create::*;
-pub use crate::datasets::delete::*;
-pub use crate::datasets::list::*;
-pub use crate::datasets::list_members::*;
-pub use crate::datasets::read::*;
-pub use crate::datasets::write::*;
+pub use self::create::*;
+pub use self::delete::*;
+pub use self::list::*;
+pub use self::list_members::*;
+pub use self::read::*;
+pub use self::write::*;
 
 use std::sync::Arc;
 
@@ -113,7 +113,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder {
+    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
         DatasetCreateBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
@@ -170,7 +170,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder {
+    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
         DatasetDeleteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
@@ -197,7 +197,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetName> {
+    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
     }
 
@@ -223,7 +223,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberName> {
+    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberList<MemberName>> {
         MemberListBuilder::new(
             self.base_url.clone(),
             self.client.clone(),
@@ -274,7 +274,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<String, Text> {
+    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
         DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 }

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::restfiles::get_transaction_id;
 
@@ -12,10 +13,8 @@ pub struct DatasetCreate {
     transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for DatasetCreate {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetCreate {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         Ok(DatasetCreate { transaction_id })
@@ -24,7 +23,7 @@ impl TryFrom<reqwest::Response> for DatasetCreate {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
-pub struct DatasetCreateBuilder {
+pub struct DatasetCreateBuilder<T> {
     base_url: Arc<str>,
     client: reqwest::Client,
 
@@ -66,13 +65,17 @@ pub struct DatasetCreateBuilder {
     dataset_type: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     model_dataset: Option<Box<str>>,
+
+    #[endpoint(optional, skip_setter, skip_builder)]
+    target_type: PhantomData<T>,
 }
 
-impl DatasetCreateBuilder {
-    pub async fn build(self) -> Result<DatasetCreate, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+impl<T> DatasetCreateBuilder<T>
+where
+    T: TryFromResponse,
+{
+    pub async fn build(self) -> Result<T, Error> {
+        self.get_response().await?.try_into_target().await
     }
 }
 
@@ -112,9 +115,9 @@ struct RequestJson<'a> {
     model_dataset: Option<&'a str>,
 }
 
-fn build_json(
+fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetCreateBuilder,
+    builder: &DatasetCreateBuilder<T>,
 ) -> reqwest::RequestBuilder {
     let DatasetCreateBuilder {
         volume,

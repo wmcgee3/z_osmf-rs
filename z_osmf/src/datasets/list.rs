@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::restfiles::get_transaction_id;
 use crate::utils::{
@@ -23,13 +23,11 @@ pub struct DatasetList<T> {
     transaction_id: Box<str>,
 }
 
-impl<T> TryFrom<reqwest::Response> for DatasetList<T>
+impl<T> TryFromResponse for DatasetList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         let ResponseJson {
@@ -38,7 +36,7 @@ where
             more_rows,
             returned_rows,
             total_rows,
-        } = Handle::current().block_on(value.json())?;
+        } = value.json().await?;
 
         Ok(DatasetList {
             items,
@@ -163,10 +161,7 @@ impl Serialize for Volume {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<T>
-where
-    T: for<'de> Deserialize<'de>,
-{
+pub struct DatasetListBuilder<T> {
     base_url: Arc<str>,
     client: Client,
 
@@ -182,15 +177,16 @@ where
     attributes: Option<Attrs>,
     #[endpoint(optional, skip_builder)]
     include_total: bool,
+
     #[endpoint(optional, skip_setter, skip_builder)]
-    attributes_marker: PhantomData<T>,
+    target_type: PhantomData<T>,
 }
 
 impl<T> DatasetListBuilder<T>
 where
-    T: for<'de> Deserialize<'de>,
+    T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetListBuilder<DatasetBase> {
+    pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetBase>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -200,11 +196,11 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Base),
             include_total: self.include_total,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetName> {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -214,11 +210,11 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Dsname),
             include_total: self.include_total,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetVol> {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVol>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -228,14 +224,12 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Vol),
             include_total: self.include_total,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub async fn build(self) -> Result<DatasetList<T>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+    pub async fn build(self) -> Result<T, Error> {
+        self.get_response().await?.try_into_target().await
     }
 }
 
@@ -276,10 +270,7 @@ struct ResponseJson<T> {
 fn build_attributes<T>(
     request_builder: RequestBuilder,
     list_builder: &DatasetListBuilder<T>,
-) -> RequestBuilder
-where
-    T: for<'de> Deserialize<'de>,
-{
+) -> RequestBuilder {
     match (list_builder.attributes, list_builder.include_total) {
         (None, false) => request_builder,
         (None, true) => request_builder.header("X-IBM-Attributes", "dsname,total"),

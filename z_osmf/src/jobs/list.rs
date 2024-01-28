@@ -2,27 +2,25 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::Deserialize;
-use tokio::runtime::Handle;
 use z_osmf_macros::{Endpoint, Getters};
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
-use crate::jobs::{JobData, JobExecData};
+use crate::jobs::JobExecData;
 
 #[derive(Clone, Debug, Getters)]
 pub struct JobsList<T> {
     items: Box<[T]>,
 }
 
-impl<T> TryFrom<reqwest::Response> for JobsList<T>
+impl<T> TryFromResponse for JobsList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
-        let items = Handle::current().block_on(value.json())?;
-
-        Ok(JobsList { items })
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        Ok(JobsList {
+            items: value.json().await?,
+        })
     }
 }
 
@@ -50,17 +48,20 @@ pub struct JobsListBuilder<T> {
     active_only: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]
-    job_data: PhantomData<T>,
+    target_type: PhantomData<T>,
 }
 
-impl<T> JobsListBuilder<T> {
+impl<T> JobsListBuilder<T>
+where
+    T: TryFromResponse,
+{
     pub fn active_only(mut self) -> Self {
         self.active_only = true;
 
         self
     }
 
-    pub fn exec_data(self) -> JobsListBuilder<JobExecData> {
+    pub fn exec_data(self) -> JobsListBuilder<JobsList<JobExecData>> {
         JobsListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -72,24 +73,12 @@ impl<T> JobsListBuilder<T> {
             user_correlator: self.user_correlator,
             exec_data: true,
             active_only: self.active_only,
-            job_data: PhantomData,
+            target_type: PhantomData,
         }
     }
-}
 
-impl JobsListBuilder<JobData> {
-    pub async fn build(self) -> Result<JobsList<JobData>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-impl JobsListBuilder<JobExecData> {
-    pub async fn build(self) -> Result<JobsList<JobExecData>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+    pub async fn build(self) -> Result<T, Error> {
+        self.get_response().await?.try_into_target().await
     }
 }
 
