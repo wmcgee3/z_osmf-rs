@@ -6,7 +6,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
-use super::Identifier;
+use super::JobIdentifier;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JobsFileList {
@@ -52,7 +52,7 @@ where
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,

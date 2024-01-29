@@ -7,7 +7,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
-use super::{Identifier, RecordRange};
+use super::{JobIdentifier, RecordRange};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JobFileRead<T> {
@@ -57,7 +57,7 @@ where
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
     #[endpoint(path)]
     id: JobFileID,
     #[endpoint(optional, header = "X-IBM-Record-Range")]

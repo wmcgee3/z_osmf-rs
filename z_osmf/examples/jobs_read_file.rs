@@ -3,13 +3,13 @@ mod _setup;
 
 use std::str::FromStr;
 
-use z_osmf::jobs::{Identifier, JobFileID, RecordRange};
+use z_osmf::jobs::{JobFileID, JobIdentifier, RecordRange};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let jobs_client = _setup::get_zosmf().await?.jobs();
 
-    let job_identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    let job_identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
 
     let job_file = jobs_client
         .read_file(job_identifier.clone(), JobFileID::ID(1))

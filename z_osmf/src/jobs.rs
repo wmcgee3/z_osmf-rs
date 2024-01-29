@@ -2,22 +2,22 @@ pub use crate::utils::RecordRange;
 
 pub mod list;
 pub mod list_files;
+pub mod purge;
 pub mod read_file;
 pub mod status;
 pub mod submit;
 
 pub use self::list::*;
 pub use self::list_files::*;
+pub use self::purge::*;
 pub use self::read_file::*;
 pub use self::status::*;
 pub use self::submit::*;
+pub use self::utils::*;
+
+mod utils;
 
 use std::sync::Arc;
-
-use serde::{Deserialize, Serialize};
-
-use crate::convert::TryFromResponse;
-use crate::error::Error;
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
@@ -34,9 +34,9 @@ impl JobsClient {
     ///
     /// Obtain the status of the job BLSJPRMI, job ID STC00052:
     /// ```
-    /// # use z_osmf::jobs::Identifier;
+    /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = Identifier::NameId("BLSJPRMI".into(), "STC00052".into());
+    /// let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
     ///
     /// let job_status = zosmf
     ///     .jobs()
@@ -47,7 +47,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn status(&self, identifier: Identifier) -> JobStatusBuilder<JobData> {
+    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobData> {
         JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
 
@@ -75,9 +75,9 @@ impl JobsClient {
     ///
     /// List the spool files for job TESTJOB1 with ID JOB00023:
     /// ```
-    /// # use z_osmf::jobs::Identifier;
+    /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = Identifier::NameId("TESTJOB1".into(), "JOB00023".into());
+    /// let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
     ///
     /// let job_files = zosmf
     ///     .jobs()
@@ -87,7 +87,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_files(&self, identifier: Identifier) -> JobsFileListBuilder<JobsFileList> {
+    pub fn list_files(&self, identifier: JobIdentifier) -> JobsFileListBuilder<JobsFileList> {
         JobsFileListBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
 
@@ -95,9 +95,9 @@ impl JobsClient {
     ///
     /// Read file 1 for job TESTJOBJ with ID JOB00023:
     /// ```
-    /// # use z_osmf::jobs::{Identifier, JobFileID};
+    /// # use z_osmf::jobs::{JobIdentifier, JobFileID};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::ID(1);
     ///
     /// let job_file = zosmf
@@ -112,9 +112,9 @@ impl JobsClient {
     /// Read a range of records (the first 250) of file 8 for job TESTJOBJ with ID JOB00023:
     /// ```
     /// # use std::str::FromStr;
-    /// # use z_osmf::jobs::{Identifier, JobFileID, RecordRange};
+    /// # use z_osmf::jobs::{JobIdentifier, JobFileID, RecordRange};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::ID(8);
     ///
     /// let job_file = zosmf
@@ -129,9 +129,9 @@ impl JobsClient {
     ///
     /// Read the JCL for job TESTJOBJ with ID JOB00060:
     /// ```
-    /// # use z_osmf::jobs::{Identifier, JobFileID};
+    /// # use z_osmf::jobs::{JobIdentifier, JobFileID};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::JCL;
     ///
     /// let job_file = zosmf
@@ -144,7 +144,7 @@ impl JobsClient {
     /// ```
     pub fn read_file(
         &self,
-        identifier: Identifier,
+        identifier: JobIdentifier,
         id: JobFileID,
     ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
         JobFileReadBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
@@ -171,211 +171,57 @@ impl JobsClient {
     pub fn submit(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
         JobSubmitBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
     }
-}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct JobData {
-    #[serde(rename = "jobid")]
-    pub id: Box<str>,
-    #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: Box<str>,
-    #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub reason_not_running: Option<Box<str>>,
-}
-
-impl JobData {
-    pub fn identifier(&self) -> Identifier {
-        Identifier::NameId(self.name.clone(), self.id.clone())
+    pub fn hold(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            RequestJson::new("hold"),
+        )
     }
-}
 
-impl TryFromResponse for JobData {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(value.json().await?)
+    pub fn release(
+        &self,
+        identifier: JobIdentifier,
+    ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            RequestJson::new("release"),
+        )
     }
-}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct JobExecData {
-    #[serde(rename = "jobid")]
-    pub id: Box<str>,
-    #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: Box<str>,
-    #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub exec_system: Box<str>,
-    pub exec_member: Box<str>,
-    pub exec_submitted: Box<str>,
-    pub exec_ended: Box<str>,
-    pub reason_not_running: Option<Box<str>>,
-}
-
-impl JobExecData {
-    pub fn identifier(&self) -> Identifier {
-        Identifier::NameId(self.name.clone(), self.id.clone())
+    pub fn change_class<C>(
+        &self,
+        identifier: JobIdentifier,
+        class: C,
+    ) -> JobFeedbackBuilder<JobFeedback, ClassJson>
+    where
+        C: Into<Box<str>>,
+    {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            ClassJson::new(class),
+        )
     }
-}
 
-impl TryFromResponse for JobExecData {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(value.json().await?)
+    pub fn cancel(
+        &self,
+        identifier: JobIdentifier,
+    ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            RequestJson::new("cancel"),
+        )
     }
-}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct JobExecStepData {
-    #[serde(rename = "jobid")]
-    pub id: Box<str>,
-    #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: Box<str>,
-    #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub step_data: Vec<StepData>,
-    pub exec_system: Box<str>,
-    pub exec_member: Box<str>,
-    pub exec_submitted: Box<str>,
-    pub exec_ended: Box<str>,
-    pub reason_not_running: Option<Box<str>>,
-}
-
-impl JobExecStepData {
-    pub fn identifier(&self) -> Identifier {
-        Identifier::NameId(self.name.clone(), self.id.clone())
+    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> PurgeBuilder<JobFeedback> {
+        PurgeBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
-}
-
-impl TryFromResponse for JobExecStepData {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(value.json().await?)
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct JobStepData {
-    #[serde(rename = "jobid")]
-    pub id: Box<str>,
-    #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: Box<str>,
-    #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub step_data: Vec<StepData>,
-    pub reason_not_running: Option<Box<str>>,
-}
-
-impl JobStepData {
-    pub fn identifier(&self) -> Identifier {
-        Identifier::NameId(self.name.clone(), self.id.clone())
-    }
-}
-
-impl TryFromResponse for JobStepData {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(value.json().await?)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum Identifier {
-    NameId(Box<str>, Box<str>),
-    Correlator(Box<str>),
-}
-
-impl std::fmt::Display for Identifier {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        type JI = Identifier;
-        let items = match self {
-            JI::Correlator(correlator) => vec![correlator.as_ref()],
-            JI::NameId(name, id) => vec![name.as_ref(), id.as_ref()],
-        };
-
-        write!(f, "{}", items.join("/"))
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum JobType {
-    #[serde(rename = "JOB")]
-    Job,
-    #[serde(rename = "STC")]
-    StartedTask,
-    #[serde(rename = "TSU")]
-    TsoUser,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum Status {
-    Active,
-    Input,
-    Output,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct StepData {
-    pub active: bool,
-    #[serde(rename = "smfid")]
-    pub smf_id: Box<str>,
-    pub step_number: i32,
-    #[serde(default)]
-    pub selected_time: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub program_name: Box<str>,
-    pub step_name: Box<str>,
-    #[serde(default)]
-    pub path_name: Option<Box<str>>,
-    #[serde(default)]
-    pub substep_number: Option<i32>,
-    #[serde(default)]
-    pub end_time: Option<Box<str>>,
-    pub proc_step_name: Box<str>,
-    #[serde(default, rename = "completion")]
-    pub completion_code: Option<Box<str>>,
-    #[serde(default)]
-    pub abend_reason_code: Option<Box<str>>,
 }

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
-use crate::jobs::{Identifier, JobData};
+use crate::jobs::{JobData, JobIdentifier};
 
 use super::{JobExecData, JobExecStepData, JobStepData};
 
@@ -20,7 +20,7 @@ where
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
     #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
     exec_data: bool,
     #[endpoint(optional, skip_setter, builder_fn = build_step_data)]
