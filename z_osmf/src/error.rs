@@ -19,4 +19,7 @@ pub enum Error {
 
     #[error("failed to convert to string")]
     ToStringError(#[from] reqwest::header::ToStrError),
+
+    #[error("an error ocurred {0}")]
+    Custom(String),
 }

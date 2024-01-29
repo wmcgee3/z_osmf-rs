@@ -1,7 +1,9 @@
 #[path = "_setup/mod.rs"]
 mod _setup;
 
-use z_osmf::jobs::{Identifier, JobFileID};
+use std::str::FromStr;
+
+use z_osmf::jobs::{Identifier, JobFileID, RecordRange};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
     // read the first 250 records
     let job_file = jobs_client
         .read_file(job_identifier.clone(), JobFileID::ID(8))
-        .record_range("0-249")
+        .record_range(RecordRange::from_str("0-249")?)
         .build()
         .await?;
 

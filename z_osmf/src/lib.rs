@@ -16,8 +16,6 @@ pub mod jobs;
 pub use crate::error::Error;
 
 mod convert;
-#[cfg(any(feature = "datasets", feature = "files"))]
-mod restfiles;
 mod utils;
 
 use std::sync::Arc;

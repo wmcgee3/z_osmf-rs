@@ -1,12 +1,16 @@
+pub use crate::utils::RecordRange;
+
 pub mod list;
 pub mod list_files;
 pub mod read_file;
 pub mod status;
+pub mod submit;
 
 pub use self::list::*;
 pub use self::list_files::*;
 pub use self::read_file::*;
 pub use self::status::*;
+pub use self::submit::*;
 
 use std::sync::Arc;
 
@@ -107,7 +111,8 @@ impl JobsClient {
     ///
     /// Read a range of records (the first 250) of file 8 for job TESTJOBJ with ID JOB00023:
     /// ```
-    /// # use z_osmf::jobs::{Identifier, JobFileID};
+    /// # use std::str::FromStr;
+    /// # use z_osmf::jobs::{Identifier, JobFileID, RecordRange};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::ID(8);
@@ -115,7 +120,7 @@ impl JobsClient {
     /// let job_file = zosmf
     ///     .jobs()
     ///     .read_file(identifier, file_id)
-    ///     .record_range("0-249")
+    ///     .record_range(RecordRange::from_str("0-249")?)
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -143,6 +148,28 @@ impl JobsClient {
         id: JobFileID,
     ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
         JobFileReadBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
+    }
+
+    /// # Examples
+    ///
+    /// Submit a job from text:
+    /// ```
+    /// # use z_osmf::jobs::{JclData, JclSource};
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
+    /// // EXEC PGM=IEFBR14
+    /// "#;
+    ///
+    /// let job_data = zosmf
+    ///     .jobs()
+    ///     .submit(JclSource::Data(JclData::Text(jcl.into())))
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn submit(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
+        JobSubmitBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
     }
 }
 

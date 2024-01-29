@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
-use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq};
+use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq, RecordRange};
 use crate::error::Error;
-use crate::restfiles::{get_etag, get_transaction_id};
+use crate::utils::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetRead<T> {
@@ -120,6 +120,8 @@ where
     return_etag: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
+    #[endpoint(optional, header = "X-IBM-Record-Range")]
+    record_range: Option<RecordRange>,
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<ObtainEnq>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
@@ -154,6 +156,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
@@ -178,6 +181,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
@@ -202,6 +206,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
@@ -229,6 +234,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
@@ -258,6 +264,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
@@ -282,6 +289,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
@@ -306,6 +314,7 @@ where
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,

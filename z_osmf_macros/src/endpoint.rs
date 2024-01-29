@@ -116,7 +116,7 @@ impl Endpoint {
         let (optional_fields, required_fields): (Vec<&EndpointField>, Vec<&EndpointField>) =
             fields.iter().partition(|f| f.optional);
 
-        let optional_builders = optional_fields
+        let mut optional_builders = optional_fields
             .iter()
             .map(|f| {
                 let EndpointField {
@@ -181,6 +181,18 @@ impl Endpoint {
                 }
             })
             .collect::<Vec<_>>();
+
+        let required_builder_fns: Vec<_> = required_fields
+            .iter()
+            .flat_map(|f| f.builder_fn.as_ref())
+            .map(|builder_fn| {
+                quote! {
+                    request_builder = #builder_fn(request_builder, &self);
+                }
+            })
+            .collect();
+
+        optional_builders.extend(required_builder_fns);
 
         quote! {
             async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {

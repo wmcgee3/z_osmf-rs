@@ -8,7 +8,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::{MigratedRecall, ObtainEnq};
 use crate::error::Error;
-use crate::restfiles::{get_etag, get_transaction_id};
+use crate::utils::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetWrite {

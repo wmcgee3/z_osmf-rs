@@ -1,3 +1,5 @@
+pub use crate::utils::RecordRange;
+
 pub mod create;
 pub mod delete;
 pub mod list;

@@ -7,10 +7,9 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
-use crate::restfiles::get_transaction_id;
 use crate::utils::{
-    de_optional_y_n, de_optional_yes_no, de_yes_no, ser_optional_y_n, ser_optional_yes_no,
-    ser_yes_no,
+    de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
+    ser_optional_yes_no, ser_yes_no,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

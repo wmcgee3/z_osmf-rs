@@ -7,7 +7,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
-use super::Identifier;
+use super::{Identifier, RecordRange};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JobFileRead<T> {
@@ -61,7 +61,7 @@ where
     #[endpoint(path)]
     id: JobFileID,
     #[endpoint(optional, header = "X-IBM-Record-Range")]
-    record_range: Option<Box<str>>,
+    record_range: Option<RecordRange>,
     #[endpoint(optional, skip_setter, query = "mode")]
     data_type: Option<DataType>,
     #[endpoint(optional, query = "fileEncoding")]
@@ -69,7 +69,7 @@ where
     #[endpoint(optional, query = "search")]
     search: Option<Box<str>>,
     #[endpoint(optional, query = "research")]
-    regex: Option<Box<str>>,
+    search_regex: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_search_case_sensitive)]
     search_case_sensitive: bool,
     #[endpoint(optional, query = "maxreturnsize")]
@@ -94,7 +94,7 @@ where
             data_type: Some(DataType::Binary),
             encoding: self.encoding,
             search: self.search,
-            regex: self.regex,
+            search_regex: self.search_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             target_type: PhantomData,
@@ -112,7 +112,7 @@ where
             data_type: Some(DataType::Record),
             encoding: self.encoding,
             search: self.search,
-            regex: self.regex,
+            search_regex: self.search_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             target_type: PhantomData,
@@ -130,7 +130,7 @@ where
             data_type: Some(DataType::Text),
             encoding: self.encoding,
             search: self.search,
-            regex: self.regex,
+            search_regex: self.search_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             target_type: PhantomData,
