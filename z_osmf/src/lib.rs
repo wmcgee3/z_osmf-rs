@@ -140,7 +140,7 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "datasets")]
-    pub fn datasets(self) -> DatasetsClient {
+    pub fn datasets(&self) -> DatasetsClient {
         DatasetsClient::new(self.base_url.clone(), self.client.clone())
     }
 
@@ -154,7 +154,7 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "files")]
-    pub fn files(self) -> FilesClient {
+    pub fn files(&self) -> FilesClient {
         FilesClient::new(self.base_url.clone(), self.client.clone())
     }
 
@@ -168,7 +168,7 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "jobs")]
-    pub fn jobs(self) -> JobsClient {
+    pub fn jobs(&self) -> JobsClient {
         JobsClient::new(self.base_url.clone(), self.client.clone())
     }
 }
