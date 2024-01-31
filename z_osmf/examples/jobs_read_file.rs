@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
-    println!("{}", job_file.data);
+    println!("{}", job_file.data());
 
     // read the first 250 records
     let job_file = jobs_client
@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
-    println!("{}", job_file.data);
+    println!("{}", job_file.data());
 
     // read JCL
     let job_file = jobs_client
@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
-    println!("{}", job_file.data);
+    println!("{}", job_file.data());
 
     Ok(())
 }

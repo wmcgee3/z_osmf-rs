@@ -4,18 +4,25 @@ use std::sync::Arc;
 use bytes::Bytes;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::files::DataType;
 use crate::utils::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
-    pub data: T,
-    pub etag: Option<Box<str>>,
-    pub transaction_id: Box<str>,
+    #[getter(skip)]
+    data: T,
+    etag: Option<Box<str>>,
+    transaction_id: Box<str>,
+}
+
+impl FileRead<Box<str>> {
+    pub fn data(&self) -> &str {
+        &self.data
+    }
 }
 
 impl TryFromResponse for FileRead<Box<str>> {
@@ -32,6 +39,12 @@ impl TryFromResponse for FileRead<Box<str>> {
     }
 }
 
+impl FileRead<Bytes> {
+    pub fn data(&self) -> &Bytes {
+        &self.data
+    }
+}
+
 impl TryFromResponse for FileRead<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
@@ -43,6 +56,12 @@ impl TryFromResponse for FileRead<Bytes> {
             etag,
             transaction_id,
         })
+    }
+}
+
+impl FileRead<Option<Box<str>>> {
+    pub fn data(&self) -> Option<&str> {
+        self.data.as_deref()
     }
 }
 
@@ -61,6 +80,12 @@ impl TryFromResponse for FileRead<Option<Box<str>>> {
             etag,
             transaction_id,
         })
+    }
+}
+
+impl FileRead<Option<Bytes>> {
+    pub fn data(&self) -> Option<&Bytes> {
+        self.data.as_ref()
     }
 }
 

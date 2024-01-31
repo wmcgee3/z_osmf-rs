@@ -1,15 +1,16 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use z_osmf_macros::Endpoint;
+use serde::{Deserialize, Serialize};
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::utils::get_transaction_id;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileDelete {
-    pub transaction_id: Box<str>,
+    transaction_id: Box<str>,
 }
 
 impl TryFromResponse for FileDelete {

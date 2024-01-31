@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
@@ -12,14 +12,14 @@ use crate::utils::{
     ser_optional_yes_no, ser_yes_no,
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {
-    pub items: Box<[T]>,
-    pub json_version: i32,
-    pub more_rows: Option<bool>,
-    pub returned_rows: i32,
-    pub total_rows: Option<i32>,
-    pub transaction_id: Box<str>,
+    items: Box<[T]>,
+    json_version: i32,
+    more_rows: Option<bool>,
+    returned_rows: i32,
+    total_rows: Option<i32>,
+    transaction_id: Box<str>,
 }
 
 impl<T> TryFromResponse for DatasetList<T>
@@ -48,76 +48,76 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetBase {
     #[serde(rename = "dsname")]
-    pub name: Box<str>,
+    name: Box<str>,
     #[serde(rename = "blksz")]
-    pub block_size: Option<Box<str>>,
+    block_size: Option<Box<str>>,
     #[serde(rename = "catnm")]
-    pub catalog: Option<Box<str>>,
+    catalog: Option<Box<str>>,
     #[serde(rename = "cdate")]
-    pub creation_date: Option<Box<str>>,
+    creation_date: Option<Box<str>>,
     #[serde(rename = "dev")]
-    pub device_type: Option<Box<str>>,
+    device_type: Option<Box<str>>,
     #[serde(rename = "dsntp")]
-    pub dataset_type: Option<Box<str>>,
+    dataset_type: Option<Box<str>>,
     #[serde(rename = "dsorg")]
-    pub organization: Option<Box<str>>,
+    organization: Option<Box<str>>,
     #[serde(rename = "edate")]
-    pub expiration_date: Option<Box<str>>,
+    expiration_date: Option<Box<str>>,
     #[serde(rename = "extx")]
-    pub extents_used: Option<Box<str>>,
+    extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
-    pub logical_record_length: Option<Box<str>>,
+    logical_record_length: Option<Box<str>>,
     #[serde(
         rename = "migr",
         deserialize_with = "de_yes_no",
         serialize_with = "ser_yes_no"
     )]
-    pub migrated: bool,
+    migrated: bool,
     #[serde(
         default,
         rename = "mvol",
         deserialize_with = "de_optional_y_n",
         serialize_with = "ser_optional_y_n"
     )]
-    pub multi_volume: Option<bool>,
+    multi_volume: Option<bool>,
     #[serde(
         default,
         rename = "ovf",
         deserialize_with = "de_optional_yes_no",
         serialize_with = "ser_optional_yes_no"
     )]
-    pub space_overflow: Option<bool>,
+    space_overflow: Option<bool>,
     #[serde(rename = "rdate")]
-    pub last_referenced_date: Option<Box<str>>,
+    last_referenced_date: Option<Box<str>>,
     #[serde(rename = "recfm")]
-    pub record_format: Option<Box<str>>,
+    record_format: Option<Box<str>>,
     #[serde(rename = "sizex")]
-    pub size_in_tracks: Option<Box<str>>,
+    size_in_tracks: Option<Box<str>>,
     #[serde(rename = "spacu")]
-    pub space_units: Option<Box<str>>,
+    space_units: Option<Box<str>>,
     #[serde(rename = "used")]
-    pub percent_used: Option<Box<str>>,
+    percent_used: Option<Box<str>>,
     #[serde(rename = "vol")]
-    pub volume: Volume,
+    volume: Volume,
     #[serde(rename = "vols")]
-    pub volumes: Option<Box<str>>,
+    volumes: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetName {
     #[serde(rename = "dsname")]
-    pub name: Box<str>,
+    name: Box<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetVol {
     #[serde(rename = "dsname")]
-    pub name: Box<str>,
+    name: Box<str>,
     #[serde(rename = "vol")]
-    pub volume: Volume,
+    volume: Volume,
 }
 
 #[derive(Clone, Debug)]

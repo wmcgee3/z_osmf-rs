@@ -4,19 +4,26 @@ use std::sync::Arc;
 use bytes::Bytes;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq, RecordRange};
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
-    pub data: T,
-    pub etag: Option<Box<str>>,
-    pub session_ref: Option<Box<str>>,
-    pub transaction_id: Box<str>,
+    #[getter(skip)]
+    data: T,
+    etag: Option<Box<str>>,
+    session_ref: Option<Box<str>>,
+    transaction_id: Box<str>,
+}
+
+impl DatasetRead<Box<str>> {
+    pub fn data(&self) -> &str {
+        &self.data
+    }
 }
 
 impl TryFromResponse for DatasetRead<Box<str>> {
@@ -34,6 +41,12 @@ impl TryFromResponse for DatasetRead<Box<str>> {
     }
 }
 
+impl DatasetRead<Bytes> {
+    pub fn data(&self) -> &Bytes {
+        &self.data
+    }
+}
+
 impl TryFromResponse for DatasetRead<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
@@ -46,6 +59,12 @@ impl TryFromResponse for DatasetRead<Bytes> {
             session_ref,
             transaction_id,
         })
+    }
+}
+
+impl DatasetRead<Option<Box<str>>> {
+    pub fn data(&self) -> Option<&str> {
+        self.data.as_deref()
     }
 }
 
@@ -65,6 +84,12 @@ impl TryFromResponse for DatasetRead<Option<Box<str>>> {
             session_ref,
             transaction_id,
         })
+    }
+}
+
+impl DatasetRead<Option<Bytes>> {
+    pub fn data(&self) -> Option<&Bytes> {
+        self.data.as_ref()
     }
 }
 

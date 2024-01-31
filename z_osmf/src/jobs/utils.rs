@@ -2,31 +2,31 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobData {
     #[serde(rename = "jobid")]
-    pub id: Box<str>,
+    id: Box<str>,
     #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: char,
+    name: Box<str>,
+    subsystem: Option<Box<str>>,
+    owner: Box<str>,
+    status: Option<Status>,
+    job_type: Option<JobType>,
+    class: char,
     #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub reason_not_running: Option<Box<str>>,
+    return_code: Option<Box<str>>,
+    url: Box<str>,
+    files_url: Box<str>,
+    job_correlator: Option<Box<str>>,
+    phase: i32,
+    phase_name: Box<str>,
+    reason_not_running: Option<Box<str>>,
 }
 
 impl JobData {
@@ -41,30 +41,30 @@ impl TryFromResponse for JobData {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecData {
     #[serde(rename = "jobid")]
-    pub id: Box<str>,
+    id: Box<str>,
     #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: char,
+    name: Box<str>,
+    subsystem: Option<Box<str>>,
+    owner: Box<str>,
+    status: Option<Status>,
+    job_type: Option<JobType>,
+    class: char,
     #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub exec_system: Box<str>,
-    pub exec_member: Box<str>,
-    pub exec_submitted: Box<str>,
-    pub exec_ended: Box<str>,
-    pub reason_not_running: Option<Box<str>>,
+    return_code: Option<Box<str>>,
+    url: Box<str>,
+    files_url: Box<str>,
+    job_correlator: Option<Box<str>>,
+    phase: i32,
+    phase_name: Box<str>,
+    exec_system: Box<str>,
+    exec_member: Box<str>,
+    exec_submitted: Box<str>,
+    exec_ended: Box<str>,
+    reason_not_running: Option<Box<str>>,
 }
 
 impl JobExecData {
@@ -79,31 +79,31 @@ impl TryFromResponse for JobExecData {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecStepData {
     #[serde(rename = "jobid")]
-    pub id: Box<str>,
+    id: Box<str>,
     #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: char,
+    name: Box<str>,
+    subsystem: Option<Box<str>>,
+    owner: Box<str>,
+    status: Option<Status>,
+    job_type: Option<JobType>,
+    class: char,
     #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub step_data: Vec<StepData>,
-    pub exec_system: Box<str>,
-    pub exec_member: Box<str>,
-    pub exec_submitted: Box<str>,
-    pub exec_ended: Box<str>,
-    pub reason_not_running: Option<Box<str>>,
+    return_code: Option<Box<str>>,
+    url: Box<str>,
+    files_url: Box<str>,
+    job_correlator: Option<Box<str>>,
+    phase: i32,
+    phase_name: Box<str>,
+    step_data: Vec<StepData>,
+    exec_system: Box<str>,
+    exec_member: Box<str>,
+    exec_submitted: Box<str>,
+    exec_ended: Box<str>,
+    reason_not_running: Option<Box<str>>,
 }
 
 impl JobExecStepData {
@@ -118,27 +118,27 @@ impl TryFromResponse for JobExecStepData {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobStepData {
     #[serde(rename = "jobid")]
-    pub id: Box<str>,
+    id: Box<str>,
     #[serde(rename = "jobname")]
-    pub name: Box<str>,
-    pub subsystem: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub status: Option<Status>,
-    pub job_type: Option<JobType>,
-    pub class: char,
+    name: Box<str>,
+    subsystem: Option<Box<str>>,
+    owner: Box<str>,
+    status: Option<Status>,
+    job_type: Option<JobType>,
+    class: char,
     #[serde(rename = "retcode")]
-    pub return_code: Option<Box<str>>,
-    pub url: Box<str>,
-    pub files_url: Box<str>,
-    pub job_correlator: Option<Box<str>>,
-    pub phase: i32,
-    pub phase_name: Box<str>,
-    pub step_data: Vec<StepData>,
-    pub reason_not_running: Option<Box<str>>,
+    return_code: Option<Box<str>>,
+    url: Box<str>,
+    files_url: Box<str>,
+    job_correlator: Option<Box<str>>,
+    phase: i32,
+    phase_name: Box<str>,
+    step_data: Vec<StepData>,
+    reason_not_running: Option<Box<str>>,
 }
 
 impl JobStepData {
@@ -153,7 +153,7 @@ impl TryFromResponse for JobStepData {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JobIdentifier {
     NameId(Box<str>, Box<str>),
     Correlator(Box<str>),
@@ -189,32 +189,32 @@ pub enum Status {
     Output,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct StepData {
-    pub active: bool,
+    active: bool,
     #[serde(rename = "smfid")]
-    pub smf_id: Box<str>,
-    pub step_number: i32,
+    smf_id: Box<str>,
+    step_number: i32,
     #[serde(default)]
-    pub selected_time: Option<Box<str>>,
-    pub owner: Box<str>,
-    pub program_name: Box<str>,
-    pub step_name: Box<str>,
+    selected_time: Option<Box<str>>,
+    owner: Box<str>,
+    program_name: Box<str>,
+    step_name: Box<str>,
     #[serde(default)]
-    pub path_name: Option<Box<str>>,
+    path_name: Option<Box<str>>,
     #[serde(default)]
-    pub substep_number: Option<i32>,
+    substep_number: Option<i32>,
     #[serde(default)]
-    pub end_time: Option<Box<str>>,
-    pub proc_step_name: Box<str>,
+    end_time: Option<Box<str>>,
+    proc_step_name: Box<str>,
     #[serde(default, rename = "completion")]
-    pub completion_code: Option<Box<str>>,
+    completion_code: Option<Box<str>>,
     #[serde(default)]
-    pub abend_reason_code: Option<Box<str>>,
+    abend_reason_code: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobFeedback {
     jobid: Box<str>,

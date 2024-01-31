@@ -2,15 +2,15 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
 use super::JobIdentifier;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct JobsFileList {
-    pub items: Box<[JobFile]>,
+    items: Box<[JobFile]>,
 }
 
 impl TryFromResponse for JobsFileList {
@@ -21,23 +21,23 @@ impl TryFromResponse for JobsFileList {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobFile {
-    pub jobname: Box<str>,
-    pub recfm: Box<str>,
-    pub byte_count: i32,
-    pub record_count: i32,
-    pub job_correlator: Option<Box<str>>,
-    pub class: Box<str>,
-    pub jobid: Box<str>,
-    pub id: i32,
-    pub ddname: Box<str>,
-    pub records_url: Box<str>,
-    pub lrecl: i32,
-    pub subsystem: Box<str>,
-    pub stepname: Option<Box<str>>,
-    pub procstep: Option<Box<str>>,
+    jobname: Box<str>,
+    recfm: Box<str>,
+    byte_count: i32,
+    record_count: i32,
+    job_correlator: Option<Box<str>>,
+    class: Box<str>,
+    jobid: Box<str>,
+    id: i32,
+    ddname: Box<str>,
+    records_url: Box<str>,
+    lrecl: i32,
+    subsystem: Box<str>,
+    stepname: Option<Box<str>>,
+    procstep: Option<Box<str>>,
 }
 
 #[derive(Clone, Debug, Endpoint)]
