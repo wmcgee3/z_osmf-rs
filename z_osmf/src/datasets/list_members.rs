@@ -5,9 +5,10 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
-use crate::datasets::MigratedRecall;
 use crate::error::Error;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
+
+use super::MigratedRecall;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberList<T> {

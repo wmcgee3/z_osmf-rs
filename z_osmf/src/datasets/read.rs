@@ -7,9 +7,10 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
-use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq, RecordRange};
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+
+use super::{get_session_ref, DataType, MigratedRecall, ObtainEnq, RecordRange};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {

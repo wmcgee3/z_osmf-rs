@@ -4,28 +4,31 @@
 //!
 //! The (work in progress) Rust z/OSMF Client.
 
-pub mod error;
-
+pub mod bytes {
+    pub use bytes::Bytes;
+}
 #[cfg(feature = "datasets")]
 pub mod datasets;
+pub mod error;
 #[cfg(feature = "files")]
 pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
-pub use crate::error::Error;
-
 mod convert;
 mod utils;
+
+pub use self::bytes::Bytes;
+pub use self::error::Error;
 
 use std::sync::Arc;
 
 #[cfg(feature = "datasets")]
-use datasets::DatasetsClient;
+use self::datasets::DatasetsClient;
 #[cfg(feature = "files")]
-use files::FilesClient;
+use self::files::FilesClient;
 #[cfg(feature = "jobs")]
-use jobs::JobsClient;
+use self::jobs::JobsClient;
 
 /// # ZOsmf
 ///

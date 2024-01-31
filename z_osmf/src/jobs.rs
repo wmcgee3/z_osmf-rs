@@ -1,11 +1,11 @@
-pub use crate::utils::RecordRange;
-
 pub mod list;
 pub mod list_files;
 pub mod purge;
 pub mod read_file;
 pub mod status;
 pub mod submit;
+
+mod utils;
 
 pub use self::list::*;
 pub use self::list_files::*;
@@ -14,8 +14,7 @@ pub use self::read_file::*;
 pub use self::status::*;
 pub use self::submit::*;
 pub use self::utils::*;
-
-mod utils;
+pub use crate::utils::RecordRange;
 
 use std::sync::Arc;
 

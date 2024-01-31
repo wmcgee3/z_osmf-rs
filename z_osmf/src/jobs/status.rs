@@ -4,9 +4,8 @@ use std::sync::Arc;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
-use crate::jobs::{JobData, JobIdentifier};
 
-use super::{JobExecData, JobExecStepData, JobStepData};
+use super::{JobData, JobExecData, JobExecStepData, JobIdentifier, JobStepData};
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]

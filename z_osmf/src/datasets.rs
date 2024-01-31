@@ -1,5 +1,3 @@
-pub use crate::utils::RecordRange;
-
 pub mod create;
 pub mod delete;
 pub mod list;
@@ -13,6 +11,7 @@ pub use self::list::*;
 pub use self::list_members::*;
 pub use self::read::*;
 pub use self::write::*;
+pub use crate::utils::RecordRange;
 
 use std::sync::Arc;
 

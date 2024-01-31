@@ -8,8 +8,9 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
-use crate::files::DataType;
 use crate::utils::{get_etag, get_transaction_id};
+
+use super::DataType;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {

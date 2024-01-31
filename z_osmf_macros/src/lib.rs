@@ -1,13 +1,13 @@
 #![forbid(unsafe_code)]
 
+mod endpoint;
+mod getter;
+mod utils;
+
 use darling::FromDeriveInput;
 use getter::Getter;
 use proc_macro::TokenStream;
 use quote::quote;
-
-mod endpoint;
-mod getter;
-mod utils;
 
 use self::endpoint::Endpoint;
 

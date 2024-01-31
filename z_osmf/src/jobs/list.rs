@@ -6,7 +6,8 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
-use crate::jobs::JobExecData;
+
+use super::JobExecData;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct JobsList<T> {
