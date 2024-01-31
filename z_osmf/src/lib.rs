@@ -43,7 +43,7 @@ use jobs::JobsClient;
 ///
 /// let my_datasets = zosmf.datasets().list(username).build().await?;
 ///
-/// for dataset in my_datasets.items.iter() {
+/// for dataset in my_datasets.items().iter() {
 ///     println!("{:?}", dataset);
 /// }
 /// # Ok(())

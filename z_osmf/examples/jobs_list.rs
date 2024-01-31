@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
-    println!("{:#?}", jobs_list.items);
+    println!("{:#?}", jobs_list.items());
 
     Ok(())
 }

@@ -11,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
 
     let job_files = jobs_client.list_files(identifier).build().await?;
 
-    println!("{:#?}", job_files.items);
+    println!("{:#?}", job_files.items());
 
     Ok(())
 }

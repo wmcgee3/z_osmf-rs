@@ -1,16 +1,16 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use serde::Deserialize;
-use z_osmf_macros::Endpoint;
+use serde::{Deserialize, Serialize};
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::jobs::JobExecData;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct JobsList<T> {
-    pub items: Box<[T]>,
+    items: Box<[T]>,
 }
 
 impl<T> TryFromResponse for JobsList<T>

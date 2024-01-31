@@ -11,7 +11,13 @@ use super::{JobIdentifier, RecordRange};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JobFileRead<T> {
-    pub data: T,
+    data: T,
+}
+
+impl JobFileRead<Box<str>> {
+    pub fn data(&self) -> &str {
+        &self.data
+    }
 }
 
 impl TryFromResponse for JobFileRead<Box<str>> {
@@ -19,6 +25,12 @@ impl TryFromResponse for JobFileRead<Box<str>> {
         Ok(JobFileRead {
             data: value.text().await?.into(),
         })
+    }
+}
+
+impl JobFileRead<Bytes> {
+    pub fn data(&self) -> &Bytes {
+        &self.data
     }
 }
 

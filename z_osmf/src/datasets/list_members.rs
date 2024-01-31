@@ -2,20 +2,20 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::datasets::MigratedRecall;
 use crate::error::Error;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberList<T> {
-    pub items: Box<[T]>,
-    pub json_version: i32,
-    pub more_rows: Option<bool>,
-    pub returned_rows: i32,
-    pub total_rows: Option<i32>,
+    items: Box<[T]>,
+    json_version: i32,
+    more_rows: Option<bool>,
+    returned_rows: i32,
+    total_rows: Option<i32>,
 }
 
 impl<T> TryFromResponse for MemberList<T>
@@ -41,57 +41,57 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberBase {
     #[serde(rename = "member")]
-    pub name: Box<str>,
+    name: Box<str>,
     #[serde(default, rename = "vers")]
-    pub version: Option<i32>,
+    version: Option<i32>,
     #[serde(default, rename = "mod")]
-    pub modification_level: Option<i32>,
+    modification_level: Option<i32>,
     #[serde(default, rename = "c4date")]
-    pub creation_date: Option<Box<str>>,
+    creation_date: Option<Box<str>>,
     #[serde(default, rename = "m4date")]
-    pub modification_date: Option<Box<str>>,
+    modification_date: Option<Box<str>>,
     #[serde(default, rename = "cnorc")]
-    pub current_number_of_records: Option<i32>,
+    current_number_of_records: Option<i32>,
     #[serde(default, rename = "inorc")]
-    pub initial_number_of_records: Option<i32>,
+    initial_number_of_records: Option<i32>,
     #[serde(default, rename = "mnorc")]
-    pub modified_number_of_records: Option<i32>,
+    modified_number_of_records: Option<i32>,
     #[serde(default, rename = "mtime")]
-    pub modified_time: Option<Box<str>>,
+    modified_time: Option<Box<str>>,
     #[serde(default, rename = "msec")]
-    pub modified_seconds: Option<Box<str>>,
+    modified_seconds: Option<Box<str>>,
     #[serde(default)]
-    pub user: Option<Box<str>>,
+    user: Option<Box<str>>,
     #[serde(
         default,
         rename = "sclm",
         deserialize_with = "de_optional_y_n",
         serialize_with = "ser_optional_y_n"
     )]
-    pub modified_by_sclm: Option<bool>,
+    modified_by_sclm: Option<bool>,
     #[serde(default, rename = "ac")]
-    pub authorization_code: Option<Box<str>>,
+    authorization_code: Option<Box<str>>,
     #[serde(default)]
-    pub amode: Option<Box<str>>,
+    amode: Option<Box<str>>,
     #[serde(default, rename = "attr")]
-    pub attributes: Option<Box<str>>,
+    attributes: Option<Box<str>>,
     #[serde(default)]
-    pub rmode: Option<Box<str>>,
+    rmode: Option<Box<str>>,
     #[serde(default)]
-    pub size: Option<Box<str>>,
+    size: Option<Box<str>>,
     #[serde(default)]
-    pub ttr: Option<Box<str>>,
+    ttr: Option<Box<str>>,
     #[serde(default)]
-    pub ssi: Option<Box<str>>,
+    ssi: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct MemberName {
     #[serde(rename = "member")]
-    pub name: Box<str>,
+    name: Box<str>,
 }
 
 #[derive(Endpoint)]

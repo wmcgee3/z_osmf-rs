@@ -2,19 +2,19 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 use crate::utils::get_transaction_id;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileList {
-    pub items: Box<[FileAttributes]>,
-    pub returned_rows: i32,
-    pub total_rows: i32,
-    pub json_version: i32,
-    pub transaction_id: Box<str>,
+    items: Box<[FileAttributes]>,
+    returned_rows: i32,
+    total_rows: i32,
+    json_version: i32,
+    transaction_id: Box<str>,
 }
 
 impl TryFromResponse for FileList {
@@ -38,19 +38,19 @@ impl TryFromResponse for FileList {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileAttributes {
-    pub name: Box<str>,
-    pub mode: Box<str>,
-    pub size: i32,
-    pub uid: i32,
+    name: Box<str>,
+    mode: Box<str>,
+    size: i32,
+    uid: i32,
     #[serde(default)]
-    pub user: Option<Box<str>>,
-    pub gid: i32,
-    pub group: Box<str>,
-    pub mtime: Box<str>,
+    user: Option<Box<str>>,
+    gid: i32,
+    group: Box<str>,
+    mtime: Box<str>,
     #[serde(default)]
-    pub target: Option<Box<str>>,
+    target: Option<Box<str>>,
 }
 
 #[derive(Endpoint)]
@@ -85,7 +85,7 @@ where
     #[endpoint(optional, query = "limit")]
     limit: Option<i32>,
     #[endpoint(optional, query = "filesys")]
-    filesys: Option<FileSys>,
+    file_system: Option<FileSystem>,
     #[endpoint(optional, query = "symlinks")]
     symlinks: Option<SymLinks>,
 
@@ -95,7 +95,7 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileSys {
+pub enum FileSystem {
     All,
     Same,
 }
@@ -110,11 +110,11 @@ pub enum SymLinks {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    pub items: Box<[FileAttributes]>,
-    pub returned_rows: i32,
-    pub total_rows: i32,
+    items: Box<[FileAttributes]>,
+    returned_rows: i32,
+    total_rows: i32,
     #[serde(rename = "JSONversion")]
-    pub json_version: i32,
+    json_version: i32,
 }
 
 fn build_lstat<T>(
