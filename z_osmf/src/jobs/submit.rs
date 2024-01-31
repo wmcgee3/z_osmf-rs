@@ -40,7 +40,7 @@ where
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
-    #[endpoint(optional, header = "X-IBM-Intrdr-Class")]
+    #[endpoint(optional, header = "X-IBM-Intrdr-Class", skip_setter)]
     message_class: Option<Box<str>>,
     #[endpoint(optional, header = "X-IBM-Intrdr-Lrecl")]
     record_length: Option<i32>,
@@ -59,6 +59,20 @@ where
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
+}
+
+impl<T> JobSubmitBuilder<T>
+where
+    T: TryFromResponse,
+{
+    pub fn message_class<C>(mut self, value: C) -> Self
+    where
+        C: Into<char>,
+    {
+        self.message_class = Some(value.into().to_string().into());
+
+        self
+    }
 }
 
 #[derive(Serialize)]

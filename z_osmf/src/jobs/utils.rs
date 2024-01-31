@@ -18,7 +18,7 @@ pub struct JobData {
     pub owner: Box<str>,
     pub status: Option<Status>,
     pub job_type: Option<JobType>,
-    pub class: Box<str>,
+    pub class: char,
     #[serde(rename = "retcode")]
     pub return_code: Option<Box<str>>,
     pub url: Box<str>,
@@ -52,7 +52,7 @@ pub struct JobExecData {
     pub owner: Box<str>,
     pub status: Option<Status>,
     pub job_type: Option<JobType>,
-    pub class: Box<str>,
+    pub class: char,
     #[serde(rename = "retcode")]
     pub return_code: Option<Box<str>>,
     pub url: Box<str>,
@@ -90,7 +90,7 @@ pub struct JobExecStepData {
     pub owner: Box<str>,
     pub status: Option<Status>,
     pub job_type: Option<JobType>,
-    pub class: Box<str>,
+    pub class: char,
     #[serde(rename = "retcode")]
     pub return_code: Option<Box<str>>,
     pub url: Box<str>,
@@ -129,7 +129,7 @@ pub struct JobStepData {
     pub owner: Box<str>,
     pub status: Option<Status>,
     pub job_type: Option<JobType>,
-    pub class: Box<str>,
+    pub class: char,
     #[serde(rename = "retcode")]
     pub return_code: Option<Box<str>>,
     pub url: Box<str>,
@@ -278,7 +278,7 @@ where
 
 #[derive(Clone, Serialize)]
 pub struct ClassJson {
-    class: Box<str>,
+    class: char,
     #[serde(skip_serializing_if = "Option::is_none")]
     version: Option<Box<str>>,
 }
@@ -286,7 +286,7 @@ pub struct ClassJson {
 impl ClassJson {
     pub(super) fn new<C>(class: C) -> Self
     where
-        C: Into<Box<str>>,
+        C: Into<char>,
     {
         ClassJson {
             class: class.into(),
