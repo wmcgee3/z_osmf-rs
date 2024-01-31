@@ -1,19 +1,19 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
-use z_osmf_core::error::Error;
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::error::Error;
 use crate::utils::get_transaction_id;
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug)]
 pub struct FileDelete {
-    transaction_id: Box<str>,
+    pub transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for FileDelete {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileDelete {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         Ok(FileDelete { transaction_id })
@@ -22,28 +22,29 @@ impl TryFrom<reqwest::Response> for FileDelete {
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileDeleteBuilder {
+pub struct FileDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = "build_recursive")]
+    #[endpoint(optional, builder_fn = build_recursive)]
     recursive: bool,
+
+    #[endpoint(optional, skip_setter, skip_builder)]
+    target_type: PhantomData<T>,
 }
 
-impl FileDeleteBuilder {
-    pub async fn build(self) -> Result<FileDelete, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-fn build_recursive(
+fn build_recursive<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &FileDeleteBuilder,
-) -> reqwest::RequestBuilder {
+    builder: &FileDeleteBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.recursive {
         request_builder = request_builder.header("X-IBM-Option", "recursive");
     }

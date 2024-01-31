@@ -1,35 +1,32 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
-use z_osmf_core::error::Error;
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::error::Error;
 use crate::utils::get_transaction_id;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileList {
-    items: Box<[FileAttributes]>,
-    returned_rows: i32,
-    total_rows: i32,
-    json_version: i32,
-    transaction_id: Box<str>,
+    pub items: Box<[FileAttributes]>,
+    pub returned_rows: i32,
+    pub total_rows: i32,
+    pub json_version: i32,
+    pub transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for FileList {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileList {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
-
-        let json = Handle::current().block_on(value.json())?;
 
         let ResponseJson {
             items,
             returned_rows,
             total_rows,
             json_version,
-        } = json;
+        } = value.json().await?;
 
         Ok(FileList {
             items,
@@ -41,30 +38,33 @@ impl TryFrom<reqwest::Response> for FileList {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileAttributes {
-    name: Box<str>,
-    mode: Box<str>,
-    size: i32,
-    uid: i32,
+    pub name: Box<str>,
+    pub mode: Box<str>,
+    pub size: i32,
+    pub uid: i32,
     #[serde(default)]
-    user: Option<Box<str>>,
-    gid: i32,
-    group: Box<str>,
-    mtime: Box<str>,
+    pub user: Option<Box<str>>,
+    pub gid: i32,
+    pub group: Box<str>,
+    pub mtime: Box<str>,
     #[serde(default)]
-    target: Option<Box<str>>,
+    pub target: Option<Box<str>>,
 }
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
-pub struct FileListBuilder {
+pub struct FileListBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
     #[endpoint(query = "path")]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = "build_lstat")]
+    #[endpoint(optional, builder_fn = build_lstat)]
     lstat: bool,
     #[endpoint(optional, query = "group")]
     group: Option<Box<str>>,
@@ -88,14 +88,9 @@ pub struct FileListBuilder {
     filesys: Option<FileSys>,
     #[endpoint(optional, query = "symlinks")]
     symlinks: Option<SymLinks>,
-}
 
-impl FileListBuilder {
-    pub async fn build(self) -> Result<FileList, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
+    #[endpoint(optional, skip_setter, skip_builder)]
+    target_type: PhantomData<T>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -112,20 +107,23 @@ pub enum SymLinks {
     Report,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    items: Box<[FileAttributes]>,
-    returned_rows: i32,
-    total_rows: i32,
+    pub items: Box<[FileAttributes]>,
+    pub returned_rows: i32,
+    pub total_rows: i32,
     #[serde(rename = "JSONversion")]
-    json_version: i32,
+    pub json_version: i32,
 }
 
-fn build_lstat(
+fn build_lstat<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &FileListBuilder,
-) -> reqwest::RequestBuilder {
+    builder: &FileListBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.lstat {
         request_builder = request_builder.header("X-IBM-Lstat", "true");
     }

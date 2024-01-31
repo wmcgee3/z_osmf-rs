@@ -2,31 +2,28 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
-use z_osmf_core::error::Error;
-use z_osmf_core::restfiles::data_type::*;
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
-use crate::datasets::utils::*;
-use crate::if_match::*;
-use crate::utils::*;
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::datasets::{get_session_ref, DataType, MigratedRecall, ObtainEnq, RecordRange};
+use crate::error::Error;
+use crate::utils::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetRead<T> {
-    data: T,
-    etag: Option<Box<str>>,
-    session_ref: Option<Box<str>>,
-    transaction_id: Box<str>,
+    pub data: T,
+    pub etag: Option<Box<str>>,
+    pub session_ref: Option<Box<str>>,
+    pub transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for DatasetRead<Bytes> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetRead<Box<str>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let data = Handle::current().block_on(value.bytes())?;
+        let data = value.text().await?.into();
 
         Ok(DatasetRead {
             data,
@@ -37,15 +34,11 @@ impl TryFrom<reqwest::Response> for DatasetRead<Bytes> {
     }
 }
 
-impl TryFrom<reqwest::Response> for DatasetRead<Box<str>> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetRead<Bytes> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let rt = Handle::current();
-
-        let data = rt.block_on(value.text())?.into();
+        let data = value.bytes().await?;
 
         Ok(DatasetRead {
             data,
@@ -56,84 +49,60 @@ impl TryFrom<reqwest::Response> for DatasetRead<Box<str>> {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum DatasetReadIfNoneMatch<T> {
-    Modified(DatasetRead<T>),
-    NotModified(DatasetReadNotModified),
-}
-
-impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Bytes> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
-        if value.status() == 304 {
-            let transaction_id = get_transaction_id(&value)?;
-
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-
+impl TryFromResponse for DatasetRead<Option<Box<str>>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let rt = Handle::current();
+        let data = if value.status() == StatusCode::NOT_MODIFIED {
+            None
+        } else {
+            Some(value.text().await?.into())
+        };
 
-        let data = rt.block_on(value.bytes())?;
-
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
             transaction_id,
-        }))
+        })
     }
 }
 
-impl TryFrom<reqwest::Response> for DatasetReadIfNoneMatch<Box<str>> {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
-        if value.status() == 304 {
-            let transaction_id = get_transaction_id(&value)?;
-
-            return Ok(DatasetReadIfNoneMatch::NotModified(
-                DatasetReadNotModified { transaction_id },
-            ));
-        }
-
+impl TryFromResponse for DatasetRead<Option<Bytes>> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
-        let rt = Handle::current();
+        let data = if value.status() == StatusCode::NOT_MODIFIED {
+            None
+        } else {
+            Some(value.bytes().await?)
+        };
 
-        let data = rt.block_on(value.text())?.into();
-
-        Ok(DatasetReadIfNoneMatch::Modified(DatasetRead {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
             transaction_id,
-        }))
+        })
     }
-}
-
-#[derive(Clone, Debug, Getters)]
-pub struct DatasetReadNotModified {
-    transaction_id: Box<str>,
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetReadBuilder<T, I> {
+pub struct DatasetReadBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_volume")]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_member")]
+    #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
-    #[endpoint(optional, query = "search", builder_fn = "build_search")]
+    #[endpoint(optional, query = "search", builder_fn = build_search)]
     search_pattern: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     search_is_regex: bool,
@@ -143,31 +112,35 @@ pub struct DatasetReadBuilder<T, I> {
     search_max_return: Option<i32>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
     if_none_match: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_data_type")]
+    #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
     data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = "build_return_etag")]
+    #[endpoint(optional, builder_fn = build_return_etag)]
     return_etag: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
+    #[endpoint(optional, header = "X-IBM-Record-Range")]
+    record_range: Option<RecordRange>,
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<ObtainEnq>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = "build_release_enq")]
+    #[endpoint(optional, builder_fn = build_release_enq)]
     release_enq: bool,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
-    data_type_marker: PhantomData<T>,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    if_none_match_marker: PhantomData<I>,
+    target_type: PhantomData<T>,
 }
 
-impl<T, I> DatasetReadBuilder<T, I> {
-    pub fn binary(self) -> DatasetReadBuilder<Binary, I> {
+impl<U> DatasetReadBuilder<DatasetRead<U>>
+where
+    DatasetRead<U>: TryFromResponse,
+    DatasetRead<Option<U>>: TryFromResponse,
+{
+    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -183,16 +156,16 @@ impl<T, I> DatasetReadBuilder<T, I> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
-            data_type_marker: PhantomData,
-            if_none_match_marker: self.if_none_match_marker,
+            target_type: PhantomData,
         }
     }
 
-    pub fn record(self) -> DatasetReadBuilder<Record, I> {
+    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -208,16 +181,16 @@ impl<T, I> DatasetReadBuilder<T, I> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
-            data_type_marker: PhantomData,
-            if_none_match_marker: self.if_none_match_marker,
+            target_type: PhantomData,
         }
     }
 
-    pub fn text(self) -> DatasetReadBuilder<Text, I> {
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -233,18 +206,18 @@ impl<T, I> DatasetReadBuilder<T, I> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
-            data_type_marker: PhantomData,
-            if_none_match_marker: self.if_none_match_marker,
+            target_type: PhantomData,
         }
     }
 
-    pub fn if_none_match<V>(self, etag: V) -> DatasetReadBuilder<T, Etag>
+    pub fn if_none_match<E>(self, etag: E) -> DatasetReadBuilder<DatasetRead<Option<U>>>
     where
-        V: Into<Box<str>>,
+        E: Into<Box<str>>,
     {
         DatasetReadBuilder {
             base_url: self.base_url,
@@ -261,86 +234,127 @@ impl<T, I> DatasetReadBuilder<T, I> {
             encoding: self.encoding,
             return_etag: self.return_etag,
             migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
             obtain_enq: self.obtain_enq,
             session_ref: self.session_ref,
             release_enq: self.release_enq,
             dsname_encoding: self.dsname_encoding,
-            data_type_marker: self.data_type_marker,
-            if_none_match_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 }
 
-impl DatasetReadBuilder<Binary, NoEtag> {
-    pub async fn build(self) -> Result<DatasetRead<Bytes>, Error> {
-        let response = self.get_response().await?.error_for_status()?;
+impl<V> DatasetReadBuilder<DatasetRead<Option<V>>>
+where
+    DatasetRead<Option<V>>: TryFromResponse,
+{
+    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
+        DatasetReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
+            dataset_name: self.dataset_name,
+            volume: self.volume,
+            member: self.member,
+            data_type: Some(DataType::Binary),
+            if_none_match: self.if_none_match,
+            encoding: self.encoding,
+            return_etag: self.return_etag,
+            migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
+            target_type: PhantomData,
+        }
+    }
 
-        response.try_into()
+    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
+        DatasetReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
+            dataset_name: self.dataset_name,
+            volume: self.volume,
+            member: self.member,
+            data_type: Some(DataType::Record),
+            if_none_match: self.if_none_match,
+            encoding: self.encoding,
+            return_etag: self.return_etag,
+            migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
+            target_type: PhantomData,
+        }
+    }
+
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
+        DatasetReadBuilder {
+            base_url: self.base_url,
+            client: self.client,
+            search_pattern: self.search_pattern,
+            search_is_regex: self.search_is_regex,
+            search_case_sensitive: self.search_case_sensitive,
+            search_max_return: self.search_max_return,
+            dataset_name: self.dataset_name,
+            volume: self.volume,
+            member: self.member,
+            data_type: Some(DataType::Text),
+            if_none_match: self.if_none_match,
+            encoding: self.encoding,
+            return_etag: self.return_etag,
+            migrated_recall: self.migrated_recall,
+            record_range: self.record_range,
+            obtain_enq: self.obtain_enq,
+            session_ref: self.session_ref,
+            release_enq: self.release_enq,
+            dsname_encoding: self.dsname_encoding,
+            target_type: PhantomData,
+        }
     }
 }
 
-impl DatasetReadBuilder<Record, NoEtag> {
-    pub async fn build(self) -> Result<DatasetRead<Bytes>, Error> {
-        let response = self.get_response().await?.error_for_status()?;
-
-        response.try_into()
-    }
-}
-
-impl<'a> DatasetReadBuilder<Text, NoEtag> {
-    pub async fn build(self) -> Result<DatasetRead<Box<str>>, Error> {
-        let response = self.get_response().await?.error_for_status()?;
-
-        response.try_into()
-    }
-}
-
-impl DatasetReadBuilder<Binary, Etag> {
-    pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Bytes>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-impl DatasetReadBuilder<Record, Etag> {
-    pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Bytes>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-impl<'a> DatasetReadBuilder<Text, Etag> {
-    pub async fn build(self) -> Result<DatasetReadIfNoneMatch<Box<str>>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-fn set_member<T, I>(
-    mut dataset_read_builder: DatasetReadBuilder<T, I>,
+fn set_member<T>(
+    mut dataset_read_builder: DatasetReadBuilder<T>,
     value: Box<str>,
-) -> DatasetReadBuilder<T, I> {
+) -> DatasetReadBuilder<T>
+where
+    T: TryFromResponse,
+{
     dataset_read_builder.member = format!("({})", value).into();
 
     dataset_read_builder
 }
 
-fn set_volume<T, I>(
-    mut dataset_read_builder: DatasetReadBuilder<T, I>,
+fn set_volume<T>(
+    mut dataset_read_builder: DatasetReadBuilder<T>,
     value: Box<str>,
-) -> DatasetReadBuilder<T, I> {
+) -> DatasetReadBuilder<T>
+where
+    T: TryFromResponse,
+{
     dataset_read_builder.volume = format!("-({})/", value).into();
 
     dataset_read_builder
 }
 
-fn build_search<T, I>(
+fn build_search<T>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T, I>,
-) -> reqwest::RequestBuilder {
+    dataset_read_builder: &DatasetReadBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let DatasetReadBuilder {
         search_pattern,
         search_is_regex,
@@ -369,10 +383,13 @@ fn build_search<T, I>(
     request_builder
 }
 
-fn build_data_type<T, I>(
+fn build_data_type<T>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T, I>,
-) -> reqwest::RequestBuilder {
+    dataset_read_builder: &DatasetReadBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     let DatasetReadBuilder {
         data_type,
         encoding,
@@ -393,10 +410,13 @@ fn build_data_type<T, I>(
     }
 }
 
-fn build_release_enq<T, I>(
+fn build_release_enq<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DatasetReadBuilder<T, I>,
-) -> reqwest::RequestBuilder {
+    builder: &DatasetReadBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if builder.release_enq {
         request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
     }
@@ -404,10 +424,13 @@ fn build_release_enq<T, I>(
     request_builder
 }
 
-fn build_return_etag<T, I>(
+fn build_return_etag<T>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T, I>,
-) -> reqwest::RequestBuilder {
+    dataset_read_builder: &DatasetReadBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
     if dataset_read_builder.return_etag {
         request_builder = request_builder.header("X-IBM-Return-Etag", "true");
     }

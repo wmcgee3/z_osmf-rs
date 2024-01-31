@@ -2,22 +2,21 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use z_osmf_core::error::Error;
-use z_osmf_core::restfiles::data_type::{Binary, DataType, Text};
-use z_osmf_macros::{Endpoint, Getters};
+use serde::{Deserialize, Serialize};
+use z_osmf_macros::Endpoint;
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileWrite {
-    etag: Box<str>,
-    transaction_id: Box<str>,
+    pub etag: Box<str>,
+    pub transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for FileWrite {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for FileWrite {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
         let transaction_id = get_transaction_id(&value)?;
 
@@ -30,9 +29,9 @@ impl TryFrom<reqwest::Response> for FileWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileWriteBuilder<D, T>
+pub struct FileWriteBuilder<T>
 where
-    D: Into<reqwest::Body> + Clone,
+    T: TryFromResponse,
 {
     base_url: Arc<str>,
     client: reqwest::Client,
@@ -42,81 +41,54 @@ where
 
     #[endpoint(optional, skip_builder)]
     crlf_newlines: bool,
-    #[endpoint(optional, skip_setter, builder_fn = "build_data")]
-    data: Option<D>,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    data_type: DataType,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    data_type_marker: PhantomData<T>,
+    #[endpoint(optional, skip_setter, builder_fn = build_data)]
+    data: Option<Data>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, header = "If-Match")]
     if_match: Option<Box<str>>,
+
+    #[endpoint(optional, skip_setter, skip_builder)]
+    target_type: PhantomData<T>,
 }
 
-impl<D, T> FileWriteBuilder<D, T>
-where
-    D: Into<reqwest::Body> + Clone,
-{
-    pub fn binary<B>(self, data: B) -> FileWriteBuilder<Bytes, Binary>
+impl FileWriteBuilder<FileWrite> {
+    pub fn binary<B>(mut self, data: B) -> Self
     where
         B: Into<Bytes>,
     {
-        FileWriteBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            path: self.path,
-            crlf_newlines: self.crlf_newlines,
-            data: Some(data.into()),
-            data_type: self.data_type,
-            data_type_marker: PhantomData,
-            encoding: self.encoding,
-            if_match: self.if_match,
-        }
+        self.data = Some(Data::Binary(data.into()));
+
+        self
     }
 
-    pub fn text<S>(self, data: S) -> FileWriteBuilder<String, Text>
+    pub fn text<B>(mut self, data: B) -> Self
     where
-        S: ToString,
+        B: Into<Box<str>>,
     {
-        FileWriteBuilder {
-            base_url: self.base_url,
-            client: self.client,
-            path: self.path,
-            crlf_newlines: self.crlf_newlines,
-            data: Some(data.to_string()),
-            data_type: self.data_type,
-            data_type_marker: PhantomData,
-            encoding: self.encoding,
-            if_match: self.if_match,
-        }
-    }
+        self.data = Some(Data::Text(data.into()));
 
-    pub async fn build(self) -> Result<FileWrite, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
+        self
     }
 }
 
-fn build_data<D, T>(
+fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &FileWriteBuilder<D, T>,
+    builder: &FileWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
-    D: Into<reqwest::Body> + Clone,
+    T: TryFromResponse,
 {
     let key = "X-IBM-Data-Type";
     let FileWriteBuilder {
         crlf_newlines,
         data,
-        data_type,
         encoding,
         ..
     } = builder;
 
-    request_builder = match (data_type, encoding, crlf_newlines) {
-        (&DataType::Text, encoding, crlf) => request_builder.header(
+    request_builder = match (data, encoding, crlf_newlines) {
+        (Some(Data::Text(_)), encoding, crlf) => request_builder.header(
             key,
             format!(
                 "text{}{}",
@@ -128,11 +100,19 @@ where
                 if *crlf { ";crlf=true" } else { "" }
             ),
         ),
-        (data_type, _, _) => request_builder.header(key, format!("{}", data_type)),
+        (Some(Data::Binary(_)), _, _) => request_builder.header(key, "binary"),
+        _ => request_builder,
     };
-    if let Some(value) = data {
-        request_builder = request_builder.body(value.clone());
-    }
 
-    request_builder
+    match data {
+        Some(Data::Binary(binary)) => request_builder.body(binary.clone()),
+        Some(Data::Text(text)) => request_builder.body(text.to_string()),
+        _ => request_builder,
+    }
+}
+
+#[derive(Clone, Debug)]
+enum Data {
+    Binary(Bytes),
+    Text(Box<str>),
 }

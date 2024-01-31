@@ -4,17 +4,13 @@ pub mod list;
 pub mod read;
 pub mod write;
 
-pub use create::*;
-pub use delete::*;
-pub use list::*;
-pub use read::*;
-pub use write::*;
+pub use self::create::*;
+pub use self::delete::*;
+pub use self::list::*;
+pub use self::read::*;
+pub use self::write::*;
 
 use std::sync::Arc;
-
-use z_osmf_core::restfiles::data_type::Text;
-
-use crate::if_match::NoEtag;
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {
@@ -58,7 +54,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, path: &str) -> FileCreateBuilder {
+    pub fn create(&self, path: &str) -> FileCreateBuilder<FileCreate> {
         FileCreateBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -87,7 +83,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, path: &str) -> FileDeleteBuilder {
+    pub fn delete(&self, path: &str) -> FileDeleteBuilder<FileDelete> {
         FileDeleteBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -129,7 +125,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, path: &str) -> FileListBuilder {
+    pub fn list(&self, path: &str) -> FileListBuilder<FileList> {
         FileListBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -146,7 +142,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, path: &str) -> FileReadBuilder<Text, NoEtag> {
+    pub fn read(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
@@ -165,7 +161,27 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, path: &str) -> FileWriteBuilder<String, Text> {
+    pub fn write(&self, path: &str) -> FileWriteBuilder<FileWrite> {
         FileWriteBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum DataType {
+    Binary,
+    #[default]
+    Text,
+}
+
+impl std::fmt::Display for DataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                DataType::Binary => "binary",
+                DataType::Text => "text",
+            }
+        )
     }
 }

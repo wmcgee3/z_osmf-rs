@@ -1,3 +1,5 @@
+pub use crate::utils::RecordRange;
+
 pub mod create;
 pub mod delete;
 pub mod list;
@@ -5,19 +7,19 @@ pub mod list_members;
 pub mod read;
 pub mod write;
 
-pub use create::*;
-pub use delete::*;
-pub use list::*;
-pub use list_members::*;
-pub use read::*;
-pub use write::*;
-
-mod utils;
+pub use self::create::*;
+pub use self::delete::*;
+pub use self::list::*;
+pub use self::list_members::*;
+pub use self::read::*;
+pub use self::write::*;
 
 use std::sync::Arc;
 
-use crate::if_match::NoEtag;
-use z_osmf_core::restfiles::data_type::Text;
+use reqwest::header::HeaderValue;
+use serde::{Deserialize, Serialize};
+
+use crate::error::Error;
 
 /// # DatasetsClient
 ///
@@ -112,7 +114,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder {
+    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
         DatasetCreateBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
@@ -169,7 +171,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder {
+    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
         DatasetDeleteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
@@ -196,7 +198,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetName> {
+    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
     }
 
@@ -222,7 +224,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberName> {
+    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberList<MemberName>> {
         MemberListBuilder::new(
             self.base_url.clone(),
             self.client.clone(),
@@ -252,7 +254,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<Text, NoEtag> {
+    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
@@ -273,7 +275,74 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<String, Text> {
+    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
         DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum DataType {
+    Binary,
+    Record,
+    #[default]
+    Text,
+}
+
+impl std::fmt::Display for DataType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                DataType::Binary => "binary",
+                DataType::Record => "record",
+                DataType::Text => "text",
+            }
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum MigratedRecall {
+    Error,
+    NoWait,
+    Wait,
+}
+
+impl From<MigratedRecall> for HeaderValue {
+    fn from(val: MigratedRecall) -> HeaderValue {
+        match val {
+            MigratedRecall::Error => "error",
+            MigratedRecall::NoWait => "nowait",
+            MigratedRecall::Wait => "wait",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum ObtainEnq {
+    Exclusive,
+    SharedReadWrite,
+}
+
+impl From<ObtainEnq> for HeaderValue {
+    fn from(val: ObtainEnq) -> HeaderValue {
+        match val {
+            ObtainEnq::Exclusive => "EXCLU",
+            ObtainEnq::SharedReadWrite => "SHRW",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
+pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
+    Ok(response
+        .headers()
+        .get("X-IBM-Session-Ref")
+        .map(|v| v.to_str())
+        .transpose()?
+        .map(|v| v.into()))
 }

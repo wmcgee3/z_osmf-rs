@@ -4,9 +4,7 @@
 //!
 //! The (work in progress) Rust z/OSMF Client.
 
-pub use z_osmf_core::error::Error;
-
-pub mod if_match;
+pub mod error;
 
 #[cfg(feature = "datasets")]
 pub mod datasets;
@@ -15,12 +13,18 @@ pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
+pub use crate::error::Error;
+
+mod convert;
 mod utils;
 
 use std::sync::Arc;
 
+#[cfg(feature = "datasets")]
 use datasets::DatasetsClient;
+#[cfg(feature = "files")]
 use files::FilesClient;
+#[cfg(feature = "jobs")]
 use jobs::JobsClient;
 
 /// # ZOsmf
@@ -39,7 +43,7 @@ use jobs::JobsClient;
 ///
 /// let my_datasets = zosmf.datasets().list(username).build().await?;
 ///
-/// for dataset in my_datasets.items().iter() {
+/// for dataset in my_datasets.items.iter() {
 ///     println!("{:?}", dataset);
 /// }
 /// # Ok(())
@@ -136,7 +140,7 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "datasets")]
-    pub fn datasets(self) -> DatasetsClient {
+    pub fn datasets(&self) -> DatasetsClient {
         DatasetsClient::new(self.base_url.clone(), self.client.clone())
     }
 
@@ -150,7 +154,7 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "files")]
-    pub fn files(self) -> FilesClient {
+    pub fn files(&self) -> FilesClient {
         FilesClient::new(self.base_url.clone(), self.client.clone())
     }
 
@@ -164,7 +168,7 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "jobs")]
-    pub fn jobs(self) -> JobsClient {
+    pub fn jobs(&self) -> JobsClient {
         JobsClient::new(self.base_url.clone(), self.client.clone())
     }
 }

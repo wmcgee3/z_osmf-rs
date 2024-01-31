@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
         .write("SYS1.PARMLIB")
         .member("SMFPRM00")
         .if_match("B5C6454F783590AA8EC15BD88E29EA63")
-        .text(data.to_string())
+        .text(data)
         .build()
         .await?;
 

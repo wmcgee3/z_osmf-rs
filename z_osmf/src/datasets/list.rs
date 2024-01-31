@@ -3,29 +3,30 @@ use std::sync::Arc;
 
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
-use z_osmf_core::error::Error;
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
-use crate::utils::*;
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::error::Error;
+use crate::utils::{
+    de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
+    ser_optional_yes_no, ser_yes_no,
+};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetList<T> {
-    items: Box<[T]>,
-    json_version: i32,
-    more_rows: Option<bool>,
-    returned_rows: i32,
-    total_rows: Option<i32>,
-    transaction_id: Box<str>,
+    pub items: Box<[T]>,
+    pub json_version: i32,
+    pub more_rows: Option<bool>,
+    pub returned_rows: i32,
+    pub total_rows: Option<i32>,
+    pub transaction_id: Box<str>,
 }
 
-impl<T> TryFrom<reqwest::Response> for DatasetList<T>
+impl<T> TryFromResponse for DatasetList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         let ResponseJson {
@@ -34,7 +35,7 @@ where
             more_rows,
             returned_rows,
             total_rows,
-        } = Handle::current().block_on(value.json())?;
+        } = value.json().await?;
 
         Ok(DatasetList {
             items,
@@ -47,76 +48,76 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetBase {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    pub name: Box<str>,
     #[serde(rename = "blksz")]
-    block_size: Option<Box<str>>,
+    pub block_size: Option<Box<str>>,
     #[serde(rename = "catnm")]
-    catalog: Option<Box<str>>,
+    pub catalog: Option<Box<str>>,
     #[serde(rename = "cdate")]
-    creation_date: Option<Box<str>>,
+    pub creation_date: Option<Box<str>>,
     #[serde(rename = "dev")]
-    device_type: Option<Box<str>>,
+    pub device_type: Option<Box<str>>,
     #[serde(rename = "dsntp")]
-    dataset_type: Option<Box<str>>,
+    pub dataset_type: Option<Box<str>>,
     #[serde(rename = "dsorg")]
-    organization: Option<Box<str>>,
+    pub organization: Option<Box<str>>,
     #[serde(rename = "edate")]
-    expiration_date: Option<Box<str>>,
+    pub expiration_date: Option<Box<str>>,
     #[serde(rename = "extx")]
-    extents_used: Option<Box<str>>,
+    pub extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
-    logical_record_length: Option<Box<str>>,
+    pub logical_record_length: Option<Box<str>>,
     #[serde(
         rename = "migr",
         deserialize_with = "de_yes_no",
         serialize_with = "ser_yes_no"
     )]
-    migrated: bool,
+    pub migrated: bool,
     #[serde(
         default,
         rename = "mvol",
         deserialize_with = "de_optional_y_n",
         serialize_with = "ser_optional_y_n"
     )]
-    multi_volume: Option<bool>,
+    pub multi_volume: Option<bool>,
     #[serde(
         default,
         rename = "ovf",
         deserialize_with = "de_optional_yes_no",
         serialize_with = "ser_optional_yes_no"
     )]
-    space_overflow: Option<bool>,
+    pub space_overflow: Option<bool>,
     #[serde(rename = "rdate")]
-    last_referenced_date: Option<Box<str>>,
+    pub last_referenced_date: Option<Box<str>>,
     #[serde(rename = "recfm")]
-    record_format: Option<Box<str>>,
+    pub record_format: Option<Box<str>>,
     #[serde(rename = "sizex")]
-    size_in_tracks: Option<Box<str>>,
+    pub size_in_tracks: Option<Box<str>>,
     #[serde(rename = "spacu")]
-    space_units: Option<Box<str>>,
+    pub space_units: Option<Box<str>>,
     #[serde(rename = "used")]
-    percent_used: Option<Box<str>>,
+    pub percent_used: Option<Box<str>>,
     #[serde(rename = "vol")]
-    volume: Volume,
+    pub volume: Volume,
     #[serde(rename = "vols")]
-    volumes: Option<Box<str>>,
+    pub volumes: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetName {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    pub name: Box<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DatasetVol {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    pub name: Box<str>,
     #[serde(rename = "vol")]
-    volume: Volume,
+    pub volume: Volume,
 }
 
 #[derive(Clone, Debug)]
@@ -161,7 +162,7 @@ impl Serialize for Volume {
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
 pub struct DatasetListBuilder<T>
 where
-    T: for<'de> Deserialize<'de>,
+    T: TryFromResponse,
 {
     base_url: Arc<str>,
     client: Client,
@@ -174,19 +175,20 @@ where
     start: Option<Box<str>>,
     #[endpoint(optional, header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
-    #[endpoint(optional, skip_setter, builder_fn = "build_attributes")]
+    #[endpoint(optional, skip_setter, builder_fn = build_attributes)]
     attributes: Option<Attrs>,
     #[endpoint(optional, skip_builder)]
     include_total: bool,
+
     #[endpoint(optional, skip_setter, skip_builder)]
-    attributes_marker: PhantomData<T>,
+    target_type: PhantomData<T>,
 }
 
 impl<T> DatasetListBuilder<T>
 where
-    T: for<'de> Deserialize<'de>,
+    T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetListBuilder<DatasetBase> {
+    pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetBase>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -196,11 +198,11 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Base),
             include_total: self.include_total,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetName> {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -210,11 +212,11 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Dsname),
             include_total: self.include_total,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetVol> {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVol>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,
@@ -224,14 +226,8 @@ where
             max_items: self.max_items,
             attributes: Some(Attrs::Vol),
             include_total: self.include_total,
-            attributes_marker: PhantomData,
+            target_type: PhantomData,
         }
-    }
-
-    pub async fn build(self) -> Result<DatasetList<T>, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
     }
 }
 
@@ -274,7 +270,7 @@ fn build_attributes<T>(
     list_builder: &DatasetListBuilder<T>,
 ) -> RequestBuilder
 where
-    T: for<'de> Deserialize<'de>,
+    T: TryFromResponse,
 {
     match (list_builder.attributes, list_builder.include_total) {
         (None, false) => request_builder,

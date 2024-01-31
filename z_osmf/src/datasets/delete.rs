@@ -1,19 +1,19 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
-use z_osmf_core::error::Error;
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
+use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::error::Error;
 use crate::utils::get_transaction_id;
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug)]
 pub struct DatasetDelete {
-    transaction_id: Box<str>,
+    pub transaction_id: Box<str>,
 }
 
-impl TryFrom<reqwest::Response> for DatasetDelete {
-    type Error = Error;
-
-    fn try_from(value: reqwest::Response) -> Result<Self, Self::Error> {
+impl TryFromResponse for DatasetDelete {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         Ok(DatasetDelete { transaction_id })
@@ -22,35 +22,39 @@ impl TryFrom<reqwest::Response> for DatasetDelete {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetDeleteBuilder {
+pub struct DatasetDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     base_url: Arc<str>,
     client: reqwest::Client,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_volume")]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = "set_member")]
+    #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
     #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,
+
+    #[endpoint(optional, skip_setter, skip_builder)]
+    target_type: PhantomData<T>,
 }
 
-impl DatasetDeleteBuilder {
-    pub async fn build(self) -> Result<DatasetDelete, Error> {
-        let response = self.get_response().await?;
-
-        response.try_into()
-    }
-}
-
-fn set_volume(mut builder: DatasetDeleteBuilder, value: Box<str>) -> DatasetDeleteBuilder {
+fn set_volume<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.volume = format!("-({})/", value).into();
 
     builder
 }
 
-fn set_member(mut builder: DatasetDeleteBuilder, value: Box<str>) -> DatasetDeleteBuilder {
+fn set_member<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T>
+where
+    T: TryFromResponse,
+{
     builder.member = format!("({})", value).into();
 
     builder
