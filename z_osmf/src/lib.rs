@@ -181,3 +181,14 @@ impl ZOsmf {
         JobsClient::new(self.base_url.clone(), self.client.clone())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    pub(crate) fn get_zosmf() -> ZOsmf {
+        let client_builder = reqwest::ClientBuilder::new();
+
+        ZOsmf::new(client_builder, "https://example.com").unwrap()
+    }
+}

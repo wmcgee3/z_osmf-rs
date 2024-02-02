@@ -157,3 +157,60 @@ where
 
     request_builder.json(&request_json)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::datasets::tests::get_datasets_client;
+
+    use super::*;
+
+    #[test]
+    fn test_create_builder() {
+        let datasets_client = get_datasets_client();
+
+        let manual_request = datasets_client
+            .client
+            .post("https://example.com/zosmf/restfiles/ds/test.dataset")
+            .json(&RequestJson {
+                volume: Some("zmf046"),
+                device_type: Some("3390"),
+                organization: Some("PS"),
+                space_allocation_unit: Some("TRK"),
+                primary_space: Some(&10),
+                secondary_space: Some(&5),
+                average_block_size: Some(&500),
+                record_format: Some("FB"),
+                block_size: Some(&400),
+                record_length: Some(&80),
+                ..Default::default()
+            })
+            .build()
+            .unwrap();
+
+        let crate_request = datasets_client
+            .create("test.dataset")
+            .volume("zmf046")
+            .device_type("3390")
+            .organization("PS")
+            .space_allocation_unit("TRK")
+            .primary_space(10)
+            .secondary_space(5)
+            .average_block_size(500)
+            .record_format("FB")
+            .block_size(400)
+            .record_length(80)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", crate_request)
+        );
+
+        assert_eq!(
+            manual_request.body().unwrap().as_bytes(),
+            crate_request.body().unwrap().as_bytes(),
+            "create dataset request bodies are not equal"
+        );
+    }
+}
