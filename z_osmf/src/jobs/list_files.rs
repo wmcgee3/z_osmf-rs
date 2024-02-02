@@ -24,20 +24,27 @@ impl TryFromResponse for JobsFileList {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobFile {
-    jobname: Box<str>,
-    recfm: Box<str>,
+    #[serde(rename = "jobname")]
+    job_name: Box<str>,
+    #[serde(rename = "recfm")]
+    record_format: Box<str>,
     byte_count: i32,
     record_count: i32,
     job_correlator: Option<Box<str>>,
     class: Box<str>,
-    jobid: Box<str>,
+    #[serde(rename = "jobid")]
+    job_id: Box<str>,
     id: i32,
-    ddname: Box<str>,
+    #[serde(rename = "ddname")]
+    dd_name: Box<str>,
     records_url: Box<str>,
-    lrecl: i32,
+    #[serde(rename = "lrecl")]
+    record_length: i32,
     subsystem: Box<str>,
-    stepname: Option<Box<str>>,
-    procstep: Option<Box<str>>,
+    #[serde(rename = "stepname")]
+    step_name: Option<Box<str>>,
+    #[serde(rename = "procstep")]
+    proc_step: Option<Box<str>>,
 }
 
 #[derive(Clone, Debug, Endpoint)]

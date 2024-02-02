@@ -69,7 +69,7 @@ pub struct DatasetBase {
     #[serde(rename = "extx")]
     extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
-    logical_record_length: Option<Box<str>>,
+    record_length: Option<Box<str>>,
     #[serde(
         rename = "migr",
         deserialize_with = "de_yes_no",

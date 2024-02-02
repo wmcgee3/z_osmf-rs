@@ -57,7 +57,7 @@ where
     #[endpoint(optional, skip_builder)]
     block_size: Option<i32>,
     #[endpoint(optional, skip_builder)]
-    logical_record_length: Option<i32>,
+    record_length: Option<i32>,
     #[endpoint(optional, skip_builder)]
     storage_class: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
@@ -96,7 +96,7 @@ struct RequestJson<'a> {
     #[serde(rename = "blksize", skip_serializing_if = "Option::is_none")]
     block_size: Option<&'a i32>,
     #[serde(rename = "lrecl", skip_serializing_if = "Option::is_none")]
-    logical_record_length: Option<&'a i32>,
+    record_length: Option<&'a i32>,
     #[serde(rename = "storclass", skip_serializing_if = "Option::is_none")]
     storage_class: Option<&'a str>,
     #[serde(rename = "mgntclass", skip_serializing_if = "Option::is_none")]
@@ -127,7 +127,7 @@ where
         average_block_size,
         record_format,
         block_size,
-        logical_record_length,
+        record_length,
         storage_class,
         management_class,
         data_class,
@@ -147,7 +147,7 @@ where
         average_block_size: average_block_size.as_ref(),
         record_format: record_format.as_deref(),
         block_size: block_size.as_ref(),
-        logical_record_length: logical_record_length.as_ref(),
+        record_length: record_length.as_ref(),
         storage_class: storage_class.as_deref(),
         management_class: management_class.as_deref(),
         data_class: data_class.as_deref(),

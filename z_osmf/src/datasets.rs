@@ -60,7 +60,7 @@ impl DatasetsClient {
     ///     .average_block_size(500)
     ///     .record_format("FB")
     ///     .block_size(400)
-    ///     .logical_record_length(80)
+    ///     .record_length(80)
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -83,7 +83,7 @@ impl DatasetsClient {
     ///     .average_block_size(500)
     ///     .record_format("FB")
     ///     .block_size(400)
-    ///     .logical_record_length(80)
+    ///     .record_length(80)
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -106,7 +106,7 @@ impl DatasetsClient {
     ///     .average_block_size(500)
     ///     .record_format("FB")
     ///     .block_size(400)
-    ///     .logical_record_length(80)
+    ///     .record_length(80)
     ///     .dataset_type("LIBRARY")
     ///     .build()
     ///     .await?;
