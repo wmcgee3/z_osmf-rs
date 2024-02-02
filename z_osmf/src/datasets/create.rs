@@ -162,28 +162,29 @@ where
 mod tests {
     use crate::datasets::tests::get_datasets_client;
 
-    use super::*;
-
     #[test]
     fn test_create_builder() {
         let datasets_client = get_datasets_client();
 
+        let raw_json = r#"
+        {
+            "volser":"zmf046",
+            "unit":"3390",
+            "dsorg":"PS",
+            "alcunit":"TRK",
+            "primary":10,
+            "secondary":5,
+            "avgblk":500,
+            "recfm":"FB",
+            "blksize":400,
+            "lrecl":80
+        }
+        "#;
+
         let manual_request = datasets_client
             .client
             .post("https://example.com/zosmf/restfiles/ds/test.dataset")
-            .json(&RequestJson {
-                volume: Some("zmf046"),
-                device_type: Some("3390"),
-                organization: Some("PS"),
-                space_allocation_unit: Some("TRK"),
-                primary_space: Some(&10),
-                secondary_space: Some(&5),
-                average_block_size: Some(&500),
-                record_format: Some("FB"),
-                block_size: Some(&400),
-                record_length: Some(&80),
-                ..Default::default()
-            })
+            .json(&serde_json::from_str::<serde_json::Value>(raw_json).unwrap())
             .build()
             .unwrap();
 
@@ -208,8 +209,14 @@ mod tests {
         );
 
         assert_eq!(
-            manual_request.body().unwrap().as_bytes(),
-            crate_request.body().unwrap().as_bytes(),
+            serde_json::from_slice::<serde_json::Value>(
+                manual_request.body().unwrap().as_bytes().unwrap()
+            )
+            .unwrap(),
+            serde_json::from_slice::<serde_json::Value>(
+                crate_request.body().unwrap().as_bytes().unwrap()
+            )
+            .unwrap(),
             "create dataset request bodies are not equal"
         );
     }
