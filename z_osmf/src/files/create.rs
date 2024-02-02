@@ -10,28 +10,28 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileCreate {
+pub struct CreateFile {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for FileCreate {
+impl TryFromResponse for CreateFile {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(FileCreate { transaction_id })
+        Ok(CreateFile { transaction_id })
     }
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileType {
-    File,
     Directory,
+    File,
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileCreateBuilder<T>
+pub struct CreateFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -63,12 +63,12 @@ struct RequestJson<'a> {
 
 fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileCreateBuilder<T>,
+    builder: &CreateFileBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileCreateBuilder {
+    let CreateFileBuilder {
         file_type, mode, ..
     } = builder;
 

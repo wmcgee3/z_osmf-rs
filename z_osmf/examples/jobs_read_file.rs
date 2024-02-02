@@ -3,7 +3,8 @@ mod _setup;
 
 use std::str::FromStr;
 
-use z_osmf::jobs::{JobFileID, JobIdentifier, RecordRange};
+use z_osmf::jobs::read_file::{JobFileID, RecordRange};
+use z_osmf::jobs::JobIdentifier;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

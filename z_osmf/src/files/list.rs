@@ -9,7 +9,7 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileList {
+pub struct ListFiles {
     items: Box<[FileAttributes]>,
     returned_rows: i32,
     total_rows: i32,
@@ -17,7 +17,7 @@ pub struct FileList {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for FileList {
+impl TryFromResponse for ListFiles {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
@@ -28,7 +28,7 @@ impl TryFromResponse for FileList {
             json_version,
         } = value.json().await?;
 
-        Ok(FileList {
+        Ok(ListFiles {
             items,
             returned_rows,
             total_rows,
@@ -53,9 +53,26 @@ pub struct FileAttributes {
     target: Option<Box<str>>,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum FileType {
+    #[serde(rename = "c")]
+    CharacterSpecialFile,
+    #[serde(rename = "d")]
+    Directory,
+    #[serde(rename = "p")]
+    FIFO,
+    #[serde(rename = "f")]
+    File,
+    #[serde(rename = "s")]
+    Socket,
+    #[serde(rename = "l")]
+    SymbolicLink,
+}
+
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
-pub struct FileListBuilder<T>
+pub struct ListFilesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -77,7 +94,7 @@ where
     #[endpoint(optional, query = "perm")]
     perm: Option<Box<str>>,
     #[endpoint(optional, query = "type")]
-    file_type: Option<Box<str>>,
+    file_type: Option<FileType>,
     #[endpoint(optional, query = "user")]
     user: Option<Box<str>>,
     #[endpoint(optional, query = "depth")]
@@ -119,7 +136,7 @@ struct ResponseJson {
 
 fn build_lstat<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &FileListBuilder<T>,
+    builder: &ListFilesBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

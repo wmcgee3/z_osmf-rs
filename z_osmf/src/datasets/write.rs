@@ -12,17 +12,17 @@ use crate::utils::{get_etag, get_transaction_id};
 use super::{MigratedRecall, ObtainEnq};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetWrite {
+pub struct WriteDataset {
     etag: Box<str>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for DatasetWrite {
+impl TryFromResponse for WriteDataset {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(DatasetWrite {
+        Ok(WriteDataset {
             etag,
             transaction_id,
         })
@@ -31,7 +31,7 @@ impl TryFromResponse for DatasetWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetWriteBuilder<T>
+pub struct WriteDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -67,7 +67,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetWriteBuilder<T>
+impl<T> WriteDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -75,7 +75,7 @@ where
     where
         B: Into<Bytes>,
     {
-        DatasetWriteBuilder {
+        WriteDatasetBuilder {
             data: Some(Data::Binary(data.into())),
             ..self
         }
@@ -85,7 +85,7 @@ where
     where
         B: Into<Bytes>,
     {
-        DatasetWriteBuilder {
+        WriteDatasetBuilder {
             data: Some(Data::Record(data.into())),
             ..self
         }
@@ -95,22 +95,29 @@ where
     where
         S: ToString,
     {
-        DatasetWriteBuilder {
+        WriteDatasetBuilder {
             data: Some(Data::Text(data.to_string())),
             ..self
         }
     }
 }
 
+#[derive(Clone, Debug)]
+enum Data {
+    Binary(Bytes),
+    Record(Bytes),
+    Text(String),
+}
+
 fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DatasetWriteBuilder<T>,
+    builder: &WriteDatasetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     let key = "X-IBM-Data-Type";
-    let DatasetWriteBuilder {
+    let WriteDatasetBuilder {
         data,
         encoding,
         crlf_newlines,
@@ -146,7 +153,7 @@ where
 
 fn build_release_enq<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DatasetWriteBuilder<T>,
+    builder: &WriteDatasetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -158,7 +165,7 @@ where
     request_builder
 }
 
-fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
+fn set_member<T>(mut builder: WriteDatasetBuilder<T>, value: Box<str>) -> WriteDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -167,18 +174,11 @@ where
     builder
 }
 
-fn set_volume<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
+fn set_volume<T>(mut builder: WriteDatasetBuilder<T>, value: Box<str>) -> WriteDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
     builder.volume = format!("-({})/", value).into();
 
     builder
-}
-
-#[derive(Clone, Debug)]
-enum Data {
-    Binary(Bytes),
-    Record(Bytes),
-    Text(String),
 }

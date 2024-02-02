@@ -1,7 +1,7 @@
 #[path = "_setup/mod.rs"]
 mod _setup;
 
-use z_osmf::files::FileType;
+use z_osmf::files::create::FileType;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,6 +13,7 @@ async fn main() -> anyhow::Result<()> {
         .mode("RWXRW-RW-")
         .build()
         .await?;
+
     println!("{}", file_create.transaction_id());
 
     Ok(())

@@ -9,13 +9,13 @@ use crate::convert::{TryFromResponse, TryIntoTarget};
 use super::JobIdentifier;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct JobsFileList {
+pub struct ListJobFiles {
     items: Box<[JobFile]>,
 }
 
-impl TryFromResponse for JobsFileList {
+impl TryFromResponse for ListJobFiles {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobsFileList {
+        Ok(ListJobFiles {
             items: value.json().await?,
         })
     }
@@ -49,7 +49,7 @@ pub struct JobFile {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files")]
-pub struct JobsFileListBuilder<T>
+pub struct ListJobFilesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -65,7 +65,7 @@ where
     target_type: PhantomData<T>,
 }
 
-fn set_subsystem<T>(mut builder: JobsFileListBuilder<T>, value: Box<str>) -> JobsFileListBuilder<T>
+fn set_subsystem<T>(mut builder: ListJobFilesBuilder<T>, value: Box<str>) -> ListJobFilesBuilder<T>
 where
     T: TryFromResponse,
 {

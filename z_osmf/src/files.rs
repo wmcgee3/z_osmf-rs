@@ -4,13 +4,13 @@ pub mod list;
 pub mod read;
 pub mod write;
 
-pub use self::create::*;
-pub use self::delete::*;
-pub use self::list::*;
-pub use self::read::*;
-pub use self::write::*;
-
 use std::sync::Arc;
+
+use self::create::{CreateFile, CreateFileBuilder};
+use self::delete::{DeleteFile, DeleteFileBuilder};
+use self::list::{ListFiles, ListFilesBuilder};
+use self::read::{ReadFile, ReadFileBuilder};
+use self::write::{WriteFile, WriteFileBuilder};
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {
@@ -28,7 +28,7 @@ impl FilesClient {
     /// Create a file:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # use z_osmf::files::FileType;
+    /// # use z_osmf::files::create::FileType;
     /// let create_file = zosmf
     ///     .files()
     ///     .create("/u/jiahj/text.txt")
@@ -43,7 +43,7 @@ impl FilesClient {
     /// Create a directory:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # use z_osmf::files::FileType;
+    /// # use z_osmf::files::create::FileType;
     /// let create_file = zosmf
     ///     .files()
     ///     .create("/u/jiahj/testDir")
@@ -54,8 +54,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, path: &str) -> FileCreateBuilder<FileCreate> {
-        FileCreateBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn create(&self, path: &str) -> CreateFileBuilder<CreateFile> {
+        CreateFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -83,8 +83,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, path: &str) -> FileDeleteBuilder<FileDelete> {
-        FileDeleteBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn delete(&self, path: &str) -> DeleteFileBuilder<DeleteFile> {
+        DeleteFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -125,8 +125,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, path: &str) -> FileListBuilder<FileList> {
-        FileListBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn list(&self, path: &str) -> ListFilesBuilder<ListFiles> {
+        ListFilesBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -142,8 +142,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
-        FileReadBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn read(&self, path: &str) -> ReadFileBuilder<ReadFile<Box<str>>> {
+        ReadFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -161,8 +161,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, path: &str) -> FileWriteBuilder<FileWrite> {
-        FileWriteBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn write(&self, path: &str) -> WriteFileBuilder<WriteFile> {
+        WriteFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 }
 

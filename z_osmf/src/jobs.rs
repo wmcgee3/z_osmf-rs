@@ -6,15 +6,6 @@ pub mod status;
 pub mod submit;
 pub mod utils;
 
-pub use self::list::*;
-pub use self::list_files::*;
-pub use self::purge::*;
-pub use self::read_file::*;
-pub use self::status::*;
-pub use self::submit::*;
-pub use self::utils::*;
-pub use crate::utils::RecordRange;
-
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -22,6 +13,14 @@ use z_osmf_macros::Getters;
 
 use crate::convert::TryFromResponse;
 use crate::error::Error;
+
+use self::list::{ListJobs, ListJobsBuilder};
+use self::list_files::{ListJobFiles, ListJobFilesBuilder};
+use self::purge::PurgeJobBuilder;
+use self::read_file::{JobFileID, ReadJobFile, ReadJobFileBuilder};
+use self::status::JobStatusBuilder;
+use self::submit::{JclSource, SubmitJobBuilder};
+use self::utils::{ClassJson, JobFeedback, JobFeedbackBuilder, RequestJson};
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
@@ -71,8 +70,8 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self) -> JobsListBuilder<JobsList<JobData>> {
-        JobsListBuilder::new(self.base_url.clone(), self.client.clone())
+    pub fn list(&self) -> ListJobsBuilder<ListJobs<JobData>> {
+        ListJobsBuilder::new(self.base_url.clone(), self.client.clone())
     }
 
     /// # Examples
@@ -91,15 +90,16 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_files(&self, identifier: JobIdentifier) -> JobsFileListBuilder<JobsFileList> {
-        JobsFileListBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    pub fn list_files(&self, identifier: JobIdentifier) -> ListJobFilesBuilder<ListJobFiles> {
+        ListJobFilesBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
 
     /// # Examples
     ///
     /// Read file 1 for job TESTJOBJ with ID JOB00023:
     /// ```
-    /// # use z_osmf::jobs::{JobIdentifier, JobFileID};
+    /// # use z_osmf::jobs::read_file::JobFileID;
+    /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::ID(1);
@@ -116,7 +116,8 @@ impl JobsClient {
     /// Read a range of records (the first 250) of file 8 for job TESTJOBJ with ID JOB00023:
     /// ```
     /// # use std::str::FromStr;
-    /// # use z_osmf::jobs::{JobIdentifier, JobFileID, RecordRange};
+    /// # use z_osmf::jobs::read_file::{JobFileID, RecordRange};
+    /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::ID(8);
@@ -133,7 +134,8 @@ impl JobsClient {
     ///
     /// Read the JCL for job TESTJOBJ with ID JOB00060:
     /// ```
-    /// # use z_osmf::jobs::{JobIdentifier, JobFileID};
+    /// # use z_osmf::jobs::read_file::JobFileID;
+    /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
     /// let file_id = JobFileID::JCL;
@@ -150,15 +152,15 @@ impl JobsClient {
         &self,
         identifier: JobIdentifier,
         id: JobFileID,
-    ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
-        JobFileReadBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
+    ) -> ReadJobFileBuilder<ReadJobFile<Box<str>>> {
+        ReadJobFileBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
     }
 
     /// # Examples
     ///
     /// Submit a job from text:
     /// ```
-    /// # use z_osmf::jobs::{JclData, JclSource};
+    /// # use z_osmf::jobs::submit::{JclData, JclSource};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
     /// // EXEC PGM=IEFBR14
@@ -172,8 +174,8 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submit(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
-        JobSubmitBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
+    pub fn submit(&self, jcl_source: JclSource) -> SubmitJobBuilder<JobData> {
+        SubmitJobBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
     }
 
     /// # Examples
@@ -305,8 +307,8 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> PurgeBuilder<JobFeedback> {
-        PurgeBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> PurgeJobBuilder<JobFeedback> {
+        PurgeJobBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
 }
 

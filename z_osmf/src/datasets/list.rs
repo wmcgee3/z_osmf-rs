@@ -13,7 +13,7 @@ use crate::utils::{
 };
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetList<T> {
+pub struct ListDatasets<T> {
     items: Box<[T]>,
     json_version: i32,
     more_rows: Option<bool>,
@@ -22,7 +22,7 @@ pub struct DatasetList<T> {
     transaction_id: Box<str>,
 }
 
-impl<T> TryFromResponse for DatasetList<T>
+impl<T> TryFromResponse for ListDatasets<T>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -37,7 +37,7 @@ where
             total_rows,
         } = value.json().await?;
 
-        Ok(DatasetList {
+        Ok(ListDatasets {
             items,
             json_version,
             more_rows,
@@ -160,7 +160,7 @@ impl Serialize for Volume {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<T>
+pub struct ListDatasetsBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -184,12 +184,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetListBuilder<T>
+impl<T> ListDatasetsBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetBase>> {
-        DatasetListBuilder {
+    pub fn attributes_base(self) -> ListDatasetsBuilder<ListDatasets<DatasetBase>> {
+        ListDatasetsBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
@@ -202,8 +202,8 @@ where
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetName>> {
-        DatasetListBuilder {
+    pub fn attributes_dsname(self) -> ListDatasetsBuilder<ListDatasets<DatasetName>> {
+        ListDatasetsBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
@@ -216,8 +216,8 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVol>> {
-        DatasetListBuilder {
+    pub fn attributes_vol(self) -> ListDatasetsBuilder<ListDatasets<DatasetVol>> {
+        ListDatasetsBuilder {
             base_url: self.base_url,
             client: self.client,
             name_pattern: self.name_pattern,
@@ -267,7 +267,7 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: RequestBuilder,
-    list_builder: &DatasetListBuilder<T>,
+    list_builder: &ListDatasetsBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,

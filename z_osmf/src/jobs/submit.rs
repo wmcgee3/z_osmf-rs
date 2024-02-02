@@ -31,7 +31,7 @@ pub enum JobEvent {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct JobSubmitBuilder<T>
+pub struct SubmitJobBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -61,7 +61,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobSubmitBuilder<T>
+impl<T> SubmitJobBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -85,18 +85,9 @@ struct Source<'a> {
     file: &'a str,
 }
 
-fn set_subsystem<T>(mut builder: JobSubmitBuilder<T>, value: Box<str>) -> JobSubmitBuilder<T>
-where
-    T: TryFromResponse,
-{
-    builder.subsystem = format!("/-{}", value).into();
-
-    builder
-}
-
 fn build_jcl_source<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &JobSubmitBuilder<T>,
+    builder: &SubmitJobBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -122,7 +113,7 @@ where
 
 fn build_notification_events<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &JobSubmitBuilder<T>,
+    builder: &SubmitJobBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -150,7 +141,7 @@ where
 
 fn build_symbols<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &JobSubmitBuilder<T>,
+    builder: &SubmitJobBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -163,4 +154,13 @@ where
     }
 
     request_builder
+}
+
+fn set_subsystem<T>(mut builder: SubmitJobBuilder<T>, value: Box<str>) -> SubmitJobBuilder<T>
+where
+    T: TryFromResponse,
+{
+    builder.subsystem = format!("/-{}", value).into();
+
+    builder
 }

@@ -10,17 +10,17 @@ use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileWrite {
+pub struct WriteFile {
     etag: Box<str>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for FileWrite {
+impl TryFromResponse for WriteFile {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(FileWrite {
+        Ok(WriteFile {
             etag,
             transaction_id,
         })
@@ -29,7 +29,7 @@ impl TryFromResponse for FileWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileWriteBuilder<T>
+pub struct WriteFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -52,7 +52,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl FileWriteBuilder<FileWrite> {
+impl WriteFileBuilder<WriteFile> {
     pub fn binary<B>(mut self, data: B) -> Self
     where
         B: Into<Bytes>,
@@ -74,13 +74,13 @@ impl FileWriteBuilder<FileWrite> {
 
 fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &FileWriteBuilder<T>,
+    builder: &WriteFileBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     let key = "X-IBM-Data-Type";
-    let FileWriteBuilder {
+    let WriteFileBuilder {
         crlf_newlines,
         data,
         encoding,

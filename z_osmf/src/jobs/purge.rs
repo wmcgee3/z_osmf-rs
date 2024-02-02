@@ -5,11 +5,12 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
-use super::{AsynchronousResponse, JobIdentifier};
+use super::utils::AsynchronousResponse;
+use super::JobIdentifier;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct PurgeBuilder<T>
+pub struct PurgeJobBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -27,12 +28,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> PurgeBuilder<T>
+impl<T> PurgeJobBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> PurgeBuilder<AsynchronousResponse> {
-        PurgeBuilder {
+    pub fn asynchronous(self) -> PurgeJobBuilder<AsynchronousResponse> {
+        PurgeJobBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -43,18 +44,9 @@ where
     }
 }
 
-fn set_subsystem<T>(mut builder: PurgeBuilder<T>, value: Box<str>) -> PurgeBuilder<T>
-where
-    T: TryFromResponse,
-{
-    builder.subsystem = format!("-{}/", value).into();
-
-    builder
-}
-
 fn build_asynchronous<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &PurgeBuilder<T>,
+    builder: &PurgeJobBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -63,4 +55,13 @@ where
         "X-IBM-Job-Modify-Version",
         if builder.asynchronous { "1.0" } else { "2.0" },
     )
+}
+
+fn set_subsystem<T>(mut builder: PurgeJobBuilder<T>, value: Box<str>) -> PurgeJobBuilder<T>
+where
+    T: TryFromResponse,
+{
+    builder.subsystem = format!("-{}/", value).into();
+
+    builder
 }

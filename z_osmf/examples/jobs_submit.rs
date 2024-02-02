@@ -1,7 +1,7 @@
 #[path = "_setup/mod.rs"]
 mod _setup;
 
-use z_osmf::jobs::{JclData, JclSource};
+use z_osmf::jobs::submit::{JclData, JclSource};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

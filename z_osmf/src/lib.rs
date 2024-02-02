@@ -10,9 +10,8 @@
 //! This crate is not approved, endorsed, acknowledged, or even tolerated by IBM.
 //! (Please don't sue me, Big Blue)
 
-pub mod bytes {
-    pub use bytes::Bytes;
-}
+pub use bytes::Bytes;
+
 #[cfg(feature = "datasets")]
 pub mod datasets;
 pub mod error;
@@ -24,13 +23,11 @@ pub mod jobs;
 mod convert;
 mod utils;
 
-pub use self::bytes::Bytes;
-pub use self::error::Error;
-
 use std::sync::Arc;
 
 #[cfg(feature = "datasets")]
 use self::datasets::DatasetsClient;
+use self::error::Error;
 #[cfg(feature = "files")]
 use self::files::FilesClient;
 #[cfg(feature = "jobs")]
@@ -41,7 +38,7 @@ use self::jobs::JobsClient;
 /// Client for interacting with z/OSMF.
 ///
 /// ```
-/// # async fn example() -> Result<(), z_osmf::Error> {
+/// # async fn example() -> anyhow::Result<()> {
 /// # use z_osmf::ZOsmf;
 /// let client_builder = reqwest::ClientBuilder::new();
 /// let base_url = "https://zosmf.mainframe.my-company.com";
@@ -69,7 +66,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example() -> Result<(), z_osmf::Error> {
+    /// # async fn example() -> anyhow::Result<()> {
     /// # use z_osmf::ZOsmf;
     /// let client_builder = reqwest::ClientBuilder::new();
     /// let base_url = "https://zosmf.mainframe.my-company.com";
@@ -95,7 +92,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// zosmf.login("USERNAME", "PASSWORD").await?;
     /// # Ok(())
     /// # }
@@ -124,7 +121,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// zosmf.logout().await?;
     /// # Ok(())
     /// # }
@@ -143,7 +140,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let dataset_client = zosmf.datasets();
     /// # Ok(())
     /// # }
@@ -157,7 +154,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let files_client = zosmf.files();
     /// # Ok(())
     /// # }
@@ -171,7 +168,7 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let jobs_client = zosmf.jobs();
     /// # Ok(())
     /// # }
