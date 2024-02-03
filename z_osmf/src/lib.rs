@@ -184,8 +184,21 @@ mod tests {
     use super::*;
 
     pub(crate) fn get_zosmf() -> ZOsmf {
-        let client_builder = reqwest::ClientBuilder::new();
+        ZOsmf::new(reqwest::Client::builder(), "https://example.com").unwrap()
+    }
 
-        ZOsmf::new(client_builder, "https://example.com").unwrap()
+    pub(crate) trait GetJson {
+        fn json(&self) -> Result<serde_json::Value, anyhow::Error>;
+    }
+
+    impl GetJson for reqwest::Request {
+        fn json(&self) -> Result<serde_json::Value, anyhow::Error> {
+            Ok(serde_json::from_slice(
+                self.body()
+                    .ok_or(anyhow::Error::msg("missing request body"))?
+                    .as_bytes()
+                    .ok_or(anyhow::Error::msg("missing request body bytes"))?,
+            )?)
+        }
     }
 }

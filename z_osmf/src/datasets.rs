@@ -344,14 +344,3 @@ pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box
         .transpose()?
         .map(|v| v.into()))
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::tests::get_zosmf;
-
-    use super::*;
-
-    pub(crate) fn get_datasets_client() -> DatasetsClient {
-        get_zosmf().datasets()
-    }
-}

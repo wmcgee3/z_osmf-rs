@@ -160,11 +160,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::datasets::tests::get_datasets_client;
+    use crate::tests::*;
 
     #[test]
-    fn test_create_builder() {
-        let datasets_client = get_datasets_client();
+    fn test_example_1() {
+        let zosmf = get_zosmf();
 
         let raw_json = r#"
         {
@@ -181,14 +181,15 @@ mod tests {
         }
         "#;
 
-        let manual_request = datasets_client
+        let manual_request = zosmf
             .client
             .post("https://example.com/zosmf/restfiles/ds/test.dataset")
             .json(&serde_json::from_str::<serde_json::Value>(raw_json).unwrap())
             .build()
             .unwrap();
 
-        let crate_request = datasets_client
+        let create_dataset = zosmf
+            .datasets()
             .create("test.dataset")
             .volume("zmf046")
             .device_type("3390")
@@ -205,19 +206,123 @@ mod tests {
 
         assert_eq!(
             format!("{:?}", manual_request),
-            format!("{:?}", crate_request)
+            format!("{:?}", create_dataset)
         );
 
         assert_eq!(
-            serde_json::from_slice::<serde_json::Value>(
-                manual_request.body().unwrap().as_bytes().unwrap()
-            )
-            .unwrap(),
-            serde_json::from_slice::<serde_json::Value>(
-                crate_request.body().unwrap().as_bytes().unwrap()
-            )
-            .unwrap(),
-            "create dataset request bodies are not equal"
+            manual_request.json().unwrap(),
+            create_dataset.json().unwrap()
         );
+    }
+
+    #[test]
+    fn test_example_2() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "volser": "zmf046",
+            "unit": "3390",
+            "dsorg": "PO",
+            "alcunit": "TRK",
+            "primary": 10,
+            "secondary": 5,
+            "dirblk": 10,
+            "avgblk": 500,
+            "recfm": "FB",
+            "blksize": 400,
+            "lrecl": 80
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+
+        let manual_request = zosmf
+            .client
+            .post("https://example.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.NEWDS02")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let create_dataset = zosmf
+            .datasets()
+            .create("JIAHJ.REST.TEST.NEWDS02")
+            .volume("zmf046")
+            .device_type("3390")
+            .organization("PO")
+            .space_allocation_unit("TRK")
+            .primary_space(10)
+            .secondary_space(5)
+            .directory_blocks(10)
+            .average_block_size(500)
+            .record_format("FB")
+            .block_size(400)
+            .record_length(80)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", create_dataset)
+        );
+
+        assert_eq!(
+            manual_request.json().unwrap(),
+            create_dataset.json().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_example_3() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "volser": "zmf046",
+            "unit": "3390",
+            "dsorg": "PO",
+            "alcunit": "TRK",
+            "primary": 10,
+            "secondary": 5,
+            "dirblk": 10,
+            "avgblk": 500,
+            "recfm": "FB",
+            "blksize": 400,
+            "lrecl": 80,
+            "dsntype": "LIBRARY"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+
+        let manual_request = zosmf
+            .client
+            .post("https://example.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.NEWDS02")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let create_pdse = zosmf
+            .datasets()
+            .create("JIAHJ.REST.TEST.NEWDS02")
+            .volume("zmf046")
+            .device_type("3390")
+            .organization("PO")
+            .space_allocation_unit("TRK")
+            .primary_space(10)
+            .secondary_space(5)
+            .directory_blocks(10)
+            .average_block_size(500)
+            .record_format("FB")
+            .block_size(400)
+            .record_length(80)
+            .dataset_type("LIBRARY")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", create_pdse)
+        );
+
+        assert_eq!(manual_request.json().unwrap(), create_pdse.json().unwrap());
     }
 }
