@@ -91,8 +91,8 @@ where
     name: Option<Box<str>>,
     #[endpoint(optional, query = "size")]
     size: Option<Box<str>>,
-    #[endpoint(optional, query = "perm")]
-    perm: Option<Box<str>>,
+    #[endpoint(optional, builder_fn = build_perm)]
+    perm: Option<i16>,
     #[endpoint(optional, query = "type")]
     file_type: Option<FileType>,
     #[endpoint(optional, query = "user")]
@@ -143,6 +143,26 @@ where
 {
     if builder.lstat {
         request_builder = request_builder.header("X-IBM-Lstat", "true");
+    }
+
+    request_builder
+}
+
+fn build_perm<T>(
+    mut request_builder: reqwest::RequestBuilder,
+    builder: &ListFilesBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
+    if let Some(perm) = builder.perm {
+        let value = if perm < 0 {
+            format!("-{:05o}", -perm)
+        } else {
+            format!("{:05o}", perm)
+        };
+
+        request_builder = request_builder.query(&[("perm", &value)]);
     }
 
     request_builder

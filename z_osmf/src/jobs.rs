@@ -35,23 +35,107 @@ impl JobsClient {
 
     /// # Examples
     ///
-    /// Obtain the status of the job BLSJPRMI, job ID STC00052:
+    /// Cancel job TESTJOB2 with ID JOB0084:
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
+    /// let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
     ///
-    /// let job_status = zosmf
+    /// let job_feedback = zosmf
     ///     .jobs()
-    ///     .status(identifier)
-    ///     .exec_data()
+    ///     .cancel(identifier)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobData> {
-        JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    pub fn cancel(
+        &self,
+        identifier: JobIdentifier,
+    ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            RequestJson::new("cancel"),
+        )
+    }
+
+    /// # Examples
+    ///
+    /// Cancel and purge the output of job TESTJOBW with ID JOB0085:
+    /// ```
+    /// # use z_osmf::jobs::JobIdentifier;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
+    ///
+    /// let job_feedback = zosmf
+    ///     .jobs()
+    ///     .cancel_and_purge(identifier)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> PurgeJobBuilder<JobFeedback> {
+        PurgeJobBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    }
+
+    /// # Examples
+    ///
+    /// Change the message class of job TESTJOBW with ID JOB0023:
+    /// ```
+    /// # use z_osmf::jobs::JobIdentifier;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+    ///
+    /// let job_feedback = zosmf
+    ///     .jobs()
+    ///     .change_class(identifier, 'A')
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn change_class<C>(
+        &self,
+        identifier: JobIdentifier,
+        class: C,
+    ) -> JobFeedbackBuilder<JobFeedback, ClassJson>
+    where
+        C: Into<char>,
+    {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            ClassJson::new(class),
+        )
+    }
+
+    /// # Examples
+    ///
+    /// Hold job TESTJOBW with ID JOB0023:
+    /// ```
+    /// # use z_osmf::jobs::JobIdentifier;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+    ///
+    /// let job_feedback = zosmf
+    ///     .jobs()
+    ///     .hold(identifier)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn hold(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
+        JobFeedbackBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            identifier,
+            RequestJson::new("hold"),
+        )
     }
 
     /// # Examples
@@ -158,53 +242,6 @@ impl JobsClient {
 
     /// # Examples
     ///
-    /// Submit a job from text:
-    /// ```
-    /// # use z_osmf::jobs::submit::{JclData, JclSource};
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
-    /// // EXEC PGM=IEFBR14
-    /// "#;
-    ///
-    /// let job_data = zosmf
-    ///     .jobs()
-    ///     .submit(JclSource::Data(JclData::Text(jcl.into())))
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn submit(&self, jcl_source: JclSource) -> SubmitJobBuilder<JobData> {
-        SubmitJobBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
-    }
-
-    /// # Examples
-    ///
-    /// Hold job TESTJOBW with ID JOB0023:
-    /// ```
-    /// # use z_osmf::jobs::JobIdentifier;
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
-    ///
-    /// let job_feedback = zosmf
-    ///     .jobs()
-    ///     .hold(identifier)
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn hold(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("hold"),
-        )
-    }
-
-    /// # Examples
-    ///
     /// Release job TESTJOBW with ID JOB0023:
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
@@ -233,82 +270,45 @@ impl JobsClient {
 
     /// # Examples
     ///
-    /// Change the message class of job TESTJOBW with ID JOB0023:
+    /// Obtain the status of the job BLSJPRMI, job ID STC00052:
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+    /// let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
     ///
-    /// let job_feedback = zosmf
+    /// let job_status = zosmf
     ///     .jobs()
-    ///     .change_class(identifier, 'A')
+    ///     .status(identifier)
+    ///     .exec_data()
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_class<C>(
-        &self,
-        identifier: JobIdentifier,
-        class: C,
-    ) -> JobFeedbackBuilder<JobFeedback, ClassJson>
-    where
-        C: Into<char>,
-    {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            ClassJson::new(class),
-        )
+    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobData> {
+        JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
     }
 
     /// # Examples
     ///
-    /// Cancel job TESTJOB2 with ID JOB0084:
+    /// Submit a job from text:
     /// ```
-    /// # use z_osmf::jobs::JobIdentifier;
+    /// # use z_osmf::jobs::submit::{JclData, JclSource};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
+    /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
+    /// // EXEC PGM=IEFBR14
+    /// "#;
     ///
-    /// let job_feedback = zosmf
+    /// let job_data = zosmf
     ///     .jobs()
-    ///     .cancel(identifier)
+    ///     .submit(JclSource::Data(JclData::Text(jcl.into())))
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel(
-        &self,
-        identifier: JobIdentifier,
-    ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("cancel"),
-        )
-    }
-
-    /// # Examples
-    ///
-    /// Cancel and purge the output of job TESTJOBW with ID JOB0085:
-    /// ```
-    /// # use z_osmf::jobs::JobIdentifier;
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
-    ///
-    /// let job_feedback = zosmf
-    ///     .jobs()
-    ///     .cancel_and_purge(identifier)
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> PurgeJobBuilder<JobFeedback> {
-        PurgeJobBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    pub fn submit(&self, jcl_source: JclSource) -> SubmitJobBuilder<JobData> {
+        SubmitJobBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
     }
 }
 
