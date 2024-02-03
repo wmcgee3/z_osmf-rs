@@ -5,8 +5,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
-use super::utils::AsynchronousResponse;
-use super::JobIdentifier;
+use super::{AsynchronousResponse, JobIdentifier};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]

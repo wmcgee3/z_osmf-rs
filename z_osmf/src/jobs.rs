@@ -1,10 +1,10 @@
+pub mod feedback;
 pub mod list;
 pub mod list_files;
 pub mod purge;
 pub mod read_file;
 pub mod status;
 pub mod submit;
-pub mod utils;
 
 use std::sync::Arc;
 
@@ -14,13 +14,13 @@ use z_osmf_macros::Getters;
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 
+use self::feedback::{ClassJson, JobFeedback, JobFeedbackBuilder, RequestJson};
 use self::list::{ListJobs, ListJobsBuilder};
 use self::list_files::{ListJobFiles, ListJobFilesBuilder};
 use self::purge::PurgeJobBuilder;
 use self::read_file::{JobFileID, ReadJobFile, ReadJobFileBuilder};
 use self::status::JobStatusBuilder;
 use self::submit::{JclSource, SubmitJobBuilder};
-use self::utils::{ClassJson, JobFeedback, JobFeedbackBuilder, RequestJson};
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
@@ -312,6 +312,14 @@ impl JobsClient {
     }
 }
 
+pub struct AsynchronousResponse;
+
+impl TryFromResponse for AsynchronousResponse {
+    async fn try_from_response(_: reqwest::Response) -> Result<Self, Error> {
+        Ok(AsynchronousResponse {})
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobData {
@@ -403,7 +411,7 @@ pub struct JobExecStepData {
     job_correlator: Option<Box<str>>,
     phase: i32,
     phase_name: Box<str>,
-    step_data: Vec<StepData>,
+    step_data: Box<[StepData]>,
     exec_system: Box<str>,
     exec_member: Box<str>,
     exec_submitted: Box<str>,
@@ -442,7 +450,7 @@ pub struct JobStepData {
     job_correlator: Option<Box<str>>,
     phase: i32,
     phase_name: Box<str>,
-    step_data: Vec<StepData>,
+    step_data: Box<[StepData]>,
     reason_not_running: Option<Box<str>>,
 }
 

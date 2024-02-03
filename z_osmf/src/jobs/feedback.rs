@@ -7,15 +7,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 
-use super::JobIdentifier;
-
-pub struct AsynchronousResponse;
-
-impl TryFromResponse for AsynchronousResponse {
-    async fn try_from_response(_: reqwest::Response) -> Result<Self, Error> {
-        Ok(AsynchronousResponse {})
-    }
-}
+use super::{AsynchronousResponse, JobIdentifier};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
