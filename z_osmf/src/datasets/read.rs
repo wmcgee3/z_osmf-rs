@@ -475,3 +475,53 @@ where
 
     dataset_read_builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds/SYS1.PARMLIB(SMFPRM00)")
+            .build()
+            .unwrap();
+
+        let read_member = zosmf
+            .datasets()
+            .read("SYS1.PARMLIB")
+            .member("SMFPRM00")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", read_member)
+        );
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.SRVMP")
+            .build()
+            .unwrap();
+
+        let read_dataset = zosmf
+            .datasets()
+            .read("JIAHJ.REST.SRVMP")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", read_dataset)
+        )
+    }
+}

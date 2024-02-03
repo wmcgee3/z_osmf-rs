@@ -163,7 +163,7 @@ mod tests {
     use crate::tests::*;
 
     #[test]
-    fn test_example_1() {
+    fn example_1() {
         let zosmf = get_zosmf();
 
         let raw_json = r#"
@@ -183,7 +183,7 @@ mod tests {
 
         let manual_request = zosmf
             .client
-            .post("https://example.com/zosmf/restfiles/ds/test.dataset")
+            .post("https://test.com/zosmf/restfiles/ds/test.dataset")
             .json(&serde_json::from_str::<serde_json::Value>(raw_json).unwrap())
             .build()
             .unwrap();
@@ -209,14 +209,11 @@ mod tests {
             format!("{:?}", create_dataset)
         );
 
-        assert_eq!(
-            manual_request.json().unwrap(),
-            create_dataset.json().unwrap()
-        );
+        assert_eq!(manual_request.json(), create_dataset.json());
     }
 
     #[test]
-    fn test_example_2() {
+    fn example_2() {
         let zosmf = get_zosmf();
 
         let raw_json = r#"
@@ -238,7 +235,7 @@ mod tests {
 
         let manual_request = zosmf
             .client
-            .post("https://example.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.NEWDS02")
+            .post("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.NEWDS02")
             .json(&json)
             .build()
             .unwrap();
@@ -265,14 +262,11 @@ mod tests {
             format!("{:?}", create_dataset)
         );
 
-        assert_eq!(
-            manual_request.json().unwrap(),
-            create_dataset.json().unwrap()
-        );
+        assert_eq!(manual_request.json(), create_dataset.json());
     }
 
     #[test]
-    fn test_example_3() {
+    fn example_3() {
         let zosmf = get_zosmf();
 
         let raw_json = r#"
@@ -295,7 +289,7 @@ mod tests {
 
         let manual_request = zosmf
             .client
-            .post("https://example.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.NEWDS02")
+            .post("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.NEWDS02")
             .json(&json)
             .build()
             .unwrap();
@@ -323,6 +317,6 @@ mod tests {
             format!("{:?}", create_pdse)
         );
 
-        assert_eq!(manual_request.json().unwrap(), create_pdse.json().unwrap());
+        assert_eq!(manual_request.json(), create_pdse.json());
     }
 }

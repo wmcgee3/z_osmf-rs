@@ -213,3 +213,54 @@ where
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .build()
+            .unwrap();
+
+        let list_members = zosmf
+            .datasets()
+            .list_members("SYS1.PROCLIB")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", list_members)
+        );
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .header("X-IBM-Attributes", "base")
+            .build()
+            .unwrap();
+
+        let list_members_base = zosmf
+            .datasets()
+            .list_members("SYS1.PROCLIB")
+            .attributes_base()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", list_members_base)
+        );
+    }
+}

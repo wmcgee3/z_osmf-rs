@@ -60,3 +60,102 @@ where
 
     builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.DATASET")
+            .build()
+            .unwrap();
+
+        let delete_dataset = zosmf
+            .datasets()
+            .delete("JIAHJ.REST.TEST.DATASET")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_dataset)
+        );
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/ds/-(ZMF046)/JIAHJ.REST.TEST.DATASET2")
+            .build()
+            .unwrap();
+
+        let delete_uncataloged = zosmf
+            .datasets()
+            .delete("JIAHJ.REST.TEST.DATASET2")
+            .volume("ZMF046")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_uncataloged)
+        );
+    }
+
+    #[test]
+    fn example_3() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.PDS(MEMBER01)")
+            .build()
+            .unwrap();
+
+        let delete_member = zosmf
+            .datasets()
+            .delete("JIAHJ.REST.TEST.PDS")
+            .member("MEMBER01")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_member)
+        );
+    }
+
+    #[test]
+    fn example_4() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete(
+                "https://test.com/zosmf/restfiles/ds/-(ZMF046)/JIAHJ.REST.TEST.PDS.UNCAT(MEMBER01)",
+            )
+            .build()
+            .unwrap();
+
+        let delete_uncataloged_member = zosmf
+            .datasets()
+            .delete("JIAHJ.REST.TEST.PDS.UNCAT")
+            .member("MEMBER01")
+            .volume("ZMF046")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_uncataloged_member)
+        );
+    }
+}

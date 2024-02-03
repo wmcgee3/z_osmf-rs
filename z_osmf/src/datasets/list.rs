@@ -285,3 +285,57 @@ where
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds")
+            .query(&[("dslevel", "IBMUSER.CONFIG.*")])
+            .build()
+            .unwrap();
+
+        let list_datasets = zosmf
+            .datasets()
+            .list("IBMUSER.CONFIG.*")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", list_datasets)
+        );
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds")
+            .query(&[("dslevel", "**"), ("volser", "PEVTS2")])
+            .header("X-IBM-Attributes", "base")
+            .build()
+            .unwrap();
+
+        let list_datasets_base = zosmf
+            .datasets()
+            .list("**")
+            .volume("PEVTS2")
+            .attributes_base()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", list_datasets_base)
+        );
+    }
+}

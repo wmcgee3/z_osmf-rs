@@ -178,7 +178,11 @@ impl DatasetsClient {
     /// Listing datasets:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_datasets = zosmf.datasets().list("IBMUSER.CONFIG.*").build().await?;
+    /// let list_datasets = zosmf
+    ///     .datasets()
+    ///     .list("IBMUSER.CONFIG.*")
+    ///     .build()
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -205,7 +209,11 @@ impl DatasetsClient {
     /// Listing PDS members:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_members = zosmf.datasets().list_members("SYS1.PROCLIB").build().await?;
+    /// let list_members = zosmf
+    ///     .datasets()
+    ///     .list_members("SYS1.PROCLIB")
+    ///     .build()
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -248,7 +256,11 @@ impl DatasetsClient {
     /// Reading a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let read_dataset = zosmf.datasets().read("JIAHJ.REST.SRVMP").build().await?;
+    /// let read_dataset = zosmf
+    ///     .datasets()
+    ///     .read("JIAHJ.REST.SRVMP")
+    ///     .build()
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```

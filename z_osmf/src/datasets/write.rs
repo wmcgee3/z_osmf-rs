@@ -127,18 +127,19 @@ where
     request_builder = match (data, encoding, crlf_newlines) {
         (Some(Data::Binary(_)), _, _) => request_builder.header(key, "binary"),
         (Some(Data::Record(_)), _, _) => request_builder.header(key, "record"),
-        (Some(Data::Text(_)), encoding, crlf) => request_builder.header(
-            key,
-            format!(
-                "text{}{}",
-                if let Some(encoding) = encoding {
-                    format!(";fileEncoding={}", encoding)
-                } else {
-                    "".to_string()
-                },
-                if *crlf { ";crlf=true" } else { "" }
+        (Some(Data::Text(_)), encoding, crlf) if encoding.is_some() || *crlf => request_builder
+            .header(
+                key,
+                format!(
+                    "text{}{}",
+                    if let Some(encoding) = encoding {
+                        format!(";fileEncoding={}", encoding)
+                    } else {
+                        "".to_string()
+                    },
+                    if *crlf { ";crlf=true" } else { "" }
+                ),
             ),
-        ),
         _ => request_builder,
     };
     request_builder = match data {
@@ -181,4 +182,43 @@ where
     builder.volume = format!("-({})/", value).into();
 
     builder
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let string_data = "here is some text!";
+
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restfiles/ds/SYS1.PARMLIB(SMFPRM00)")
+            .header("If-Match", "B5C6454F783590AA8EC15BD88E29EA63")
+            .body(string_data)
+            .build()
+            .unwrap();
+
+        let write_dataset = zosmf
+            .datasets()
+            .write("SYS1.PARMLIB")
+            .member("SMFPRM00")
+            .if_match("B5C6454F783590AA8EC15BD88E29EA63")
+            .text(string_data)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", write_dataset)
+        );
+
+        assert_eq!(
+            manual_request.body().unwrap().as_bytes().unwrap(),
+            write_dataset.body().unwrap().as_bytes().unwrap()
+        )
+    }
 }
