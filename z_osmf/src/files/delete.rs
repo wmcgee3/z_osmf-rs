@@ -52,3 +52,52 @@ where
 
     request_builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .build()
+            .unwrap();
+
+        let delete_file = zosmf
+            .files()
+            .delete("/u/jiahj/text.txt")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_file)
+        )
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .build()
+            .unwrap();
+
+        let delete_file = zosmf
+            .files()
+            .delete("/u/jiahj/testDir")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_file)
+        )
+    }
+}

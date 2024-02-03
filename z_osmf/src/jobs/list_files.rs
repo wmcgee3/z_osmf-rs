@@ -73,3 +73,26 @@ where
 
     builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOB1/JOB00023/files")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
+        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
+    }
+}

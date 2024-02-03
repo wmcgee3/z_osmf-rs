@@ -1,4 +1,5 @@
 .env
+/tarpaulin-report.html
 
 /target
 Cargo.lock

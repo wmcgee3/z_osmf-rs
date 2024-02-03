@@ -10,7 +10,7 @@ use crate::convert::{TryFromResponse, TryIntoTarget};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JclSource {
-    Data(JclData),
+    Jcl(JclData),
     Dataset(Box<str>),
     File(Box<str>),
 }
@@ -29,6 +29,23 @@ pub enum JobEvent {
     Ready,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum RecordFormat {
+    Fixed,
+    Variable,
+}
+
+impl From<RecordFormat> for reqwest::header::HeaderValue {
+    fn from(value: RecordFormat) -> Self {
+        match value {
+            RecordFormat::Fixed => "F",
+            RecordFormat::Variable => "V",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}")]
 pub struct SubmitJobBuilder<T>
@@ -42,6 +59,8 @@ where
     subsystem: Box<str>,
     #[endpoint(optional, header = "X-IBM-Intrdr-Class", skip_setter)]
     message_class: Option<Box<str>>,
+    #[endpoint(optional, header = "X-IBM-Intrdr-Recfm")]
+    record_format: Option<RecordFormat>,
     #[endpoint(optional, header = "X-IBM-Intrdr-Lrecl")]
     record_length: Option<i32>,
     #[endpoint(optional, header = "X-IBM-User-Correlator")]
@@ -93,14 +112,16 @@ where
     T: TryFromResponse,
 {
     request_builder = match &builder.jcl_source {
-        JclSource::Data(jcl_data) => match jcl_data {
+        JclSource::Jcl(jcl_data) => match jcl_data {
             JclData::Binary(binary) => request_builder
                 .header("X-IBM-Intrdr-Mode", "BINARY")
                 .body(binary.clone()),
             JclData::Record(record) => request_builder
                 .header("X-IBM-Intrdr-Mode", "RECORD")
                 .body(record.clone()),
-            JclData::Text(text) => request_builder.body(text.to_string()),
+            JclData::Text(text) => request_builder
+                .header("X-IBM-Intrdr-Mode", "TEXT")
+                .body(text.to_string()),
         },
         JclSource::Dataset(dataset) => request_builder.json(&Source {
             file: &format!("//'{}'", dataset),
@@ -163,4 +184,58 @@ where
     builder.subsystem = format!("/-{}", value).into();
 
     builder
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        r#"PUT /zosmf/restjobs/jobs HTTP/1.1
+        Host: zosmf1.yourco.com
+        Content-Type: text/plain
+        X-IBM-Intrdr-Class: A
+        X-IBM-Intrdr-Recfm: F
+        X-IBM-Intrdr-Lrecl: 80
+        X-IBM-Intrdr-Mode: TEXT
+
+        //TESTJOBX JOB (),MSGCLASS=H
+        // EXEC PGM=IEFBR14"#;
+
+        let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
+        // EXEC PGM=IEFBR14
+        "#;
+
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restjobs/jobs")
+            .header("X-IBM-Intrdr-Class", "A")
+            .header("X-IBM-Intrdr-Recfm", "F")
+            .header("X-IBM-Intrdr-Lrecl", "80")
+            .header("X-IBM-Intrdr-Mode", "TEXT")
+            .body(jcl.to_string())
+            .build()
+            .unwrap();
+
+        let job_data = zosmf
+            .jobs()
+            .submit(JclSource::Jcl(JclData::Text(jcl.into())))
+            .message_class('A')
+            .record_format(RecordFormat::Fixed)
+            .record_length(80)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_data));
+
+        assert_eq!(
+            manual_request.body().unwrap().as_bytes(),
+            job_data.body().unwrap().as_bytes()
+        )
+    }
 }

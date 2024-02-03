@@ -297,3 +297,23 @@ where
 fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>), Error> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
+            .build()
+            .unwrap();
+
+        let read_file = zosmf.files().read("/etc/inetd.conf").get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
+    }
+}

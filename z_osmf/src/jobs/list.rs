@@ -118,3 +118,35 @@ where
 
     builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs")
+            .query(&[
+                ("owner", "IBMUSER"),
+                ("prefix", "TESTJOB*"),
+                ("exec-data", "Y"),
+            ])
+            .build()
+            .unwrap();
+
+        let job_list = zosmf
+            .jobs()
+            .list()
+            .owner("IBMUSER")
+            .prefix("TESTJOB*")
+            .exec_data()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_list))
+    }
+}

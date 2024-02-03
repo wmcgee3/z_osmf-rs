@@ -221,7 +221,7 @@ impl JobsClient {
     /// # use z_osmf::jobs::read_file::JobFileID;
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00060".into());
     /// let file_id = JobFileID::JCL;
     ///
     /// let job_file = zosmf
@@ -293,7 +293,7 @@ impl JobsClient {
     ///
     /// Submit a job from text:
     /// ```
-    /// # use z_osmf::jobs::submit::{JclData, JclSource};
+    /// # use z_osmf::jobs::submit::{JclData, JclSource, RecordFormat};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
     /// // EXEC PGM=IEFBR14
@@ -301,7 +301,10 @@ impl JobsClient {
     ///
     /// let job_data = zosmf
     ///     .jobs()
-    ///     .submit(JclSource::Data(JclData::Text(jcl.into())))
+    ///     .submit(JclSource::Jcl(JclData::Text(jcl.into())))
+    ///     .message_class('A')
+    ///     .record_format(RecordFormat::Fixed)
+    ///     .record_length(80)
     ///     .build()
     ///     .await?;
     /// # Ok(())

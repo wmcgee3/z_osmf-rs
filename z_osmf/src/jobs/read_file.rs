@@ -182,3 +182,78 @@ where
 
     builder
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00023/files/1/records")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let file_id = JobFileID::ID(1);
+        let job_file = zosmf
+            .jobs()
+            .read_file(identifier, file_id)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_file))
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00023/files/8/records")
+            .header("X-IBM-Record-Range", "0-249")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let file_id = JobFileID::ID(8);
+        let job_file = zosmf
+            .jobs()
+            .read_file(identifier, file_id)
+            .record_range(RecordRange::from_str("0-249").unwrap())
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_file))
+    }
+
+    #[test]
+    fn example_3() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00060/files/JCL/records")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00060".into());
+        let file_id = JobFileID::JCL;
+
+        let job_file = zosmf
+            .jobs()
+            .read_file(identifier, file_id)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_file))
+    }
+}

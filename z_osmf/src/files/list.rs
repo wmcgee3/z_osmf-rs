@@ -167,3 +167,65 @@ where
 
     request_builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/fs")
+            .query(&[("path", "/usr")])
+            .build()
+            .unwrap();
+
+        let list_files = zosmf.files().list("/usr").get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", list_files))
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/fs")
+            .query(&[("path", "/u/ibmuser/myFile.txt")])
+            .build()
+            .unwrap();
+
+        let list_files = zosmf
+            .files()
+            .list("/u/ibmuser/myFile.txt")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", list_files))
+    }
+
+    #[test]
+    fn example_3() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/fs")
+            .query(&[("path", "/usr/include"), ("name", "f*.h")])
+            .build()
+            .unwrap();
+
+        let list_files = zosmf
+            .files()
+            .list("/usr/include")
+            .name("f*.h")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", list_files))
+    }
+}

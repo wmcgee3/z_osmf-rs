@@ -64,3 +64,34 @@ where
 
     builder
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00085")
+            .header("X-IBM-Job-Modify-Version", "2.0")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
+        let job_feedback = zosmf
+            .jobs()
+            .cancel_and_purge(identifier)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", job_feedback)
+        )
+    }
+}

@@ -88,18 +88,19 @@ where
     } = builder;
 
     request_builder = match (data, encoding, crlf_newlines) {
-        (Some(Data::Text(_)), encoding, crlf) => request_builder.header(
-            key,
-            format!(
-                "text{}{}",
-                if let Some(encoding) = encoding {
-                    format!(";fileEncoding={}", encoding)
-                } else {
-                    "".to_string()
-                },
-                if *crlf { ";crlf=true" } else { "" }
+        (Some(Data::Text(_)), encoding, crlf) if encoding.is_some() || *crlf => request_builder
+            .header(
+                key,
+                format!(
+                    "text{}{}",
+                    if let Some(encoding) = encoding {
+                        format!(";fileEncoding={}", encoding)
+                    } else {
+                        "".to_string()
+                    },
+                    if *crlf { ";crlf=true" } else { "" }
+                ),
             ),
-        ),
         (Some(Data::Binary(_)), _, _) => request_builder.header(key, "binary"),
         _ => request_builder,
     };
@@ -115,4 +116,32 @@ where
 enum Data {
     Binary(Bytes),
     Text(Box<str>),
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let text_data = "here is some text!";
+
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
+            .body(text_data)
+            .build()
+            .unwrap();
+
+        let write_file = zosmf
+            .files()
+            .write("/etc/inetd.conf")
+            .text(text_data)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", write_file))
+    }
 }

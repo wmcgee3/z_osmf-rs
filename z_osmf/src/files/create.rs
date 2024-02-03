@@ -77,3 +77,80 @@ where
         mode: mode.as_deref(),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "type": "file",
+            "mode": "RWXRW-RW-"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+
+        let manual_request = zosmf
+            .client
+            .post("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let create_file = zosmf
+            .files()
+            .create("/u/jiahj/text.txt")
+            .file_type(FileType::File)
+            .mode("RWXRW-RW-")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", create_file)
+        );
+
+        assert_eq!(manual_request.json(), create_file.json())
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "type": "directory",
+            "mode": "rwxr-xrwx"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+
+        let manual_request = zosmf
+            .client
+            .post("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let create_file = zosmf
+            .files()
+            .create("/u/jiahj/testDir")
+            .file_type(FileType::Directory)
+            .mode("rwxr-xrwx")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", create_file)
+        );
+
+        assert_eq!(manual_request.json(), create_file.json())
+    }
+}

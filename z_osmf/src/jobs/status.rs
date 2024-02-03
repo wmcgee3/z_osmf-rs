@@ -96,7 +96,7 @@ fn build_exec_data<T>(
 where
     T: TryFromResponse,
 {
-    if builder.step_data {
+    if builder.exec_data {
         request_builder = request_builder.query(&[("exec-data", "Y")]);
     }
 
@@ -124,4 +124,33 @@ where
     builder.subsystem = format!("-{}/", value).into();
 
     builder
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/BLSJPRMI/STC00052")
+            .query(&[("exec-data", "Y")])
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
+        let job_status = zosmf
+            .jobs()
+            .status(identifier)
+            .exec_data()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_status))
+    }
 }

@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
 "#;
 
     let job_data = jobs_client
-        .submit(JclSource::Data(JclData::Text(jcl.into())))
+        .submit(JclSource::Jcl(JclData::Text(jcl.into())))
         .build()
         .await?;
 
