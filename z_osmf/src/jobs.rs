@@ -376,7 +376,8 @@ pub struct JobExecData {
     job_correlator: Option<Box<str>>,
     phase: i32,
     phase_name: Box<str>,
-    exec_system: Box<str>,
+    #[serde(default)]
+    exec_system: Option<Box<str>>,
     #[serde(default)]
     exec_member: Option<Box<str>>,
     #[serde(default)]
@@ -418,7 +419,8 @@ pub struct JobExecStepData {
     phase: i32,
     phase_name: Box<str>,
     step_data: Box<[StepData]>,
-    exec_system: Box<str>,
+    #[serde(default)]
+    exec_system: Option<Box<str>>,
     #[serde(default)]
     exec_member: Option<Box<str>>,
     #[serde(default)]
