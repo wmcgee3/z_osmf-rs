@@ -9,21 +9,21 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileDelete {
+pub struct DeleteFile {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for FileDelete {
+impl TryFromResponse for DeleteFile {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(FileDelete { transaction_id })
+        Ok(DeleteFile { transaction_id })
     }
 }
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileDeleteBuilder<T>
+pub struct DeleteFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -41,7 +41,7 @@ where
 
 fn build_recursive<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &FileDeleteBuilder<T>,
+    builder: &DeleteFileBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -51,4 +51,53 @@ where
     }
 
     request_builder
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .build()
+            .unwrap();
+
+        let delete_file = zosmf
+            .files()
+            .delete("/u/jiahj/text.txt")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_file)
+        )
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .build()
+            .unwrap();
+
+        let delete_file = zosmf
+            .files()
+            .delete("/u/jiahj/testDir")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", delete_file)
+        )
+    }
 }

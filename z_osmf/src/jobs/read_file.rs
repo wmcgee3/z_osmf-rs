@@ -1,3 +1,5 @@
+pub use crate::utils::RecordRange;
+
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -7,36 +9,36 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::{TryFromResponse, TryIntoTarget};
 
-use super::{JobIdentifier, RecordRange};
+use super::JobIdentifier;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct JobFileRead<T> {
+pub struct ReadJobFile<T> {
     data: T,
 }
 
-impl JobFileRead<Box<str>> {
+impl ReadJobFile<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for JobFileRead<Box<str>> {
+impl TryFromResponse for ReadJobFile<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobFileRead {
+        Ok(ReadJobFile {
             data: value.text().await?.into(),
         })
     }
 }
 
-impl JobFileRead<Bytes> {
+impl ReadJobFile<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for JobFileRead<Bytes> {
+impl TryFromResponse for ReadJobFile<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobFileRead {
+        Ok(ReadJobFile {
             data: value.bytes().await?,
         })
     }
@@ -59,7 +61,7 @@ impl std::fmt::Display for JobFileID {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files/{id}/records")]
-pub struct JobFileReadBuilder<T>
+pub struct ReadJobFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -91,12 +93,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> JobFileReadBuilder<JobFileRead<U>>
+impl<U> ReadJobFileBuilder<ReadJobFile<U>>
 where
-    JobFileRead<U>: TryFromResponse,
+    ReadJobFile<U>: TryFromResponse,
 {
-    pub fn binary(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
-        JobFileReadBuilder {
+    pub fn binary(self) -> ReadJobFileBuilder<ReadJobFile<Bytes>> {
+        ReadJobFileBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -113,8 +115,8 @@ where
         }
     }
 
-    pub fn record(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
-        JobFileReadBuilder {
+    pub fn record(self) -> ReadJobFileBuilder<ReadJobFile<Bytes>> {
+        ReadJobFileBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -131,8 +133,8 @@ where
         }
     }
 
-    pub fn text(self) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
-        JobFileReadBuilder {
+    pub fn text(self) -> ReadJobFileBuilder<ReadJobFile<Box<str>>> {
+        ReadJobFileBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -160,7 +162,7 @@ enum DataType {
 
 fn build_search_case_sensitive<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &JobFileReadBuilder<T>,
+    builder: &ReadJobFileBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -172,11 +174,86 @@ where
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: JobFileReadBuilder<T>, value: Box<str>) -> JobFileReadBuilder<T>
+fn set_subsystem<T>(mut builder: ReadJobFileBuilder<T>, value: Box<str>) -> ReadJobFileBuilder<T>
 where
     T: TryFromResponse,
 {
     builder.subsystem = format!("-{}/", value).into();
 
     builder
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00023/files/1/records")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let file_id = JobFileID::ID(1);
+        let job_file = zosmf
+            .jobs()
+            .read_file(identifier, file_id)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_file))
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00023/files/8/records")
+            .header("X-IBM-Record-Range", "0-249")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let file_id = JobFileID::ID(8);
+        let job_file = zosmf
+            .jobs()
+            .read_file(identifier, file_id)
+            .record_range(RecordRange::from_str("0-249").unwrap())
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_file))
+    }
+
+    #[test]
+    fn example_3() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00060/files/JCL/records")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00060".into());
+        let file_id = JobFileID::JCL;
+
+        let job_file = zosmf
+            .jobs()
+            .read_file(identifier, file_id)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_file))
+    }
 }

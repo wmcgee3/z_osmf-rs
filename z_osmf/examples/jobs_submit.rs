@@ -1,7 +1,7 @@
 #[path = "_setup/mod.rs"]
 mod _setup;
 
-use z_osmf::jobs::{JclData, JclSource};
+use z_osmf::jobs::submit::{JclData, JclSource};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
 "#;
 
     let job_data = jobs_client
-        .submit(JclSource::Data(JclData::Text(jcl.into())))
+        .submit(JclSource::Jcl(JclData::Text(jcl.into())))
         .build()
         .await?;
 

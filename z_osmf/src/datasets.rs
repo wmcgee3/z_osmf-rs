@@ -5,20 +5,19 @@ pub mod list_members;
 pub mod read;
 pub mod write;
 
-pub use self::create::*;
-pub use self::delete::*;
-pub use self::list::*;
-pub use self::list_members::*;
-pub use self::read::*;
-pub use self::write::*;
-pub use crate::utils::RecordRange;
-
 use std::sync::Arc;
 
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
+
+use self::create::{CreateDataset, CreateDatasetBuilder};
+use self::delete::{DeleteDataset, DeleteDatasetBuilder};
+use self::list::{DatasetName, ListDatasets, ListDatasetsBuilder};
+use self::list_members::{ListMembers, ListMembersBuilder, MemberName};
+use self::read::{ReadDataset, ReadDatasetBuilder};
+use self::write::{WriteDataset, WriteDatasetBuilder};
 
 /// # DatasetsClient
 ///
@@ -113,8 +112,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
-        DatasetCreateBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn create(&self, dataset_name: &str) -> CreateDatasetBuilder<CreateDataset> {
+        CreateDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
     /// # Examples
@@ -170,8 +169,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
-        DatasetDeleteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn delete(&self, dataset_name: &str) -> DeleteDatasetBuilder<DeleteDataset> {
+        DeleteDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
     /// # Examples
@@ -179,7 +178,11 @@ impl DatasetsClient {
     /// Listing datasets:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_datasets = zosmf.datasets().list("IBMUSER.CONFIG.*").build().await?;
+    /// let list_datasets = zosmf
+    ///     .datasets()
+    ///     .list("IBMUSER.CONFIG.*")
+    ///     .build()
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -197,8 +200,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetList<DatasetName>> {
-        DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
+    pub fn list(&self, name_pattern: &str) -> ListDatasetsBuilder<ListDatasets<DatasetName>> {
+        ListDatasetsBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
     }
 
     /// # Examples
@@ -206,7 +209,11 @@ impl DatasetsClient {
     /// Listing PDS members:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_members = zosmf.datasets().list_members("SYS1.PROCLIB").build().await?;
+    /// let list_members = zosmf
+    ///     .datasets()
+    ///     .list_members("SYS1.PROCLIB")
+    ///     .build()
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -223,8 +230,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_members(&self, dataset_name: &str) -> MemberListBuilder<MemberList<MemberName>> {
-        MemberListBuilder::new(
+    pub fn list_members(&self, dataset_name: &str) -> ListMembersBuilder<ListMembers<MemberName>> {
+        ListMembersBuilder::new(
             self.base_url.clone(),
             self.client.clone(),
             dataset_name.to_string(),
@@ -249,12 +256,16 @@ impl DatasetsClient {
     /// Reading a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let read_dataset = zosmf.datasets().read("JIAHJ.REST.SRVMP").build().await?;
+    /// let read_dataset = zosmf
+    ///     .datasets()
+    ///     .read("JIAHJ.REST.SRVMP")
+    ///     .build()
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
-        DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn read(&self, dataset_name: &str) -> ReadDatasetBuilder<ReadDataset<Box<str>>> {
+        ReadDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
     /// # Examples
@@ -274,8 +285,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
-        DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn write(&self, dataset_name: &str) -> WriteDatasetBuilder<WriteDataset> {
+        WriteDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 }
 

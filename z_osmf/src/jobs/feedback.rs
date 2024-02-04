@@ -7,15 +7,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::{TryFromResponse, TryIntoTarget};
 use crate::error::Error;
 
-use super::JobIdentifier;
-
-pub struct AsynchronousResponse;
-
-impl TryFromResponse for AsynchronousResponse {
-    async fn try_from_response(_: reqwest::Response) -> Result<Self, Error> {
-        Ok(AsynchronousResponse {})
-    }
-}
+use super::{AsynchronousResponse, JobIdentifier};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -174,4 +166,133 @@ where
     data.set_version(if builder.asynchronous { "1.0" } else { "2.0" });
 
     request_builder.json(&data)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn cancel_example_1() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "request": "cancel",
+            "version": "2.0"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restjobs/jobs/TESTJOB2/JOB00084")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
+
+        let job_feedback = zosmf.jobs().cancel(identifier).get_request().unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", job_feedback)
+        );
+
+        assert_eq!(manual_request.json(), job_feedback.json())
+    }
+
+    #[test]
+    fn change_class_example_1() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "class": "A",
+            "version": "2.0"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let job_feedback = zosmf
+            .jobs()
+            .change_class(identifier, 'A')
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", job_feedback)
+        );
+
+        assert_eq!(manual_request.json(), job_feedback.json())
+    }
+
+    #[test]
+    fn hold_example_1() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "request": "hold",
+            "version": "2.0"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let job_feedback = zosmf.jobs().hold(identifier).get_request().unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", job_feedback)
+        );
+
+        assert_eq!(manual_request.json(), job_feedback.json())
+    }
+
+    #[test]
+    fn release_example_1() {
+        let zosmf = get_zosmf();
+
+        let raw_json = r#"
+        {
+            "request": "release",
+            "version": "2.0"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
+        let manual_request = zosmf
+            .client
+            .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let job_feedback = zosmf.jobs().release(identifier).get_request().unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", job_feedback)
+        );
+
+        assert_eq!(manual_request.json(), job_feedback.json())
+    }
 }

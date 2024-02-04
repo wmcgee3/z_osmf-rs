@@ -195,7 +195,7 @@ impl Endpoint {
         optional_builders.extend(required_builder_fns);
 
         quote! {
-            async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
+            fn get_request(&self) -> Result<reqwest::Request, crate::error::Error> {
                 let path = {
                     let Self {
                         #( #path_idents, )*
@@ -206,11 +206,17 @@ impl Endpoint {
                 };
 
                 let mut request_builder = self.client.#method(format!("{}{}", self.base_url, path))
+
                 #( #required_builders )* ;
 
                 #( #optional_builders )*
 
-                let response = request_builder.send().await?;
+                Ok(request_builder.build()?)
+            }
+
+            async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
+                let request = self.get_request()?;
+                let response = self.client.execute(request).await?;
 
                 Ok(response.error_for_status()?)
             }

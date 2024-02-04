@@ -13,26 +13,26 @@ use crate::utils::{get_etag, get_transaction_id};
 use super::DataType;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileRead<T> {
+pub struct ReadFile<T> {
     #[getter(skip)]
     data: T,
     etag: Option<Box<str>>,
     transaction_id: Box<str>,
 }
 
-impl FileRead<Box<str>> {
+impl ReadFile<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for FileRead<Box<str>> {
+impl TryFromResponse for ReadFile<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = value.text().await?.into();
 
-        Ok(FileRead {
+        Ok(ReadFile {
             data,
             etag,
             transaction_id,
@@ -40,19 +40,19 @@ impl TryFromResponse for FileRead<Box<str>> {
     }
 }
 
-impl FileRead<Bytes> {
+impl ReadFile<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for FileRead<Bytes> {
+impl TryFromResponse for ReadFile<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
 
-        Ok(FileRead {
+        Ok(ReadFile {
             data,
             etag,
             transaction_id,
@@ -60,13 +60,13 @@ impl TryFromResponse for FileRead<Bytes> {
     }
 }
 
-impl FileRead<Option<Box<str>>> {
+impl ReadFile<Option<Box<str>>> {
     pub fn data(&self) -> Option<&str> {
         self.data.as_deref()
     }
 }
 
-impl TryFromResponse for FileRead<Option<Box<str>>> {
+impl TryFromResponse for ReadFile<Option<Box<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
@@ -76,7 +76,7 @@ impl TryFromResponse for FileRead<Option<Box<str>>> {
             Some(value.text().await?.into())
         };
 
-        Ok(FileRead {
+        Ok(ReadFile {
             data,
             etag,
             transaction_id,
@@ -84,13 +84,13 @@ impl TryFromResponse for FileRead<Option<Box<str>>> {
     }
 }
 
-impl FileRead<Option<Bytes>> {
+impl ReadFile<Option<Bytes>> {
     pub fn data(&self) -> Option<&Bytes> {
         self.data.as_ref()
     }
 }
 
-impl TryFromResponse for FileRead<Option<Bytes>> {
+impl TryFromResponse for ReadFile<Option<Bytes>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
@@ -100,7 +100,7 @@ impl TryFromResponse for FileRead<Option<Bytes>> {
             Some(value.bytes().await?)
         };
 
-        Ok(FileRead {
+        Ok(ReadFile {
             data,
             etag,
             transaction_id,
@@ -110,7 +110,7 @@ impl TryFromResponse for FileRead<Option<Bytes>> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileReadBuilder<T>
+pub struct ReadFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -138,13 +138,13 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> FileReadBuilder<FileRead<U>>
+impl<U> ReadFileBuilder<ReadFile<U>>
 where
-    FileRead<U>: TryFromResponse,
-    FileRead<Option<U>>: TryFromResponse,
+    ReadFile<U>: TryFromResponse,
+    ReadFile<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
-        FileReadBuilder {
+    pub fn binary(self) -> ReadFileBuilder<ReadFile<Bytes>> {
+        ReadFileBuilder {
             base_url: self.base_url,
             client: self.client,
             path: self.path,
@@ -159,8 +159,8 @@ where
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
-        FileReadBuilder {
+    pub fn text(self) -> ReadFileBuilder<ReadFile<Box<str>>> {
+        ReadFileBuilder {
             base_url: self.base_url,
             client: self.client,
             path: self.path,
@@ -175,11 +175,11 @@ where
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<FileRead<Option<U>>>
+    pub fn if_none_match<E>(self, etag: E) -> ReadFileBuilder<ReadFile<Option<U>>>
     where
         E: Into<Box<str>>,
     {
-        FileReadBuilder {
+        ReadFileBuilder {
             base_url: self.base_url,
             client: self.client,
             path: self.path,
@@ -195,12 +195,12 @@ where
     }
 }
 
-impl<U> FileReadBuilder<FileRead<Option<U>>>
+impl<U> ReadFileBuilder<ReadFile<Option<U>>>
 where
-    FileRead<Option<U>>: TryFromResponse,
+    ReadFile<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> FileReadBuilder<FileRead<Option<Bytes>>> {
-        FileReadBuilder {
+    pub fn binary(self) -> ReadFileBuilder<ReadFile<Option<Bytes>>> {
+        ReadFileBuilder {
             base_url: self.base_url,
             client: self.client,
             path: self.path,
@@ -215,8 +215,8 @@ where
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileRead<Option<Box<str>>>> {
-        FileReadBuilder {
+    pub fn text(self) -> ReadFileBuilder<ReadFile<Option<Box<str>>>> {
+        ReadFileBuilder {
             base_url: self.base_url,
             client: self.client,
             path: self.path,
@@ -234,12 +234,12 @@ where
 
 fn build_data_type<T>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T>,
+    dataset_read_builder: &ReadFileBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileReadBuilder {
+    let ReadFileBuilder {
         data_type,
         encoding,
         ..
@@ -261,12 +261,12 @@ where
 
 fn build_search<T>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T>,
+    dataset_read_builder: &ReadFileBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileReadBuilder {
+    let ReadFileBuilder {
         search_pattern,
         search_is_regex,
         search_case_sensitive,
@@ -296,4 +296,24 @@ where
 
 fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>), Error> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
+            .build()
+            .unwrap();
+
+        let read_file = zosmf.files().read("/etc/inetd.conf").get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
+    }
 }

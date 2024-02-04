@@ -11,7 +11,7 @@ use crate::utils::{de_optional_y_n, ser_optional_y_n};
 use super::MigratedRecall;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberList<T> {
+pub struct ListMembers<T> {
     items: Box<[T]>,
     json_version: i32,
     more_rows: Option<bool>,
@@ -19,7 +19,7 @@ pub struct MemberList<T> {
     total_rows: Option<i32>,
 }
 
-impl<T> TryFromResponse for MemberList<T>
+impl<T> TryFromResponse for ListMembers<T>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -32,7 +32,7 @@ where
             json_version,
         } = value.json().await?;
 
-        Ok(MemberList {
+        Ok(ListMembers {
             items,
             json_version,
             more_rows,
@@ -97,7 +97,7 @@ pub struct MemberName {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct MemberListBuilder<T>
+pub struct ListMembersBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -123,12 +123,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> MemberListBuilder<T>
+impl<T> ListMembersBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> MemberListBuilder<MemberList<MemberBase>> {
-        MemberListBuilder {
+    pub fn attributes_base(self) -> ListMembersBuilder<ListMembers<MemberBase>> {
+        ListMembersBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -142,8 +142,8 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> MemberListBuilder<MemberList<MemberName>> {
-        MemberListBuilder {
+    pub fn attributes_member(self) -> ListMembersBuilder<ListMembers<MemberName>> {
+        ListMembersBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -192,12 +192,12 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: reqwest::RequestBuilder,
-    member_list_builder: &MemberListBuilder<T>,
+    member_list_builder: &ListMembersBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let MemberListBuilder {
+    let ListMembersBuilder {
         attributes,
         include_total,
         ..
@@ -211,5 +211,56 @@ where
             key,
             format!("{}{}", attr, if *total { ",total" } else { "" }),
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::*;
+
+    #[test]
+    fn example_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .build()
+            .unwrap();
+
+        let list_members = zosmf
+            .datasets()
+            .list_members("SYS1.PROCLIB")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", list_members)
+        );
+    }
+
+    #[test]
+    fn example_2() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .client
+            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .header("X-IBM-Attributes", "base")
+            .build()
+            .unwrap();
+
+        let list_members_base = zosmf
+            .datasets()
+            .list_members("SYS1.PROCLIB")
+            .attributes_base()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(
+            format!("{:?}", manual_request),
+            format!("{:?}", list_members_base)
+        );
     }
 }
