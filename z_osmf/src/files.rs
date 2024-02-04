@@ -185,3 +185,15 @@ impl std::fmt::Display for DataType {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn data_type_display() {
+        assert_eq!(format!("{}", DataType::Binary), "binary");
+
+        assert_eq!(format!("{}", DataType::Text), "text");
+    }
+}

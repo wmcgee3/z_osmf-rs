@@ -528,3 +528,16 @@ pub struct StepData {
     #[serde(default)]
     abend_reason_code: Option<Box<str>>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_job_identifier() {
+        assert_eq!(
+            format!("{}", JobIdentifier::Correlator("ABCD1234".into())),
+            "ABCD1234"
+        );
+    }
+}

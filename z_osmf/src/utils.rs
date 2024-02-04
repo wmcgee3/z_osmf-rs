@@ -107,13 +107,13 @@ pub(crate) fn de_optional_y_n<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    Ok(Option::<String>::deserialize(deserializer)?
+    Option::<String>::deserialize(deserializer)?
         .map(|s| match s.as_str() {
             "Y" => Ok(true),
             "N" => Ok(false),
             _ => Err(serde::de::Error::unknown_variant(&s, &["Y", "N"])),
         })
-        .transpose()?)
+        .transpose()
 }
 
 pub(crate) fn ser_optional_y_n<S>(
@@ -135,13 +135,13 @@ pub(crate) fn de_optional_yes_no<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    Ok(Option::<String>::deserialize(deserializer)?
+    Option::<String>::deserialize(deserializer)?
         .map(|s| match s.as_str() {
             "YES" => Ok(true),
             "NO" => Ok(false),
             _ => Err(serde::de::Error::unknown_variant(&s, &["YES", "NO"])),
         })
-        .transpose()?)
+        .transpose()
 }
 
 pub(crate) fn ser_optional_yes_no<S>(

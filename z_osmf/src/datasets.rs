@@ -356,3 +356,52 @@ pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box
         .transpose()?
         .map(|v| v.into()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_data_type() {
+        assert_eq!(format!("{}", DataType::Binary), "binary");
+
+        assert_eq!(format!("{}", DataType::Record), "record");
+
+        assert_eq!(format!("{}", DataType::Text), "text");
+    }
+
+    #[test]
+    fn display_migrated_recall() {
+        let header_value: HeaderValue = MigratedRecall::Error.into();
+        assert_eq!(header_value, HeaderValue::from_static("error"));
+
+        let header_value: HeaderValue = MigratedRecall::NoWait.into();
+        assert_eq!(header_value, HeaderValue::from_static("nowait"));
+
+        let header_value: HeaderValue = MigratedRecall::Wait.into();
+        assert_eq!(header_value, HeaderValue::from_static("wait"));
+    }
+
+    #[test]
+    fn display_obtain_enq() {
+        let header_value: HeaderValue = ObtainEnq::Exclusive.into();
+        assert_eq!(header_value, HeaderValue::from_static("EXCLU"));
+
+        let header_value: HeaderValue = ObtainEnq::SharedReadWrite.into();
+        assert_eq!(header_value, HeaderValue::from_static("SHRW"));
+    }
+
+    #[test]
+    fn test_get_session_ref() {
+        let response = reqwest::Response::from(
+            http::Response::builder()
+                .header("X-IBM-Session-Ref", "ABCD1234")
+                .body("")
+                .unwrap(),
+        );
+        assert_eq!(get_session_ref(&response).unwrap(), Some("ABCD1234".into()));
+
+        let response = reqwest::Response::from(http::Response::new(""));
+        assert_eq!(get_session_ref(&response).unwrap(), None);
+    }
+}
