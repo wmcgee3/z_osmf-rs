@@ -378,7 +378,8 @@ pub struct JobExecData {
     phase_name: Box<str>,
     exec_system: Box<str>,
     exec_member: Box<str>,
-    exec_submitted: Box<str>,
+    #[serde(default)]
+    exec_submitted: Option<Box<str>>,
     #[serde(default)]
     exec_ended: Option<Box<str>>,
     reason_not_running: Option<Box<str>>,
