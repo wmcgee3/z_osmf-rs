@@ -19,7 +19,7 @@ pub struct WriteDataset {
 
 impl TryFromResponse for WriteDataset {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let etag = get_etag(&value)?.ok_or(Error::MissingEtag)?;
+        let etag = get_etag(&value)?.ok_or(Error::Etag)?;
         let transaction_id = get_transaction_id(&value)?;
 
         Ok(WriteDataset {
