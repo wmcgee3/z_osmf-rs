@@ -516,8 +516,8 @@ pub enum Status {
 #[serde(rename_all = "kebab-case")]
 pub struct StepData {
     active: bool,
-    #[serde(rename = "smfid")]
-    smf_id: Box<str>,
+    #[serde(default, rename = "smfid")]
+    smf_id: Option<Box<str>>,
     step_number: i32,
     #[serde(default)]
     selected_time: Option<Box<str>>,
