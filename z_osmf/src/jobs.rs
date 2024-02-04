@@ -334,7 +334,7 @@ pub struct JobData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -368,7 +368,7 @@ pub struct JobExecData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -406,7 +406,7 @@ pub struct JobExecStepData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -445,7 +445,7 @@ pub struct JobStepData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
