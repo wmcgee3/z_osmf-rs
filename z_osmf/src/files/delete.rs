@@ -9,21 +9,21 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DeleteFile {
+pub struct FileDelete {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for DeleteFile {
+impl TryFromResponse for FileDelete {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(DeleteFile { transaction_id })
+        Ok(FileDelete { transaction_id })
     }
 }
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
-pub struct DeleteFileBuilder<T>
+pub struct FileDeleteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -41,7 +41,7 @@ where
 
 fn build_recursive<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &DeleteFileBuilder<T>,
+    builder: &FileDeleteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -68,8 +68,7 @@ mod tests {
             .unwrap();
 
         let delete_file = zosmf
-            .files()
-            .delete("/u/jiahj/text.txt")
+            .delete_file("/u/jiahj/text.txt")
             .get_request()
             .unwrap();
 
@@ -89,11 +88,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let delete_file = zosmf
-            .files()
-            .delete("/u/jiahj/testDir")
-            .get_request()
-            .unwrap();
+        let delete_file = zosmf.delete_file("/u/jiahj/testDir").get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),

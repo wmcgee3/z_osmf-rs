@@ -9,13 +9,13 @@ use crate::convert::{TryFromResponse, TryIntoTarget};
 use super::JobIdentifier;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct ListJobFiles {
+pub struct JobFileList {
     items: Box<[JobFile]>,
 }
 
-impl TryFromResponse for ListJobFiles {
+impl TryFromResponse for JobFileList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(ListJobFiles {
+        Ok(JobFileList {
             items: value.json().await?,
         })
     }
@@ -49,7 +49,7 @@ pub struct JobFile {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files")]
-pub struct ListJobFilesBuilder<T>
+pub struct JobFileListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -65,7 +65,7 @@ where
     target_type: PhantomData<T>,
 }
 
-fn set_subsystem<T>(mut builder: ListJobFilesBuilder<T>, value: Box<str>) -> ListJobFilesBuilder<T>
+fn set_subsystem<T>(mut builder: JobFileListBuilder<T>, value: Box<str>) -> JobFileListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -91,7 +91,7 @@ mod tests {
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
-        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
+        let job_files = zosmf.list_job_files(identifier).get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
     }

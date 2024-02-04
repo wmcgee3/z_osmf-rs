@@ -9,7 +9,7 @@ use super::{AsynchronousResponse, JobIdentifier};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct PurgeJobBuilder<T>
+pub struct JobPurgeBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -27,12 +27,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> PurgeJobBuilder<T>
+impl<T> JobPurgeBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> PurgeJobBuilder<AsynchronousResponse> {
-        PurgeJobBuilder {
+    pub fn asynchronous(self) -> JobPurgeBuilder<AsynchronousResponse> {
+        JobPurgeBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -45,7 +45,7 @@ where
 
 fn build_asynchronous<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &PurgeJobBuilder<T>,
+    builder: &JobPurgeBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -56,7 +56,7 @@ where
     )
 }
 
-fn set_subsystem<T>(mut builder: PurgeJobBuilder<T>, value: Box<str>) -> PurgeJobBuilder<T>
+fn set_subsystem<T>(mut builder: JobPurgeBuilder<T>, value: Box<str>) -> JobPurgeBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -84,8 +84,7 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
         let job_feedback = zosmf
-            .jobs()
-            .cancel_and_purge(identifier)
+            .cancel_and_purge_job(identifier)
             .get_request()
             .unwrap();
 

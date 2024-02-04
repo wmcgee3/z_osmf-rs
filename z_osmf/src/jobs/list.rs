@@ -10,16 +10,16 @@ use crate::error::Error;
 use super::JobExecData;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct ListJobs<T> {
+pub struct JobList<T> {
     items: Box<[T]>,
 }
 
-impl<T> TryFromResponse for ListJobs<T>
+impl<T> TryFromResponse for JobList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(ListJobs {
+        Ok(JobList {
             items: value.json().await?,
         })
     }
@@ -27,7 +27,7 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct ListJobsBuilder<T>
+pub struct JobListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -55,7 +55,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> ListJobsBuilder<T>
+impl<T> JobListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -65,8 +65,8 @@ where
         self
     }
 
-    pub fn exec_data(self) -> ListJobsBuilder<ListJobs<JobExecData>> {
-        ListJobsBuilder {
+    pub fn exec_data(self) -> JobListBuilder<JobList<JobExecData>> {
+        JobListBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -84,7 +84,7 @@ where
 
 fn build_active_only<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &ListJobsBuilder<T>,
+    builder: &JobListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -98,7 +98,7 @@ where
 
 fn build_exec_data<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &ListJobsBuilder<T>,
+    builder: &JobListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -110,7 +110,7 @@ where
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: ListJobsBuilder<T>, value: Box<str>) -> ListJobsBuilder<T>
+fn set_subsystem<T>(mut builder: JobListBuilder<T>, value: Box<str>) -> JobListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -139,8 +139,7 @@ mod tests {
             .unwrap();
 
         let job_list = zosmf
-            .jobs()
-            .list()
+            .list_jobs()
             .owner("IBMUSER")
             .prefix("TESTJOB*")
             .exec_data()

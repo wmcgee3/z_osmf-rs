@@ -11,7 +11,7 @@ use crate::utils::{de_optional_y_n, ser_optional_y_n};
 use super::MigratedRecall;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct ListMembers<T> {
+pub struct DatasetMemberList<T> {
     items: Box<[T]>,
     json_version: i32,
     more_rows: Option<bool>,
@@ -19,7 +19,7 @@ pub struct ListMembers<T> {
     total_rows: Option<i32>,
 }
 
-impl<T> TryFromResponse for ListMembers<T>
+impl<T> TryFromResponse for DatasetMemberList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -32,7 +32,7 @@ where
             json_version,
         } = value.json().await?;
 
-        Ok(ListMembers {
+        Ok(DatasetMemberList {
             items,
             json_version,
             more_rows,
@@ -97,7 +97,7 @@ pub struct MemberName {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct ListMembersBuilder<T>
+pub struct DatasetMemberListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -123,12 +123,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> ListMembersBuilder<T>
+impl<T> DatasetMemberListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> ListMembersBuilder<ListMembers<MemberBase>> {
-        ListMembersBuilder {
+    pub fn attributes_base(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberBase>> {
+        DatasetMemberListBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -142,8 +142,8 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> ListMembersBuilder<ListMembers<MemberName>> {
-        ListMembersBuilder {
+    pub fn attributes_member(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
+        DatasetMemberListBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -192,12 +192,12 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: reqwest::RequestBuilder,
-    member_list_builder: &ListMembersBuilder<T>,
+    member_list_builder: &DatasetMemberListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let ListMembersBuilder {
+    let DatasetMemberListBuilder {
         attributes,
         include_total,
         ..
@@ -229,8 +229,7 @@ mod tests {
             .unwrap();
 
         let list_members = zosmf
-            .datasets()
-            .list_members("SYS1.PROCLIB")
+            .list_dataset_members("SYS1.PROCLIB")
             .get_request()
             .unwrap();
 
@@ -252,8 +251,7 @@ mod tests {
             .unwrap();
 
         let list_members_base = zosmf
-            .datasets()
-            .list_members("SYS1.PROCLIB")
+            .list_dataset_members("SYS1.PROCLIB")
             .attributes_base()
             .get_request()
             .unwrap();

@@ -10,15 +10,15 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct CreateFile {
+pub struct FileCreate {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for CreateFile {
+impl TryFromResponse for FileCreate {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(CreateFile { transaction_id })
+        Ok(FileCreate { transaction_id })
     }
 }
 
@@ -31,7 +31,7 @@ pub enum FileType {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/fs{path}")]
-pub struct CreateFileBuilder<T>
+pub struct FileCreateBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -63,12 +63,12 @@ struct RequestJson<'a> {
 
 fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CreateFileBuilder<T>,
+    builder: &FileCreateBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,
 {
-    let CreateFileBuilder {
+    let FileCreateBuilder {
         file_type, mode, ..
     } = builder;
 
@@ -104,8 +104,7 @@ mod tests {
             .unwrap();
 
         let create_file = zosmf
-            .files()
-            .create("/u/jiahj/text.txt")
+            .create_file("/u/jiahj/text.txt")
             .file_type(FileType::File)
             .mode("RWXRW-RW-")
             .get_request()
@@ -139,8 +138,7 @@ mod tests {
             .unwrap();
 
         let create_file = zosmf
-            .files()
-            .create("/u/jiahj/testDir")
+            .create_file("/u/jiahj/testDir")
             .file_type(FileType::Directory)
             .mode("rwxr-xrwx")
             .get_request()

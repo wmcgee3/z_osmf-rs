@@ -12,17 +12,17 @@ use crate::utils::{get_etag, get_transaction_id};
 use super::{MigratedRecall, ObtainEnq};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct WriteDataset {
+pub struct DatasetWrite {
     etag: Box<str>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for WriteDataset {
+impl TryFromResponse for DatasetWrite {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let etag = get_etag(&value)?.ok_or(Error::Etag)?;
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(WriteDataset {
+        Ok(DatasetWrite {
             etag,
             transaction_id,
         })
@@ -31,7 +31,7 @@ impl TryFromResponse for WriteDataset {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct WriteDatasetBuilder<T>
+pub struct DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -67,7 +67,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> WriteDatasetBuilder<T>
+impl<T> DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -75,7 +75,7 @@ where
     where
         B: Into<Bytes>,
     {
-        WriteDatasetBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Binary(data.into())),
             ..self
         }
@@ -85,7 +85,7 @@ where
     where
         B: Into<Bytes>,
     {
-        WriteDatasetBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Record(data.into())),
             ..self
         }
@@ -95,7 +95,7 @@ where
     where
         S: ToString,
     {
-        WriteDatasetBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Text(data.to_string())),
             ..self
         }
@@ -111,13 +111,13 @@ enum Data {
 
 fn build_data<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &WriteDatasetBuilder<T>,
+    builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     let key = "X-IBM-Data-Type";
-    let WriteDatasetBuilder {
+    let DatasetWriteBuilder {
         data,
         encoding,
         crlf_newlines,
@@ -154,7 +154,7 @@ where
 
 fn build_release_enq<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &WriteDatasetBuilder<T>,
+    builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -166,7 +166,7 @@ where
     request_builder
 }
 
-fn set_member<T>(mut builder: WriteDatasetBuilder<T>, value: Box<str>) -> WriteDatasetBuilder<T>
+fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -175,7 +175,7 @@ where
     builder
 }
 
-fn set_volume<T>(mut builder: WriteDatasetBuilder<T>, value: Box<str>) -> WriteDatasetBuilder<T>
+fn set_volume<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -203,8 +203,7 @@ mod tests {
             .unwrap();
 
         let write_dataset = zosmf
-            .datasets()
-            .write("SYS1.PARMLIB")
+            .write_dataset("SYS1.PARMLIB")
             .member("SMFPRM00")
             .if_match("B5C6454F783590AA8EC15BD88E29EA63")
             .text(string_data)

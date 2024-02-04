@@ -145,8 +145,7 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
         let job_status = zosmf
-            .jobs()
-            .status(identifier)
+            .job_status(identifier)
             .exec_data()
             .get_request()
             .unwrap();

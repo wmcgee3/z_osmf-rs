@@ -48,7 +48,7 @@ impl From<RecordFormat> for reqwest::header::HeaderValue {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct SubmitJobBuilder<T>
+pub struct JobSubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -80,7 +80,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> SubmitJobBuilder<T>
+impl<T> JobSubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -106,7 +106,7 @@ struct Source<'a> {
 
 fn build_jcl_source<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &SubmitJobBuilder<T>,
+    builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -134,7 +134,7 @@ where
 
 fn build_notification_events<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &SubmitJobBuilder<T>,
+    builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -162,7 +162,7 @@ where
 
 fn build_symbols<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &SubmitJobBuilder<T>,
+    builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -177,7 +177,7 @@ where
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: SubmitJobBuilder<T>, value: Box<str>) -> SubmitJobBuilder<T>
+fn set_subsystem<T>(mut builder: JobSubmitBuilder<T>, value: Box<str>) -> JobSubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -212,8 +212,7 @@ mod tests {
             .unwrap();
 
         let job_data = zosmf
-            .jobs()
-            .submit(JclSource::Jcl(JclData::Text(jcl.into())))
+            .submit_job(JclSource::Jcl(JclData::Text(jcl.into())))
             .message_class('A')
             .record_format(RecordFormat::Fixed)
             .record_length(80)

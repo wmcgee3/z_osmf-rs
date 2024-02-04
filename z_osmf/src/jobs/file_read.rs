@@ -12,33 +12,33 @@ use crate::convert::{TryFromResponse, TryIntoTarget};
 use super::JobIdentifier;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ReadJobFile<T> {
+pub struct JobFileRead<T> {
     data: T,
 }
 
-impl ReadJobFile<Box<str>> {
+impl JobFileRead<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for ReadJobFile<Box<str>> {
+impl TryFromResponse for JobFileRead<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(ReadJobFile {
+        Ok(JobFileRead {
             data: value.text().await?.into(),
         })
     }
 }
 
-impl ReadJobFile<Bytes> {
+impl JobFileRead<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for ReadJobFile<Bytes> {
+impl TryFromResponse for JobFileRead<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(ReadJobFile {
+        Ok(JobFileRead {
             data: value.bytes().await?,
         })
     }
@@ -61,7 +61,7 @@ impl std::fmt::Display for JobFileID {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files/{id}/records")]
-pub struct ReadJobFileBuilder<T>
+pub struct JobFileReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -93,12 +93,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> ReadJobFileBuilder<ReadJobFile<U>>
+impl<U> JobFileReadBuilder<JobFileRead<U>>
 where
-    ReadJobFile<U>: TryFromResponse,
+    JobFileRead<U>: TryFromResponse,
 {
-    pub fn binary(self) -> ReadJobFileBuilder<ReadJobFile<Bytes>> {
-        ReadJobFileBuilder {
+    pub fn binary(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
+        JobFileReadBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -115,8 +115,8 @@ where
         }
     }
 
-    pub fn record(self) -> ReadJobFileBuilder<ReadJobFile<Bytes>> {
-        ReadJobFileBuilder {
+    pub fn record(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
+        JobFileReadBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -133,8 +133,8 @@ where
         }
     }
 
-    pub fn text(self) -> ReadJobFileBuilder<ReadJobFile<Box<str>>> {
-        ReadJobFileBuilder {
+    pub fn text(self) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
+        JobFileReadBuilder {
             base_url: self.base_url,
             client: self.client,
             subsystem: self.subsystem,
@@ -162,7 +162,7 @@ enum DataType {
 
 fn build_search_case_sensitive<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &ReadJobFileBuilder<T>,
+    builder: &JobFileReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -174,7 +174,7 @@ where
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: ReadJobFileBuilder<T>, value: Box<str>) -> ReadJobFileBuilder<T>
+fn set_subsystem<T>(mut builder: JobFileReadBuilder<T>, value: Box<str>) -> JobFileReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -204,8 +204,7 @@ mod tests {
         let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
         let file_id = JobFileID::ID(1);
         let job_file = zosmf
-            .jobs()
-            .read_file(identifier, file_id)
+            .read_job_file(identifier, file_id)
             .get_request()
             .unwrap();
 
@@ -226,8 +225,7 @@ mod tests {
         let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
         let file_id = JobFileID::ID(8);
         let job_file = zosmf
-            .jobs()
-            .read_file(identifier, file_id)
+            .read_job_file(identifier, file_id)
             .record_range(RecordRange::from_str("0-249").unwrap())
             .get_request()
             .unwrap();
@@ -249,8 +247,7 @@ mod tests {
         let file_id = JobFileID::JCL;
 
         let job_file = zosmf
-            .jobs()
-            .read_file(identifier, file_id)
+            .read_job_file(identifier, file_id)
             .get_request()
             .unwrap();
 

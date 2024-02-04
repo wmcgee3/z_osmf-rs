@@ -15,7 +15,7 @@ use crate::utils::{get_etag, get_transaction_id};
 use super::{get_session_ref, DataType, MigratedRecall, ObtainEnq};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct ReadDataset<T> {
+pub struct DatasetRead<T> {
     #[getter(skip)]
     data: T,
     etag: Option<Box<str>>,
@@ -23,19 +23,19 @@ pub struct ReadDataset<T> {
     transaction_id: Box<str>,
 }
 
-impl ReadDataset<Box<str>> {
+impl DatasetRead<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for ReadDataset<Box<str>> {
+impl TryFromResponse for DatasetRead<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.text().await?.into();
 
-        Ok(ReadDataset {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
@@ -44,19 +44,19 @@ impl TryFromResponse for ReadDataset<Box<str>> {
     }
 }
 
-impl ReadDataset<Bytes> {
+impl DatasetRead<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for ReadDataset<Bytes> {
+impl TryFromResponse for DatasetRead<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
 
-        Ok(ReadDataset {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
@@ -65,13 +65,13 @@ impl TryFromResponse for ReadDataset<Bytes> {
     }
 }
 
-impl ReadDataset<Option<Box<str>>> {
+impl DatasetRead<Option<Box<str>>> {
     pub fn data(&self) -> Option<&str> {
         self.data.as_deref()
     }
 }
 
-impl TryFromResponse for ReadDataset<Option<Box<str>>> {
+impl TryFromResponse for DatasetRead<Option<Box<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
@@ -81,7 +81,7 @@ impl TryFromResponse for ReadDataset<Option<Box<str>>> {
             Some(value.text().await?.into())
         };
 
-        Ok(ReadDataset {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
@@ -90,13 +90,13 @@ impl TryFromResponse for ReadDataset<Option<Box<str>>> {
     }
 }
 
-impl ReadDataset<Option<Bytes>> {
+impl DatasetRead<Option<Bytes>> {
     pub fn data(&self) -> Option<&Bytes> {
         self.data.as_ref()
     }
 }
 
-impl TryFromResponse for ReadDataset<Option<Bytes>> {
+impl TryFromResponse for DatasetRead<Option<Bytes>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
@@ -106,7 +106,7 @@ impl TryFromResponse for ReadDataset<Option<Bytes>> {
             Some(value.bytes().await?)
         };
 
-        Ok(ReadDataset {
+        Ok(DatasetRead {
             data,
             etag,
             session_ref,
@@ -117,7 +117,7 @@ impl TryFromResponse for ReadDataset<Option<Bytes>> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct ReadDatasetBuilder<T>
+pub struct DatasetReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -163,13 +163,13 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> ReadDatasetBuilder<ReadDataset<U>>
+impl<U> DatasetReadBuilder<DatasetRead<U>>
 where
-    ReadDataset<U>: TryFromResponse,
-    ReadDataset<Option<U>>: TryFromResponse,
+    DatasetRead<U>: TryFromResponse,
+    DatasetRead<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> ReadDatasetBuilder<ReadDataset<Bytes>> {
-        ReadDatasetBuilder {
+    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             search_pattern: self.search_pattern,
@@ -193,8 +193,8 @@ where
         }
     }
 
-    pub fn record(self) -> ReadDatasetBuilder<ReadDataset<Bytes>> {
-        ReadDatasetBuilder {
+    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             search_pattern: self.search_pattern,
@@ -218,8 +218,8 @@ where
         }
     }
 
-    pub fn text(self) -> ReadDatasetBuilder<ReadDataset<Box<str>>> {
-        ReadDatasetBuilder {
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             search_pattern: self.search_pattern,
@@ -243,11 +243,11 @@ where
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> ReadDatasetBuilder<ReadDataset<Option<U>>>
+    pub fn if_none_match<E>(self, etag: E) -> DatasetReadBuilder<DatasetRead<Option<U>>>
     where
         E: Into<Box<str>>,
     {
-        ReadDatasetBuilder {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             dataset_name: self.dataset_name,
@@ -272,12 +272,12 @@ where
     }
 }
 
-impl<V> ReadDatasetBuilder<ReadDataset<Option<V>>>
+impl<V> DatasetReadBuilder<DatasetRead<Option<V>>>
 where
-    ReadDataset<Option<V>>: TryFromResponse,
+    DatasetRead<Option<V>>: TryFromResponse,
 {
-    pub fn binary(self) -> ReadDatasetBuilder<ReadDataset<Option<Bytes>>> {
-        ReadDatasetBuilder {
+    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             search_pattern: self.search_pattern,
@@ -301,8 +301,8 @@ where
         }
     }
 
-    pub fn record(self) -> ReadDatasetBuilder<ReadDataset<Option<Bytes>>> {
-        ReadDatasetBuilder {
+    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             search_pattern: self.search_pattern,
@@ -326,8 +326,8 @@ where
         }
     }
 
-    pub fn text(self) -> ReadDatasetBuilder<ReadDataset<Option<Box<str>>>> {
-        ReadDatasetBuilder {
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
+        DatasetReadBuilder {
             base_url: self.base_url,
             client: self.client,
             search_pattern: self.search_pattern,
@@ -354,12 +354,12 @@ where
 
 fn build_data_type<T>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &ReadDatasetBuilder<T>,
+    dataset_read_builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let ReadDatasetBuilder {
+    let DatasetReadBuilder {
         data_type,
         encoding,
         ..
@@ -381,7 +381,7 @@ where
 
 fn build_release_enq<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &ReadDatasetBuilder<T>,
+    builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -395,7 +395,7 @@ where
 
 fn build_return_etag<T>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &ReadDatasetBuilder<T>,
+    dataset_read_builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -409,12 +409,12 @@ where
 
 fn build_search<T>(
     mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &ReadDatasetBuilder<T>,
+    dataset_read_builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let ReadDatasetBuilder {
+    let DatasetReadBuilder {
         search_pattern,
         search_is_regex,
         search_case_sensitive,
@@ -453,9 +453,9 @@ fn get_headers(response: &reqwest::Response) -> Result<H, Error> {
 }
 
 fn set_member<T>(
-    mut dataset_read_builder: ReadDatasetBuilder<T>,
+    mut dataset_read_builder: DatasetReadBuilder<T>,
     value: Box<str>,
-) -> ReadDatasetBuilder<T>
+) -> DatasetReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -465,9 +465,9 @@ where
 }
 
 fn set_volume<T>(
-    mut dataset_read_builder: ReadDatasetBuilder<T>,
+    mut dataset_read_builder: DatasetReadBuilder<T>,
     value: Box<str>,
-) -> ReadDatasetBuilder<T>
+) -> DatasetReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -491,8 +491,7 @@ mod tests {
             .unwrap();
 
         let read_member = zosmf
-            .datasets()
-            .read("SYS1.PARMLIB")
+            .read_dataset("SYS1.PARMLIB")
             .member("SMFPRM00")
             .get_request()
             .unwrap();
@@ -514,8 +513,7 @@ mod tests {
             .unwrap();
 
         let read_dataset = zosmf
-            .datasets()
-            .read("JIAHJ.REST.SRVMP")
+            .read_dataset("JIAHJ.REST.SRVMP")
             .get_request()
             .unwrap();
 

@@ -9,21 +9,21 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct CreateDataset {
+pub struct DatasetCreate {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for CreateDataset {
+impl TryFromResponse for DatasetCreate {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(CreateDataset { transaction_id })
+        Ok(DatasetCreate { transaction_id })
     }
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
-pub struct CreateDatasetBuilder<T>
+pub struct DatasetCreateBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -111,12 +111,12 @@ struct RequestJson<'a> {
 
 fn build_json<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CreateDatasetBuilder<T>,
+    builder: &DatasetCreateBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let CreateDatasetBuilder {
+    let DatasetCreateBuilder {
         volume,
         device_type,
         organization,
@@ -189,8 +189,7 @@ mod tests {
             .unwrap();
 
         let create_dataset = zosmf
-            .datasets()
-            .create("test.dataset")
+            .create_dataset("test.dataset")
             .volume("zmf046")
             .device_type("3390")
             .organization("PS")
@@ -241,8 +240,7 @@ mod tests {
             .unwrap();
 
         let create_dataset = zosmf
-            .datasets()
-            .create("JIAHJ.REST.TEST.NEWDS02")
+            .create_dataset("JIAHJ.REST.TEST.NEWDS02")
             .volume("zmf046")
             .device_type("3390")
             .organization("PO")
@@ -295,8 +293,7 @@ mod tests {
             .unwrap();
 
         let create_pdse = zosmf
-            .datasets()
-            .create("JIAHJ.REST.TEST.NEWDS02")
+            .create_dataset("JIAHJ.REST.TEST.NEWDS02")
             .volume("zmf046")
             .device_type("3390")
             .organization("PO")

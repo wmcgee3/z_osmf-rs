@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![forbid(unsafe_code)]
 
 //! # z_osmf
@@ -23,15 +24,7 @@ pub mod jobs;
 mod convert;
 mod utils;
 
-use std::sync::Arc;
-
-#[cfg(feature = "datasets")]
-use self::datasets::DatasetsClient;
 use self::error::Error;
-#[cfg(feature = "files")]
-use self::files::FilesClient;
-#[cfg(feature = "jobs")]
-use self::jobs::JobsClient;
 
 /// # ZOsmf
 ///
@@ -47,7 +40,7 @@ use self::jobs::JobsClient;
 /// let zosmf = ZOsmf::new(client_builder, base_url)?;
 /// zosmf.login(username, "PASSWORD").await?;
 ///
-/// let my_datasets = zosmf.datasets().list(username).build().await?;
+/// let my_datasets = zosmf.list_datasets(username).build().await?;
 ///
 /// for dataset in my_datasets.items().iter() {
 ///     println!("{:?}", dataset);
@@ -57,7 +50,7 @@ use self::jobs::JobsClient;
 /// ```
 #[derive(Clone, Debug)]
 pub struct ZOsmf {
-    base_url: Arc<str>,
+    base_url: Box<str>,
     client: reqwest::Client,
 }
 
@@ -79,10 +72,7 @@ impl ZOsmf {
     where
         B: std::fmt::Display,
     {
-        let base_url: Arc<str> = format!("{}", base_url)
-            .trim_end_matches('/')
-            .to_string()
-            .into();
+        let base_url = format!("{}", base_url).trim_end_matches('/').into();
         let client = client_builder.cookie_store(true).build()?;
 
         Ok(ZOsmf { base_url, client })
@@ -134,48 +124,6 @@ impl ZOsmf {
             .error_for_status()?;
 
         Ok(())
-    }
-
-    /// Create a [DatasetsClient] for working with datasets via z/OSMF.
-    ///
-    /// # Example
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let dataset_client = zosmf.datasets();
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "datasets")]
-    pub fn datasets(&self) -> DatasetsClient {
-        DatasetsClient::new(self.base_url.clone(), self.client.clone())
-    }
-
-    /// Create a [FilesClient] for working with files via z/OSMF.
-    ///
-    /// # Example
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let files_client = zosmf.files();
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "files")]
-    pub fn files(&self) -> FilesClient {
-        FilesClient::new(self.base_url.clone(), self.client.clone())
-    }
-
-    /// Create a [JobsClient] for working with jobs via z/OSMF.
-    ///
-    /// # Example
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let jobs_client = zosmf.jobs();
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[cfg(feature = "jobs")]
-    pub fn jobs(&self) -> JobsClient {
-        JobsClient::new(self.base_url.clone(), self.client.clone())
     }
 }
 

@@ -1,55 +1,32 @@
 pub mod create;
 pub mod delete;
 pub mod list;
-pub mod list_members;
+pub mod member_list;
 pub mod read;
 pub mod write;
-
-use std::sync::Arc;
 
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
+use crate::ZOsmf;
 
-use self::create::{CreateDataset, CreateDatasetBuilder};
-use self::delete::{DeleteDataset, DeleteDatasetBuilder};
-use self::list::{DatasetName, ListDatasets, ListDatasetsBuilder};
-use self::list_members::{ListMembers, ListMembersBuilder, MemberName};
-use self::read::{ReadDataset, ReadDatasetBuilder};
-use self::write::{WriteDataset, WriteDatasetBuilder};
+use self::create::{DatasetCreate, DatasetCreateBuilder};
+use self::delete::{DatasetDelete, DatasetDeleteBuilder};
+use self::list::{DatasetList, DatasetListBuilder, DatasetName};
+use self::member_list::{DatasetMemberList, DatasetMemberListBuilder, MemberName};
+use self::read::{DatasetRead, DatasetReadBuilder};
+use self::write::{DatasetWrite, DatasetWriteBuilder};
 
-/// # DatasetsClient
-///
-/// A sub-client for organizing the dataset functionality of the z/OSMF Rest APIs.
-///
-/// This client is intended to be accessed via the `datasets` attribute of the [ZOsmf](crate::ZOsmf) struct:
-/// ```
-/// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-/// # use z_osmf::datasets::DatasetsClient;
-/// let _: DatasetsClient = zosmf.datasets();
-/// # Ok(())
-/// # }
-/// ```
-#[derive(Clone, Debug)]
-pub struct DatasetsClient {
-    base_url: Arc<str>,
-    client: reqwest::Client,
-}
-
-impl DatasetsClient {
-    pub(super) fn new(base_url: Arc<str>, client: reqwest::Client) -> Self {
-        DatasetsClient { base_url, client }
-    }
-
+/// # Datasets
+impl ZOsmf {
     /// # Examples
     ///
     /// Creating a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_dataset = zosmf
-    ///     .datasets()
-    ///     .create("JIAHJ.REST.TEST.NEWDS")
+    ///     .create_dataset("JIAHJ.REST.TEST.NEWDS")
     ///     .volume("zmf046")
     ///     .device_type("3390")
     ///     .organization("PS")
@@ -70,8 +47,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pds = zosmf
-    ///     .datasets()
-    ///     .create("JIAHJ.REST.TEST.NEWDS02")
+    ///     .create_dataset("JIAHJ.REST.TEST.NEWDS02")
     ///     .volume("zmf046")
     ///     .device_type("3390")
     ///     .organization("PO")
@@ -93,8 +69,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pdse = zosmf
-    ///     .datasets()
-    ///     .create("JIAHJ.REST.TEST.NEWDS02")
+    ///     .create_dataset("JIAHJ.REST.TEST.NEWDS02")
     ///     .volume("zmf046")
     ///     .device_type("3390")
     ///     .organization("PO")
@@ -112,8 +87,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> CreateDatasetBuilder<CreateDataset> {
-        CreateDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn create_dataset(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
+        DatasetCreateBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
     /// # Examples
@@ -122,8 +97,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_dataset = zosmf
-    ///     .datasets()
-    ///     .delete("JIAHJ.REST.TEST.DATASET")
+    ///     .delete_dataset("JIAHJ.REST.TEST.DATASET")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -134,8 +108,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged = zosmf
-    ///     .datasets()
-    ///     .delete("JIAHJ.REST.TEST.DATASET2")
+    ///     .delete_dataset("JIAHJ.REST.TEST.DATASET2")
     ///     .volume("ZMF046")
     ///     .build()
     ///     .await?;
@@ -147,8 +120,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_member = zosmf
-    ///     .datasets()
-    ///     .delete("JIAHJ.REST.TEST.PDS")
+    ///     .delete_dataset("JIAHJ.REST.TEST.PDS")
     ///     .member("MEMBER01")
     ///     .build()
     ///     .await?;
@@ -160,8 +132,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged_member = zosmf
-    ///     .datasets()
-    ///     .delete("JIAHJ.REST.TEST.PDS.UNCAT")
+    ///     .delete_dataset("JIAHJ.REST.TEST.PDS.UNCAT")
     ///     .member("MEMBER01")
     ///     .volume("ZMF046")
     ///     .build()
@@ -169,39 +140,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DeleteDatasetBuilder<DeleteDataset> {
-        DeleteDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
-    }
-
-    /// # Examples
-    ///
-    /// Listing datasets:
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_datasets = zosmf
-    ///     .datasets()
-    ///     .list("IBMUSER.CONFIG.*")
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// Listing the base attributes of uncataloged datasets:
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_datasets_base = zosmf
-    ///     .datasets()
-    ///     .list("**")
-    ///     .volume("PEVTS2")
-    ///     .attributes_base()
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn list(&self, name_pattern: &str) -> ListDatasetsBuilder<ListDatasets<DatasetName>> {
-        ListDatasetsBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
+    pub fn delete_dataset(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
+        DatasetDeleteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
     /// # Examples
@@ -210,8 +150,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members = zosmf
-    ///     .datasets()
-    ///     .list_members("SYS1.PROCLIB")
+    ///     .list_dataset_members("SYS1.PROCLIB")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -222,20 +161,50 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members_base = zosmf
-    ///     .datasets()
-    ///     .list_members("SYS1.PROCLIB")
+    ///     .list_dataset_members("SYS1.PROCLIB")
     ///     .attributes_base()
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_members(&self, dataset_name: &str) -> ListMembersBuilder<ListMembers<MemberName>> {
-        ListMembersBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            dataset_name.to_string(),
-        )
+    pub fn list_dataset_members(
+        &self,
+        dataset_name: &str,
+    ) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
+        DatasetMemberListBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    }
+
+    /// # Examples
+    ///
+    /// Listing datasets:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_datasets = zosmf
+    ///     .list_datasets("IBMUSER.CONFIG.*")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Listing the base attributes of uncataloged datasets:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_datasets_base = zosmf
+    ///     .list_datasets("**")
+    ///     .volume("PEVTS2")
+    ///     .attributes_base()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list_datasets(
+        &self,
+        name_pattern: &str,
+    ) -> DatasetListBuilder<DatasetList<DatasetName>> {
+        DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
     }
 
     /// # Examples
@@ -244,8 +213,7 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_member = zosmf
-    ///     .datasets()
-    ///     .read("SYS1.PARMLIB")
+    ///     .read_dataset("SYS1.PARMLIB")
     ///     .member("SMFPRM00")
     ///     .build()
     ///     .await?;
@@ -257,15 +225,14 @@ impl DatasetsClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_dataset = zosmf
-    ///     .datasets()
-    ///     .read("JIAHJ.REST.SRVMP")
+    ///     .read_dataset("JIAHJ.REST.SRVMP")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> ReadDatasetBuilder<ReadDataset<Box<str>>> {
-        ReadDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn read_dataset(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
+        DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 
     /// # Examples
@@ -275,8 +242,7 @@ impl DatasetsClient {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// # let string_data = "".to_string();
     /// let write_dataset = zosmf
-    ///     .datasets()
-    ///     .write("SYS1.PARMLIB")
+    ///     .write_dataset("SYS1.PARMLIB")
     ///     .member("SMFPRM00")
     ///     .if_match("B5C6454F783590AA8EC15BD88E29EA63")
     ///     .text(string_data)
@@ -285,8 +251,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> WriteDatasetBuilder<WriteDataset> {
-        WriteDatasetBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    pub fn write_dataset(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
+        DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
     }
 }
 

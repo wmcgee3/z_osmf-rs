@@ -4,25 +4,16 @@ pub mod list;
 pub mod read;
 pub mod write;
 
-use std::sync::Arc;
+use crate::ZOsmf;
 
-use self::create::{CreateFile, CreateFileBuilder};
-use self::delete::{DeleteFile, DeleteFileBuilder};
-use self::list::{ListFiles, ListFilesBuilder};
-use self::read::{ReadFile, ReadFileBuilder};
-use self::write::{WriteFile, WriteFileBuilder};
+use self::create::{FileCreate, FileCreateBuilder};
+use self::delete::{FileDelete, FileDeleteBuilder};
+use self::list::{FileList, FileListBuilder};
+use self::read::{FileRead, FileReadBuilder};
+use self::write::{FileWrite, FileWriteBuilder};
 
-#[derive(Clone, Debug)]
-pub struct FilesClient {
-    base_url: Arc<str>,
-    client: reqwest::Client,
-}
-
-impl FilesClient {
-    pub(crate) fn new(base_url: Arc<str>, client: reqwest::Client) -> Self {
-        FilesClient { base_url, client }
-    }
-
+/// # Files
+impl ZOsmf {
     /// # Examples
     ///
     /// Create a file:
@@ -30,8 +21,7 @@ impl FilesClient {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// # use z_osmf::files::create::FileType;
     /// let create_file = zosmf
-    ///     .files()
-    ///     .create("/u/jiahj/text.txt")
+    ///     .create_file("/u/jiahj/text.txt")
     ///     .file_type(FileType::File)
     ///     .mode("RWXRW-RW-")
     ///     .build()
@@ -45,8 +35,7 @@ impl FilesClient {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// # use z_osmf::files::create::FileType;
     /// let create_file = zosmf
-    ///     .files()
-    ///     .create("/u/jiahj/testDir")
+    ///     .create_file("/u/jiahj/testDir")
     ///     .file_type(FileType::Directory)
     ///     .mode("rwxr-xrwx")
     ///     .build()
@@ -54,8 +43,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, path: &str) -> CreateFileBuilder<CreateFile> {
-        CreateFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn create_file(&self, path: &str) -> FileCreateBuilder<FileCreate> {
+        FileCreateBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -64,8 +53,7 @@ impl FilesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_file = zosmf
-    ///     .files()
-    ///     .delete("/u/jiahj/text.txt")
+    ///     .delete_file("/u/jiahj/text.txt")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -76,15 +64,14 @@ impl FilesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_file = zosmf
-    ///     .files()
-    ///     .delete("/u/jiahj/testDir")
+    ///     .delete_file("/u/jiahj/testDir")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, path: &str) -> DeleteFileBuilder<DeleteFile> {
-        DeleteFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn delete_file(&self, path: &str) -> FileDeleteBuilder<FileDelete> {
+        FileDeleteBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -93,8 +80,7 @@ impl FilesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_files = zosmf
-    ///     .files()
-    ///     .list("/usr")
+    ///     .list_files("/usr")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -105,8 +91,7 @@ impl FilesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_files = zosmf
-    ///     .files()
-    ///     .list("/u/ibmuser/myFile.txt")
+    ///     .list_files("/u/ibmuser/myFile.txt")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -117,16 +102,15 @@ impl FilesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_files = zosmf
-    ///     .files()
-    ///     .list("/usr/include")
+    ///     .list_files("/usr/include")
     ///     .name("f*.h")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, path: &str) -> ListFilesBuilder<ListFiles> {
-        ListFilesBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn list_files(&self, path: &str) -> FileListBuilder<FileList> {
+        FileListBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -135,15 +119,14 @@ impl FilesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_file = zosmf
-    ///     .files()
-    ///     .read("/etc/inetd.conf")
+    ///     .read_file("/etc/inetd.conf")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, path: &str) -> ReadFileBuilder<ReadFile<Box<str>>> {
-        ReadFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn read_file(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
+        FileReadBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 
     /// # Examples
@@ -153,16 +136,15 @@ impl FilesClient {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// # let text_data = "";
     /// let write_file = zosmf
-    ///     .files()
-    ///     .write("/etc/inetd.conf")
+    ///     .write_file("/etc/inetd.conf")
     ///     .text(text_data)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, path: &str) -> WriteFileBuilder<WriteFile> {
-        WriteFileBuilder::new(self.base_url.clone(), self.client.clone(), path)
+    pub fn write_file(&self, path: &str) -> FileWriteBuilder<FileWrite> {
+        FileWriteBuilder::new(self.base_url.clone(), self.client.clone(), path)
     }
 }
 

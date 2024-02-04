@@ -9,7 +9,7 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct ListFiles {
+pub struct FileList {
     items: Box<[FileAttributes]>,
     returned_rows: i32,
     total_rows: i32,
@@ -17,7 +17,7 @@ pub struct ListFiles {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for ListFiles {
+impl TryFromResponse for FileList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
@@ -28,7 +28,7 @@ impl TryFromResponse for ListFiles {
             json_version,
         } = value.json().await?;
 
-        Ok(ListFiles {
+        Ok(FileList {
             items,
             returned_rows,
             total_rows,
@@ -72,7 +72,7 @@ pub enum FileType {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
-pub struct ListFilesBuilder<T>
+pub struct FileListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -136,7 +136,7 @@ struct ResponseJson {
 
 fn build_lstat<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &ListFilesBuilder<T>,
+    builder: &FileListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -150,7 +150,7 @@ where
 
 fn build_perm<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &ListFilesBuilder<T>,
+    builder: &FileListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -183,7 +183,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let list_files = zosmf.files().list("/usr").get_request().unwrap();
+        let list_files = zosmf.list_files("/usr").get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", list_files))
     }
@@ -200,8 +200,7 @@ mod tests {
             .unwrap();
 
         let list_files = zosmf
-            .files()
-            .list("/u/ibmuser/myFile.txt")
+            .list_files("/u/ibmuser/myFile.txt")
             .get_request()
             .unwrap();
 
@@ -220,8 +219,7 @@ mod tests {
             .unwrap();
 
         let list_files = zosmf
-            .files()
-            .list("/usr/include")
+            .list_files("/usr/include")
             .name("f*.h")
             .get_request()
             .unwrap();

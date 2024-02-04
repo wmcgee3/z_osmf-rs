@@ -1,5 +1,5 @@
 pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
-    let _ = dotenvy::dotenv();
+    let _ = dotenvy::dotenv_override();
 
     let base_url = std::env::var("ZOSMF_BASE_URL")?;
     let username = std::env::var("ZOSMF_USERNAME")?;
@@ -16,7 +16,7 @@ pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
 
     let zosmf = z_osmf::ZOsmf::new(client_builder, base_url)?;
 
-    zosmf.login(&username, password).await?;
+    zosmf.login(username, password).await?;
 
     Ok(zosmf)
 }
