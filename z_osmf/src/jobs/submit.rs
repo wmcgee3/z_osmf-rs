@@ -196,17 +196,6 @@ mod tests {
     fn example_1() {
         let zosmf = get_zosmf();
 
-        r#"PUT /zosmf/restjobs/jobs HTTP/1.1
-        Host: zosmf1.yourco.com
-        Content-Type: text/plain
-        X-IBM-Intrdr-Class: A
-        X-IBM-Intrdr-Recfm: F
-        X-IBM-Intrdr-Lrecl: 80
-        X-IBM-Intrdr-Mode: TEXT
-
-        //TESTJOBX JOB (),MSGCLASS=H
-        // EXEC PGM=IEFBR14"#;
-
         let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
         // EXEC PGM=IEFBR14
         "#;
