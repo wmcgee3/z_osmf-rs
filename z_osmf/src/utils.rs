@@ -235,10 +235,10 @@ mod tests {
     #[test]
     fn test_de_yes_no() {
         let deserializer: StrDeserializer<serde::de::value::Error> = "YES".into_deserializer();
-        assert_eq!(de_yes_no(deserializer).unwrap(), true);
+        assert!(de_yes_no(deserializer).unwrap());
 
         let deserializer: StrDeserializer<serde::de::value::Error> = "NO".into_deserializer();
-        assert_eq!(de_yes_no(deserializer).unwrap(), false);
+        assert!(!de_yes_no(deserializer).unwrap());
 
         let deserializer: StrDeserializer<serde::de::value::Error> = "NONSENSE".into_deserializer();
         assert!(de_yes_no(deserializer).is_err());
