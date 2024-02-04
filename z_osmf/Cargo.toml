@@ -1,6 +1,6 @@
 [package]
 name = "z_osmf"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 authors = ["Billy McGee <william.j.mcgee3@gmail.com>"]
 description = "The Rust z/OSMF Client"
@@ -29,7 +29,7 @@ serde_json = { version = "1.0", optional = true }
 thiserror = "1.0"
 tokio = { version = "1.32", default-features = false }
 
-z_osmf_macros = { version = "0.5", path = "../z_osmf_macros" }
+z_osmf_macros = { version = "0.6", path = "../z_osmf_macros" }
 
 
 [dev-dependencies]
