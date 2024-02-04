@@ -377,7 +377,8 @@ pub struct JobExecData {
     phase: i32,
     phase_name: Box<str>,
     exec_system: Box<str>,
-    exec_member: Box<str>,
+    #[serde(default)]
+    exec_member: Option<Box<str>>,
     #[serde(default)]
     exec_submitted: Option<Box<str>>,
     #[serde(default)]
@@ -418,9 +419,12 @@ pub struct JobExecStepData {
     phase_name: Box<str>,
     step_data: Box<[StepData]>,
     exec_system: Box<str>,
-    exec_member: Box<str>,
-    exec_submitted: Box<str>,
-    exec_ended: Box<str>,
+    #[serde(default)]
+    exec_member: Option<Box<str>>,
+    #[serde(default)]
+    exec_submitted: Option<Box<str>>,
+    #[serde(default)]
+    exec_ended: Option<Box<str>>,
     reason_not_running: Option<Box<str>>,
 }
 
