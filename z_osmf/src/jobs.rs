@@ -334,7 +334,7 @@ pub struct JobData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -368,7 +368,7 @@ pub struct JobExecData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -376,10 +376,14 @@ pub struct JobExecData {
     job_correlator: Option<Box<str>>,
     phase: i32,
     phase_name: Box<str>,
-    exec_system: Box<str>,
-    exec_member: Box<str>,
-    exec_submitted: Box<str>,
-    exec_ended: Box<str>,
+    #[serde(default)]
+    exec_system: Option<Box<str>>,
+    #[serde(default)]
+    exec_member: Option<Box<str>>,
+    #[serde(default)]
+    exec_submitted: Option<Box<str>>,
+    #[serde(default)]
+    exec_ended: Option<Box<str>>,
     reason_not_running: Option<Box<str>>,
 }
 
@@ -406,7 +410,7 @@ pub struct JobExecStepData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -415,10 +419,14 @@ pub struct JobExecStepData {
     phase: i32,
     phase_name: Box<str>,
     step_data: Box<[StepData]>,
-    exec_system: Box<str>,
-    exec_member: Box<str>,
-    exec_submitted: Box<str>,
-    exec_ended: Box<str>,
+    #[serde(default)]
+    exec_system: Option<Box<str>>,
+    #[serde(default)]
+    exec_member: Option<Box<str>>,
+    #[serde(default)]
+    exec_submitted: Option<Box<str>>,
+    #[serde(default)]
+    exec_ended: Option<Box<str>>,
     reason_not_running: Option<Box<str>>,
 }
 
@@ -445,7 +453,7 @@ pub struct JobStepData {
     owner: Box<str>,
     status: Option<Status>,
     job_type: Option<JobType>,
-    class: char,
+    class: Box<str>,
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     url: Box<str>,
@@ -508,12 +516,13 @@ pub enum Status {
 #[serde(rename_all = "kebab-case")]
 pub struct StepData {
     active: bool,
-    #[serde(rename = "smfid")]
-    smf_id: Box<str>,
+    #[serde(default, rename = "smfid")]
+    smf_id: Option<Box<str>>,
     step_number: i32,
     #[serde(default)]
     selected_time: Option<Box<str>>,
-    owner: Box<str>,
+    #[serde(default)]
+    owner: Option<Box<str>>,
     program_name: Box<str>,
     step_name: Box<str>,
     #[serde(default)]

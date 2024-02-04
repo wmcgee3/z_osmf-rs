@@ -76,7 +76,7 @@ pub(crate) fn get_transaction_id(response: &reqwest::Response) -> Result<Box<str
     Ok(response
         .headers()
         .get("X-IBM-Txid")
-        .ok_or(Error::MissingTransactionId)?
+        .ok_or(Error::TransactionId)?
         .to_str()?
         .into())
 }
