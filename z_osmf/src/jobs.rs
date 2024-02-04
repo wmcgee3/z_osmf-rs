@@ -521,7 +521,8 @@ pub struct StepData {
     step_number: i32,
     #[serde(default)]
     selected_time: Option<Box<str>>,
-    owner: Box<str>,
+    #[serde(default)]
+    owner: Option<Box<str>>,
     program_name: Box<str>,
     step_name: Box<str>,
     #[serde(default)]
