@@ -29,11 +29,11 @@ impl Getter {
                                 }
                             }
                         } else {
-                            let (ty, method) = string_to_str_type(vec_to_slice_type(ty));
+                            let ty = vec_to_slice_type(ty);
 
                             quote! {
                                 pub fn #ident(&self) -> Option<&#ty> {
-                                    self.#ident.as_ref()#method
+                                    self.#ident.as_ref()
                                 }
                             }
                         }
@@ -44,7 +44,7 @@ impl Getter {
                             }
                         }
                     } else {
-                        let (ty, _) = string_to_str_type(vec_to_slice_type(ty.clone()));
+                        let ty = vec_to_slice_type(ty.clone());
 
                         quote! {
                             pub fn #ident(&self) -> &#ty {

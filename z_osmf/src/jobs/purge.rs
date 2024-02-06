@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use z_osmf_macros::Endpoint;
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 
 use super::{AsynchronousResponse, JobIdentifier};
 

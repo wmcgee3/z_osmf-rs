@@ -2,7 +2,9 @@ pub mod create;
 pub mod delete;
 pub mod list;
 pub mod member_list;
+pub mod migrate;
 pub mod read;
+pub mod recall;
 pub mod write;
 
 use reqwest::header::HeaderValue;
@@ -15,7 +17,9 @@ use self::create::{DatasetCreate, DatasetCreateBuilder};
 use self::delete::{DatasetDelete, DatasetDeleteBuilder};
 use self::list::{DatasetList, DatasetListBuilder, DatasetName};
 use self::member_list::{DatasetMemberList, DatasetMemberListBuilder, MemberName};
+use self::migrate::{DatasetMigrate, DatasetMigrateBuilder};
 use self::read::{DatasetRead, DatasetReadBuilder};
+use self::recall::{DatasetRecall, DatasetRecallBuilder};
 use self::write::{DatasetWrite, DatasetWriteBuilder};
 
 /// # Datasets
@@ -207,6 +211,10 @@ impl ZOsmf {
         DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
     }
 
+    pub fn migrate_dataset(&self, name: &str) -> DatasetMigrateBuilder<DatasetMigrate> {
+        DatasetMigrateBuilder::new(self.base_url.clone(), self.client.clone(), name)
+    }
+
     /// # Examples
     ///
     /// Reading a PDS member:
@@ -233,6 +241,10 @@ impl ZOsmf {
     /// ```
     pub fn read_dataset(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+    }
+
+    pub fn recall_dataset(&self, name: &str) -> DatasetRecallBuilder<DatasetRecall> {
+        DatasetRecallBuilder::new(self.base_url.clone(), self.client.clone(), name)
     }
 
     /// # Examples
@@ -321,6 +333,12 @@ pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box
         .map(|v| v.to_str())
         .transpose()?
         .map(|v| v.into()))
+}
+
+#[derive(Debug, Serialize)]
+struct RequestJson {
+    request: &'static str,
+    wait: bool,
 }
 
 #[cfg(test)]

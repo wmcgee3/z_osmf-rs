@@ -37,6 +37,8 @@ pub fn derive_endpoint(input: TokenStream) -> TokenStream {
             #get_response_fn
 
             pub async fn build(self) -> Result<T, crate::error::Error> {
+                use crate::convert::TryIntoTarget;
+
                 self.get_response().await?.try_into_target().await
             }
         }

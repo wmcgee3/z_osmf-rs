@@ -5,7 +5,7 @@ use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{
     de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
