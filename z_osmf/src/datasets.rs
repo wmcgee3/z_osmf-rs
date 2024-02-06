@@ -5,6 +5,7 @@ pub mod member_list;
 pub mod migrate;
 pub mod read;
 pub mod recall;
+pub mod rename;
 pub mod write;
 
 use reqwest::header::HeaderValue;
@@ -20,6 +21,7 @@ use self::member_list::{DatasetMemberList, DatasetMemberListBuilder, MemberName}
 use self::migrate::{DatasetMigrate, DatasetMigrateBuilder};
 use self::read::{DatasetRead, DatasetReadBuilder};
 use self::recall::{DatasetRecall, DatasetRecallBuilder};
+use self::rename::{DatasetRename, DatasetRenameBuilder};
 use self::write::{DatasetWrite, DatasetWriteBuilder};
 
 /// # Datasets
@@ -249,6 +251,31 @@ impl ZOsmf {
 
     /// # Examples
     ///
+    /// Renaming MY.OLD.DSN to MY.NEW.DSN:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let rename_dataset = zosmf
+    ///     .rename_dataset("MY.OLD.DSN", "MY.NEW.DSN")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rename_dataset(
+        &self,
+        from_dataset: &str,
+        to_dataset: &str,
+    ) -> DatasetRenameBuilder<DatasetRename> {
+        DatasetRenameBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            from_dataset,
+            to_dataset,
+        )
+    }
+
+    /// # Examples
+    ///
     /// Writing to a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
@@ -333,12 +360,6 @@ pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box
         .map(|v| v.to_str())
         .transpose()?
         .map(|v| v.into()))
-}
-
-#[derive(Debug, Serialize)]
-struct RequestJson {
-    request: &'static str,
-    wait: bool,
 }
 
 #[cfg(test)]

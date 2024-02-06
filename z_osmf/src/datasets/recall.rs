@@ -7,8 +7,6 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::utils::get_transaction_id;
 
-use super::{MigratedRecall, RequestJson};
-
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRecall {
     transaction_id: Box<str>,
@@ -23,7 +21,7 @@ impl TryFromResponse for DatasetRecall {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{name}{member}")]
+#[endpoint(method = put, path = "/zosmf/restfiles/ds/{name}{member}")]
 pub struct DatasetRecallBuilder<T>
 where
     T: TryFromResponse,
@@ -31,19 +29,21 @@ where
     base_url: Arc<str>,
     client: reqwest::Client,
 
-    #[endpoint(optional, path, setter_fn = set_volume)]
-    volume: Box<str>,
     #[endpoint(path)]
     name: Box<str>,
     #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
-    #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
-    migrated_recall: Option<MigratedRecall>,
     #[endpoint(optional, builder_fn = build_body)]
     wait: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
+}
+
+#[derive(Serialize)]
+struct RequestJson {
+    request: &'static str,
+    wait: bool,
 }
 
 fn build_body<T>(
@@ -64,15 +64,6 @@ where
     T: TryFromResponse,
 {
     builder.member = format!("({})", value).into();
-
-    builder
-}
-
-fn set_volume<T>(mut builder: DatasetRecallBuilder<T>, value: Box<str>) -> DatasetRecallBuilder<T>
-where
-    T: TryFromResponse,
-{
-    builder.volume = format!("-({})/", value).into();
 
     builder
 }
