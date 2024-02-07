@@ -13,9 +13,13 @@ use super::MigratedRecall;
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetMemberList<T> {
     items: Box<[T]>,
+    #[getter(copy)]
     json_version: i32,
+    #[getter(copy)]
     more_rows: Option<bool>,
+    #[getter(copy)]
     returned_rows: i32,
+    #[getter(copy)]
     total_rows: Option<i32>,
 }
 
@@ -46,18 +50,23 @@ where
 pub struct MemberBase {
     #[serde(rename = "member")]
     name: Box<str>,
+    #[getter(copy)]
     #[serde(default, rename = "vers")]
     version: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "mod")]
     modification_level: Option<i32>,
     #[serde(default, rename = "c4date")]
     creation_date: Option<Box<str>>,
     #[serde(default, rename = "m4date")]
     modification_date: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(default, rename = "cnorc")]
     current_number_of_records: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "inorc")]
     initial_number_of_records: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "mnorc")]
     modified_number_of_records: Option<i32>,
     #[serde(default, rename = "mtime")]
@@ -66,6 +75,7 @@ pub struct MemberBase {
     modified_seconds: Option<Box<str>>,
     #[serde(default)]
     user: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(
         default,
         rename = "sclm",

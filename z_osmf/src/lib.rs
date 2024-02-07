@@ -24,7 +24,7 @@ pub mod jobs;
 mod convert;
 mod utils;
 
-use self::error::Error;
+use self::error::{CheckStatus, Error};
 
 /// # ZOsmf
 ///
@@ -97,7 +97,8 @@ impl ZOsmf {
             .basic_auth(username, Some(password))
             .send()
             .await?
-            .error_for_status()?;
+            .check_status()
+            .await?;
 
         Ok(())
     }
@@ -121,7 +122,8 @@ impl ZOsmf {
             .delete(format!("{}/zosmf/services/authenticate", self.base_url))
             .send()
             .await?
-            .error_for_status()?;
+            .check_status()
+            .await?;
 
         Ok(())
     }

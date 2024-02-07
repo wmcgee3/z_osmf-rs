@@ -313,7 +313,9 @@ pub struct JobData {
     name: Box<str>,
     subsystem: Option<Box<str>>,
     owner: Box<str>,
+    #[getter(copy)]
     status: Option<Status>,
+    #[getter(copy)]
     job_type: Option<JobType>,
     class: Box<str>,
     #[serde(rename = "retcode")]
@@ -321,6 +323,7 @@ pub struct JobData {
     url: Box<str>,
     files_url: Box<str>,
     job_correlator: Option<Box<str>>,
+    #[getter(copy)]
     phase: i32,
     phase_name: Box<str>,
     reason_not_running: Option<Box<str>>,
@@ -347,7 +350,9 @@ pub struct JobExecData {
     name: Box<str>,
     subsystem: Option<Box<str>>,
     owner: Box<str>,
+    #[getter(copy)]
     status: Option<Status>,
+    #[getter(copy)]
     job_type: Option<JobType>,
     class: Box<str>,
     #[serde(rename = "retcode")]
@@ -355,6 +360,7 @@ pub struct JobExecData {
     url: Box<str>,
     files_url: Box<str>,
     job_correlator: Option<Box<str>>,
+    #[getter(copy)]
     phase: i32,
     phase_name: Box<str>,
     #[serde(default)]
@@ -389,7 +395,9 @@ pub struct JobExecStepData {
     name: Box<str>,
     subsystem: Option<Box<str>>,
     owner: Box<str>,
+    #[getter(copy)]
     status: Option<Status>,
+    #[getter(copy)]
     job_type: Option<JobType>,
     class: Box<str>,
     #[serde(rename = "retcode")]
@@ -397,6 +405,7 @@ pub struct JobExecStepData {
     url: Box<str>,
     files_url: Box<str>,
     job_correlator: Option<Box<str>>,
+    #[getter(copy)]
     phase: i32,
     phase_name: Box<str>,
     step_data: Box<[StepData]>,
@@ -432,7 +441,9 @@ pub struct JobStepData {
     name: Box<str>,
     subsystem: Option<Box<str>>,
     owner: Box<str>,
+    #[getter(copy)]
     status: Option<Status>,
+    #[getter(copy)]
     job_type: Option<JobType>,
     class: Box<str>,
     #[serde(rename = "retcode")]
@@ -440,6 +451,7 @@ pub struct JobStepData {
     url: Box<str>,
     files_url: Box<str>,
     job_correlator: Option<Box<str>>,
+    #[getter(copy)]
     phase: i32,
     phase_name: Box<str>,
     step_data: Box<[StepData]>,
@@ -496,9 +508,11 @@ pub enum Status {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct StepData {
+    #[getter(copy)]
     active: bool,
     #[serde(default, rename = "smfid")]
     smf_id: Option<Box<str>>,
+    #[getter(copy)]
     step_number: i32,
     #[serde(default)]
     selected_time: Option<Box<str>>,
@@ -508,6 +522,7 @@ pub struct StepData {
     step_name: Box<str>,
     #[serde(default)]
     path_name: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(default)]
     substep_number: Option<i32>,
     #[serde(default)]

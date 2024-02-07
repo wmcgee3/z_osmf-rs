@@ -20,8 +20,16 @@ impl Getter {
                 .iter()
                 .filter(|f| !f.skip)
                 .map(|f| {
-                    let GetterField { ident, ty, .. } = f;
-                    if let Some(ty) = extract_optional_type(ty) {
+                    let GetterField {
+                        ident, ty, copy, ..
+                    } = f;
+                    if *copy {
+                        quote! {
+                            pub fn #ident(&self) -> #ty {
+                                self.#ident
+                            }
+                        }
+                    } else if let Some(ty) = extract_optional_type(ty) {
                         if let Some(ty) = extract_box_type(&ty) {
                             quote! {
                                 pub fn #ident(&self) -> Option<&#ty> {
@@ -67,4 +75,6 @@ pub(crate) struct GetterField {
 
     #[darling(default)]
     skip: bool,
+    #[darling(default)]
+    copy: bool,
 }

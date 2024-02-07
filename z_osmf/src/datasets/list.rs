@@ -15,9 +15,13 @@ use crate::utils::{
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {
     items: Box<[T]>,
+    #[getter(copy)]
     json_version: i32,
+    #[getter(copy)]
     more_rows: Option<bool>,
+    #[getter(copy)]
     returned_rows: i32,
+    #[getter(copy)]
     total_rows: Option<i32>,
     transaction_id: Box<str>,
 }
@@ -70,12 +74,14 @@ pub struct DatasetBase {
     extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
     record_length: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(
         rename = "migr",
         deserialize_with = "de_yes_no",
         serialize_with = "ser_yes_no"
     )]
     migrated: bool,
+    #[getter(copy)]
     #[serde(
         default,
         rename = "mvol",
@@ -83,6 +89,7 @@ pub struct DatasetBase {
         serialize_with = "ser_optional_y_n"
     )]
     multi_volume: Option<bool>,
+    #[getter(copy)]
     #[serde(
         default,
         rename = "ovf",

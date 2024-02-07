@@ -28,16 +28,20 @@ pub struct JobFile {
     job_name: Box<str>,
     #[serde(rename = "recfm")]
     record_format: Box<str>,
+    #[getter(copy)]
     byte_count: i32,
+    #[getter(copy)]
     record_count: i32,
     job_correlator: Option<Box<str>>,
     class: Box<str>,
     #[serde(rename = "jobid")]
     job_id: Box<str>,
+    #[getter(copy)]
     id: i32,
     #[serde(rename = "ddname")]
     dd_name: Box<str>,
     records_url: Box<str>,
+    #[getter(copy)]
     #[serde(rename = "lrecl")]
     record_length: i32,
     subsystem: Box<str>,

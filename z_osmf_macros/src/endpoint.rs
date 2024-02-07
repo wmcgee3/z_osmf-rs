@@ -215,10 +215,12 @@ impl Endpoint {
             }
 
             async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
+                use crate::error::CheckStatus;
+
                 let request = self.get_request()?;
                 let response = self.client.execute(request).await?;
 
-                Ok(response.error_for_status()?)
+                response.check_status().await
             }
         }
     }

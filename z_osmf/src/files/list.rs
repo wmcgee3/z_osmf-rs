@@ -11,8 +11,11 @@ use crate::utils::get_transaction_id;
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileList {
     items: Box<[FileAttributes]>,
+    #[getter(copy)]
     returned_rows: i32,
+    #[getter(copy)]
     total_rows: i32,
+    #[getter(copy)]
     json_version: i32,
     transaction_id: Box<str>,
 }
@@ -42,10 +45,13 @@ impl TryFromResponse for FileList {
 pub struct FileAttributes {
     name: Box<str>,
     mode: Box<str>,
+    #[getter(copy)]
     size: i32,
+    #[getter(copy)]
     uid: i32,
     #[serde(default)]
     user: Option<Box<str>>,
+    #[getter(copy)]
     gid: i32,
     group: Box<str>,
     mtime: Box<str>,

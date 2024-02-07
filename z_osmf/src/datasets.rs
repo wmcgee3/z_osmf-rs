@@ -1,3 +1,5 @@
+pub mod copy;
+pub mod copy_file;
 pub mod create;
 pub mod delete;
 pub mod list;
@@ -14,6 +16,8 @@ use serde::{Deserialize, Serialize};
 use crate::error::Error;
 use crate::ZOsmf;
 
+use self::copy::{DatasetCopy, DatasetCopyBuilder};
+use self::copy_file::{CopyFileToDataset, CopyFileToDatasetBuilder};
 use self::create::{DatasetCreate, DatasetCreateBuilder};
 use self::delete::{DatasetDelete, DatasetDeleteBuilder};
 use self::list::{DatasetList, DatasetListBuilder, DatasetName};
@@ -26,6 +30,32 @@ use self::write::{DatasetWrite, DatasetWriteBuilder};
 
 /// # Datasets
 impl ZOsmf {
+    pub fn copy_dataset(
+        &self,
+        from_dataset: &str,
+        to_dataset: &str,
+    ) -> DatasetCopyBuilder<DatasetCopy> {
+        DatasetCopyBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            from_dataset,
+            to_dataset,
+        )
+    }
+
+    pub fn copy_file_to_dataset(
+        &self,
+        from_path: &str,
+        to_dataset: &str,
+    ) -> CopyFileToDatasetBuilder<CopyFileToDataset> {
+        CopyFileToDatasetBuilder::new(
+            self.base_url.clone(),
+            self.client.clone(),
+            from_path,
+            to_dataset,
+        )
+    }
+
     /// # Examples
     ///
     /// Creating a sequential dataset:
