@@ -11,15 +11,15 @@ use crate::convert::TryFromResponse;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JclSource {
     Jcl(JclData),
-    Dataset(Box<str>),
-    File(Box<str>),
+    Dataset(String),
+    File(String),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JclData {
     Binary(Bytes),
     Record(Bytes),
-    Text(Box<str>),
+    Text(String),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

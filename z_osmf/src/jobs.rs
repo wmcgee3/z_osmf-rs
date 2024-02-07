@@ -331,7 +331,7 @@ pub struct JobData {
 
 impl JobData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
     }
 }
 
@@ -376,7 +376,7 @@ pub struct JobExecData {
 
 impl JobExecData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
     }
 }
 
@@ -422,7 +422,7 @@ pub struct JobExecStepData {
 
 impl JobExecStepData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
     }
 }
 
@@ -460,7 +460,7 @@ pub struct JobStepData {
 
 impl JobStepData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
     }
 }
 
@@ -472,8 +472,8 @@ impl TryFromResponse for JobStepData {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JobIdentifier {
-    Correlator(Box<str>),
-    NameId(Box<str>, Box<str>),
+    Correlator(String),
+    NameId(String, String),
 }
 
 impl std::fmt::Display for JobIdentifier {

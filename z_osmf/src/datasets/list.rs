@@ -120,7 +120,7 @@ pub struct DatasetName {
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetVol {
+pub struct DatasetVolume {
     #[serde(rename = "dsname")]
     name: Box<str>,
     #[serde(rename = "vol")]
@@ -131,7 +131,7 @@ pub struct DatasetVol {
 pub enum Volume {
     Alias,
     Migrated,
-    Volume(Box<str>),
+    Volume(String),
     Vsam,
 }
 
@@ -146,7 +146,7 @@ impl<'de> Deserialize<'de> for Volume {
             "*ALIAS" => Volume::Alias,
             "MIGRAT" => Volume::Migrated,
             "*VSAM*" => Volume::Vsam,
-            _ => Volume::Volume(s.into()),
+            _ => Volume::Volume(s),
         })
     }
 }
@@ -223,7 +223,7 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVol>> {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVolume>> {
         DatasetListBuilder {
             base_url: self.base_url,
             client: self.client,

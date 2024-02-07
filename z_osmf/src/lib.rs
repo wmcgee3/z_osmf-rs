@@ -13,9 +13,10 @@
 
 pub use bytes::Bytes;
 
+pub mod error;
+
 #[cfg(feature = "datasets")]
 pub mod datasets;
-pub mod error;
 #[cfg(feature = "files")]
 pub mod files;
 #[cfg(feature = "jobs")]
