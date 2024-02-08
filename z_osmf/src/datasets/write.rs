@@ -9,7 +9,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
-use super::{MigratedRecall, ObtainEnq};
+use super::{Enqueue, MigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetWrite {
@@ -55,7 +55,7 @@ where
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<ObtainEnq>,
+    obtain_enq: Option<Enqueue>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_release_enq)]

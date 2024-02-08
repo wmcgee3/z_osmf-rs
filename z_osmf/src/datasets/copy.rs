@@ -6,7 +6,15 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 
-use super::ObtainEnq;
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum CopyEnqueue {
+    #[serde(rename = "SHR")]
+    SharedRead,
+    #[serde(rename = "SHRW")]
+    SharedReadWrite,
+    #[serde(rename = "EXCLU")]
+    Exclusive,
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct DatasetCopy {}
@@ -39,7 +47,7 @@ where
     #[endpoint(optional, skip_builder)]
     alias: Option<bool>,
     #[endpoint(optional, skip_builder)]
-    enqueue: Option<ObtainEnq>,
+    enqueue: Option<CopyEnqueue>,
     #[endpoint(optional, skip_builder)]
     replace: Option<bool>,
 
@@ -53,7 +61,7 @@ struct RequestJson<'a> {
     request: &'a str,
     from_dataset: FromDataset<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enq: Option<ObtainEnq>,
+    enq: Option<CopyEnqueue>,
     replace: Option<bool>,
 }
 

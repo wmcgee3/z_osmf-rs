@@ -326,22 +326,22 @@ impl ZOsmf {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub enum DataType {
+pub enum DatasetDataType {
     Binary,
     Record,
     #[default]
     Text,
 }
 
-impl std::fmt::Display for DataType {
+impl std::fmt::Display for DatasetDataType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                DataType::Binary => "binary",
-                DataType::Record => "record",
-                DataType::Text => "text",
+                DatasetDataType::Binary => "binary",
+                DatasetDataType::Record => "record",
+                DatasetDataType::Text => "text",
             }
         )
     }
@@ -367,16 +367,16 @@ impl From<MigratedRecall> for HeaderValue {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum ObtainEnq {
+pub enum Enqueue {
     Exclusive,
     SharedReadWrite,
 }
 
-impl From<ObtainEnq> for HeaderValue {
-    fn from(val: ObtainEnq) -> HeaderValue {
+impl From<Enqueue> for HeaderValue {
+    fn from(val: Enqueue) -> HeaderValue {
         match val {
-            ObtainEnq::Exclusive => "EXCLU",
-            ObtainEnq::SharedReadWrite => "SHRW",
+            Enqueue::Exclusive => "EXCLU",
+            Enqueue::SharedReadWrite => "SHRW",
         }
         .try_into()
         .unwrap()
@@ -398,11 +398,11 @@ mod tests {
 
     #[test]
     fn display_data_type() {
-        assert_eq!(format!("{}", DataType::Binary), "binary");
+        assert_eq!(format!("{}", DatasetDataType::Binary), "binary");
 
-        assert_eq!(format!("{}", DataType::Record), "record");
+        assert_eq!(format!("{}", DatasetDataType::Record), "record");
 
-        assert_eq!(format!("{}", DataType::Text), "text");
+        assert_eq!(format!("{}", DatasetDataType::Text), "text");
     }
 
     #[test]
@@ -419,10 +419,10 @@ mod tests {
 
     #[test]
     fn display_obtain_enq() {
-        let header_value: HeaderValue = ObtainEnq::Exclusive.into();
+        let header_value: HeaderValue = Enqueue::Exclusive.into();
         assert_eq!(header_value, HeaderValue::from_static("EXCLU"));
 
-        let header_value: HeaderValue = ObtainEnq::SharedReadWrite.into();
+        let header_value: HeaderValue = Enqueue::SharedReadWrite.into();
         assert_eq!(header_value, HeaderValue::from_static("SHRW"));
     }
 

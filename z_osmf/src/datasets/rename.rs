@@ -6,7 +6,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 
-use super::ObtainEnq;
+use super::Enqueue;
 
 pub struct DatasetRename {}
 
@@ -34,7 +34,7 @@ where
     #[endpoint(optional, path, setter_fn = set_to_member)]
     to_member: Box<str>,
     #[endpoint(optional, skip_builder)]
-    enqueue: Option<ObtainEnq>,
+    enqueue: Option<Enqueue>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
@@ -46,7 +46,7 @@ struct RequestJson<'a> {
     request: &'static str,
     from_dataset: FromDataset<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enq: &'a Option<ObtainEnq>,
+    enq: &'a Option<Enqueue>,
 }
 
 #[derive(Serialize)]

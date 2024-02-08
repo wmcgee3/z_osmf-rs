@@ -59,23 +59,6 @@ pub struct FileAttributes {
     target: Option<Box<str>>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum FileType {
-    #[serde(rename = "c")]
-    CharacterSpecialFile,
-    #[serde(rename = "d")]
-    Directory,
-    #[serde(rename = "p")]
-    FIFO,
-    #[serde(rename = "f")]
-    File,
-    #[serde(rename = "s")]
-    Socket,
-    #[serde(rename = "l")]
-    SymbolicLink,
-}
-
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
 pub struct FileListBuilder<T>
@@ -100,7 +83,7 @@ where
     #[endpoint(optional, builder_fn = build_perm)]
     perm: Option<i16>,
     #[endpoint(optional, query = "type")]
-    file_type: Option<FileType>,
+    file_type: Option<ListFileType>,
     #[endpoint(optional, query = "user")]
     user: Option<Box<str>>,
     #[endpoint(optional, query = "depth")]
@@ -121,6 +104,23 @@ where
 pub enum FileSystem {
     All,
     Same,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum ListFileType {
+    #[serde(rename = "c")]
+    CharacterSpecialFile,
+    #[serde(rename = "d")]
+    Directory,
+    #[serde(rename = "p")]
+    FIFO,
+    #[serde(rename = "f")]
+    File,
+    #[serde(rename = "s")]
+    Socket,
+    #[serde(rename = "l")]
+    SymbolicLink,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

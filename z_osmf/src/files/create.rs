@@ -9,6 +9,13 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::get_transaction_id;
 
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CreateFileType {
+    Directory,
+    File,
+}
+
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileCreate {
     transaction_id: Box<str>,
@@ -20,13 +27,6 @@ impl TryFromResponse for FileCreate {
 
         Ok(FileCreate { transaction_id })
     }
-}
-
-#[derive(Clone, Copy, Debug, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FileType {
-    Directory,
-    File,
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -45,7 +45,7 @@ where
     json: PhantomData<RequestJson<'static>>,
 
     #[endpoint(optional, skip_builder)]
-    file_type: Option<FileType>,
+    file_type: Option<CreateFileType>,
     #[endpoint(optional, skip_builder)]
     mode: Option<Box<str>>,
 
@@ -56,7 +56,7 @@ where
 #[derive(Serialize)]
 struct RequestJson<'a> {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    file_type: Option<&'a FileType>,
+    file_type: Option<&'a CreateFileType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     mode: Option<&'a str>,
 }
@@ -105,7 +105,7 @@ mod tests {
 
         let create_file = zosmf
             .create_file("/u/jiahj/text.txt")
-            .file_type(FileType::File)
+            .file_type(CreateFileType::File)
             .mode("RWXRW-RW-")
             .get_request()
             .unwrap();
@@ -139,7 +139,7 @@ mod tests {
 
         let create_file = zosmf
             .create_file("/u/jiahj/testDir")
-            .file_type(FileType::Directory)
+            .file_type(CreateFileType::Directory)
             .mode("rwxr-xrwx")
             .get_request()
             .unwrap();

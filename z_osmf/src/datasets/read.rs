@@ -12,7 +12,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
-use super::{get_session_ref, DataType, MigratedRecall, ObtainEnq};
+use super::{get_session_ref, DatasetDataType, Enqueue, MigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
@@ -141,7 +141,7 @@ where
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
     if_none_match: Option<Box<str>>,
     #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
-    data_type: Option<DataType>,
+    data_type: Option<DatasetDataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_return_etag)]
@@ -151,7 +151,7 @@ where
     #[endpoint(optional, header = "X-IBM-Record-Range")]
     record_range: Option<RecordRange>,
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<ObtainEnq>,
+    obtain_enq: Option<Enqueue>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_release_enq)]
@@ -179,7 +179,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Binary),
+            data_type: Some(DatasetDataType::Binary),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -204,7 +204,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Record),
+            data_type: Some(DatasetDataType::Record),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -229,7 +229,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Text),
+            data_type: Some(DatasetDataType::Text),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -287,7 +287,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Binary),
+            data_type: Some(DatasetDataType::Binary),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -312,7 +312,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Record),
+            data_type: Some(DatasetDataType::Record),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -337,7 +337,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Text),
+            data_type: Some(DatasetDataType::Text),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,

@@ -19,10 +19,10 @@ impl ZOsmf {
     /// Create a file:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # use z_osmf::files::create::FileType;
+    /// # use z_osmf::files::create::CreateFileType;
     /// let create_file = zosmf
     ///     .create_file("/u/jiahj/text.txt")
-    ///     .file_type(FileType::File)
+    ///     .file_type(CreateFileType::File)
     ///     .mode("RWXRW-RW-")
     ///     .build()
     ///     .await?;
@@ -33,10 +33,10 @@ impl ZOsmf {
     /// Create a directory:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # use z_osmf::files::create::FileType;
+    /// # use z_osmf::files::create::CreateFileType;
     /// let create_file = zosmf
     ///     .create_file("/u/jiahj/testDir")
-    ///     .file_type(FileType::Directory)
+    ///     .file_type(CreateFileType::Directory)
     ///     .mode("rwxr-xrwx")
     ///     .build()
     ///     .await?;
@@ -149,20 +149,20 @@ impl ZOsmf {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub enum DataType {
+pub enum FileDataType {
     Binary,
     #[default]
     Text,
 }
 
-impl std::fmt::Display for DataType {
+impl std::fmt::Display for FileDataType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                DataType::Binary => "binary",
-                DataType::Text => "text",
+                FileDataType::Binary => "binary",
+                FileDataType::Text => "text",
             }
         )
     }
@@ -174,8 +174,8 @@ mod tests {
 
     #[test]
     fn data_type_display() {
-        assert_eq!(format!("{}", DataType::Binary), "binary");
+        assert_eq!(format!("{}", FileDataType::Binary), "binary");
 
-        assert_eq!(format!("{}", DataType::Text), "text");
+        assert_eq!(format!("{}", FileDataType::Text), "text");
     }
 }

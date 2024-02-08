@@ -6,8 +6,6 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 
-use super::ObtainEnq;
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct CopyFileToDataset {}
 
@@ -37,8 +35,6 @@ where
     #[endpoint(optional, path)]
     to_member: Box<str>,
     #[endpoint(optional, skip_builder)]
-    enqueue: Option<ObtainEnq>,
-    #[endpoint(optional, skip_builder)]
     replace: Option<bool>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
@@ -57,7 +53,6 @@ pub enum CopyFileType {
 struct RequestJson<'a> {
     request: &'a str,
     from_file: FromFile<'a>,
-    enq: Option<ObtainEnq>,
     replace: Option<bool>,
 }
 
@@ -81,7 +76,6 @@ where
             filename: &builder.from_path,
             file_type: builder.file_type,
         },
-        enq: builder.enqueue,
         replace: builder.replace,
     })
 }

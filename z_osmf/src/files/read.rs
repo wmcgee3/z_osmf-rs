@@ -10,7 +10,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
-use super::DataType;
+use super::FileDataType;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
@@ -128,7 +128,7 @@ where
     #[endpoint(optional, skip_builder)]
     search_max_return: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
-    data_type: Option<DataType>,
+    data_type: Option<FileDataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
@@ -152,7 +152,7 @@ where
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Binary),
+            data_type: Some(FileDataType::Binary),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -168,7 +168,7 @@ where
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Text),
+            data_type: Some(FileDataType::Text),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -208,7 +208,7 @@ where
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Binary),
+            data_type: Some(FileDataType::Binary),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -224,7 +224,7 @@ where
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Text),
+            data_type: Some(FileDataType::Text),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
