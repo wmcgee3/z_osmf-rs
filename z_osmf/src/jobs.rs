@@ -344,25 +344,8 @@ impl TryFromResponse for JobData {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecData {
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    subsystem: Option<Box<str>>,
-    owner: Box<str>,
-    #[getter(copy)]
-    status: Option<Status>,
-    #[getter(copy)]
-    job_type: Option<JobType>,
-    class: Box<str>,
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    url: Box<str>,
-    files_url: Box<str>,
-    job_correlator: Option<Box<str>>,
-    #[getter(copy)]
-    phase: i32,
-    phase_name: Box<str>,
+    #[serde(flatten)]
+    job_data: JobData,
     #[serde(default)]
     exec_system: Option<Box<str>>,
     #[serde(default)]
@@ -371,12 +354,19 @@ pub struct JobExecData {
     exec_submitted: Option<Box<str>>,
     #[serde(default)]
     exec_ended: Option<Box<str>>,
-    reason_not_running: Option<Box<str>>,
 }
 
 impl JobExecData {
     pub fn identifier(&self) -> JobIdentifier {
         JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+    }
+}
+
+impl std::ops::Deref for JobExecData {
+    type Target = JobData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.job_data
     }
 }
 
@@ -389,25 +379,8 @@ impl TryFromResponse for JobExecData {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecStepData {
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    subsystem: Option<Box<str>>,
-    owner: Box<str>,
-    #[getter(copy)]
-    status: Option<Status>,
-    #[getter(copy)]
-    job_type: Option<JobType>,
-    class: Box<str>,
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    url: Box<str>,
-    files_url: Box<str>,
-    job_correlator: Option<Box<str>>,
-    #[getter(copy)]
-    phase: i32,
-    phase_name: Box<str>,
+    #[serde(flatten)]
+    job_data: JobData,
     step_data: Box<[StepData]>,
     #[serde(default)]
     exec_system: Option<Box<str>>,
@@ -417,12 +390,19 @@ pub struct JobExecStepData {
     exec_submitted: Option<Box<str>>,
     #[serde(default)]
     exec_ended: Option<Box<str>>,
-    reason_not_running: Option<Box<str>>,
 }
 
 impl JobExecStepData {
     pub fn identifier(&self) -> JobIdentifier {
         JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+    }
+}
+
+impl std::ops::Deref for JobExecStepData {
+    type Target = JobData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.job_data
     }
 }
 
@@ -435,32 +415,22 @@ impl TryFromResponse for JobExecStepData {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobStepData {
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    subsystem: Option<Box<str>>,
-    owner: Box<str>,
-    #[getter(copy)]
-    status: Option<Status>,
-    #[getter(copy)]
-    job_type: Option<JobType>,
-    class: Box<str>,
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    url: Box<str>,
-    files_url: Box<str>,
-    job_correlator: Option<Box<str>>,
-    #[getter(copy)]
-    phase: i32,
-    phase_name: Box<str>,
+    #[serde(flatten)]
+    job_data: JobData,
     step_data: Box<[StepData]>,
-    reason_not_running: Option<Box<str>>,
 }
 
 impl JobStepData {
     pub fn identifier(&self) -> JobIdentifier {
         JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+    }
+}
+
+impl std::ops::Deref for JobStepData {
+    type Target = JobData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.job_data
     }
 }
 
