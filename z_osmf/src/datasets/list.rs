@@ -1,23 +1,28 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use reqwest::{Client, RequestBuilder};
+use reqwest::RequestBuilder;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{
     de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
     ser_optional_yes_no, ser_yes_no,
 };
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {
     items: Box<[T]>,
+    #[getter(copy)]
     json_version: i32,
+    #[getter(copy)]
     more_rows: Option<bool>,
+    #[getter(copy)]
     returned_rows: i32,
+    #[getter(copy)]
     total_rows: Option<i32>,
     transaction_id: Box<str>,
 }
@@ -70,12 +75,14 @@ pub struct DatasetBase {
     extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
     record_length: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(
         rename = "migr",
         deserialize_with = "de_yes_no",
         serialize_with = "ser_yes_no"
     )]
     migrated: bool,
+    #[getter(copy)]
     #[serde(
         default,
         rename = "mvol",
@@ -83,6 +90,7 @@ pub struct DatasetBase {
         serialize_with = "ser_optional_y_n"
     )]
     multi_volume: Option<bool>,
+    #[getter(copy)]
     #[serde(
         default,
         rename = "ovf",
@@ -113,7 +121,7 @@ pub struct DatasetName {
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetVol {
+pub struct DatasetVolume {
     #[serde(rename = "dsname")]
     name: Box<str>,
     #[serde(rename = "vol")]
@@ -124,7 +132,7 @@ pub struct DatasetVol {
 pub enum Volume {
     Alias,
     Migrated,
-    Volume(Box<str>),
+    Volume(String),
     Vsam,
 }
 
@@ -139,7 +147,7 @@ impl<'de> Deserialize<'de> for Volume {
             "*ALIAS" => Volume::Alias,
             "MIGRAT" => Volume::Migrated,
             "*VSAM*" => Volume::Vsam,
-            _ => Volume::Volume(s.into()),
+            _ => Volume::Volume(s),
         })
     }
 }
@@ -164,8 +172,7 @@ pub struct DatasetListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(query = "dslevel")]
     name_pattern: Box<str>,
@@ -190,8 +197,7 @@ where
 {
     pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetBase>> {
         DatasetListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
@@ -204,8 +210,7 @@ where
 
     pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
@@ -216,10 +221,9 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVol>> {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVolume>> {
         DatasetListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
@@ -295,6 +299,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds")
             .query(&[("dslevel", "IBMUSER.CONFIG.*")])
@@ -302,7 +307,8 @@ mod tests {
             .unwrap();
 
         let list_datasets = zosmf
-            .list_datasets("IBMUSER.CONFIG.*")
+            .datasets()
+            .list("IBMUSER.CONFIG.*")
             .get_request()
             .unwrap();
 
@@ -317,6 +323,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds")
             .query(&[("dslevel", "**"), ("volser", "PEVTS2")])
@@ -325,7 +332,8 @@ mod tests {
             .unwrap();
 
         let list_datasets_base = zosmf
-            .list_datasets("**")
+            .datasets()
+            .list("**")
             .volume("PEVTS2")
             .attributes_base()
             .get_request()

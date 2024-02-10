@@ -4,9 +4,10 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::get_transaction_id;
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileDelete {
@@ -27,8 +28,7 @@ pub struct FileDeleteBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     path: Box<str>,
@@ -62,13 +62,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
             .build()
             .unwrap();
 
         let delete_file = zosmf
-            .delete_file("/u/jiahj/text.txt")
+            .files()
+            .delete("/u/jiahj/text.txt")
             .get_request()
             .unwrap();
 
@@ -83,12 +85,17 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
             .build()
             .unwrap();
 
-        let delete_file = zosmf.delete_file("/u/jiahj/testDir").get_request().unwrap();
+        let delete_file = zosmf
+            .files()
+            .delete("/u/jiahj/testDir")
+            .get_request()
+            .unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),

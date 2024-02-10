@@ -4,8 +4,9 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
+use crate::ClientCore;
 
 use super::{AsynchronousResponse, JobIdentifier};
 
@@ -41,8 +42,7 @@ where
     T: TryFromResponse,
     U: Clone + FeedbackJson + Serialize,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -64,8 +64,7 @@ where
 {
     pub fn asynchronous(self) -> JobFeedbackBuilder<AsynchronousResponse, U> {
         JobFeedbackBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             data: self.data,
@@ -187,6 +186,7 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
 
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOB2/JOB00084")
             .json(&json)
@@ -195,7 +195,7 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
 
-        let job_feedback = zosmf.cancel_job(identifier).get_request().unwrap();
+        let job_feedback = zosmf.jobs().cancel(identifier).get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),
@@ -217,6 +217,7 @@ mod tests {
         "#;
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
             .json(&json)
@@ -225,7 +226,8 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf
-            .change_job_class(identifier, 'A')
+            .jobs()
+            .change_class(identifier, 'A')
             .get_request()
             .unwrap();
 
@@ -249,6 +251,7 @@ mod tests {
         "#;
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
             .json(&json)
@@ -256,7 +259,7 @@ mod tests {
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
-        let job_feedback = zosmf.hold_job(identifier).get_request().unwrap();
+        let job_feedback = zosmf.jobs().hold(identifier).get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),
@@ -278,6 +281,7 @@ mod tests {
         "#;
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
             .json(&json)
@@ -285,7 +289,7 @@ mod tests {
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
-        let job_feedback = zosmf.release_job(identifier).get_request().unwrap();
+        let job_feedback = zosmf.jobs().release(identifier).get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),

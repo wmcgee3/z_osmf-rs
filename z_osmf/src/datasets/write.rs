@@ -5,11 +5,12 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
-use super::{MigratedRecall, ObtainEnq};
+use super::{Enqueue, MigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetWrite {
@@ -35,8 +36,7 @@ pub struct DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
@@ -55,7 +55,7 @@ where
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<ObtainEnq>,
+    obtain_enq: Option<Enqueue>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_release_enq)]
@@ -195,6 +195,7 @@ mod tests {
         let string_data = "here is some text!";
 
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restfiles/ds/SYS1.PARMLIB(SMFPRM00)")
             .header("If-Match", "B5C6454F783590AA8EC15BD88E29EA63")
@@ -203,7 +204,8 @@ mod tests {
             .unwrap();
 
         let write_dataset = zosmf
-            .write_dataset("SYS1.PARMLIB")
+            .datasets()
+            .write("SYS1.PARMLIB")
             .member("SMFPRM00")
             .if_match("B5C6454F783590AA8EC15BD88E29EA63")
             .text(string_data)

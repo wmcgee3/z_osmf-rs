@@ -205,20 +205,34 @@ impl Endpoint {
                     format!(#path)
                 };
 
-                let mut request_builder = self.client.#method(format!("{}{}", self.base_url, path))
+                let mut request_builder = self
+                    .core
+                    .client
+                    .#method(format!("{}{}", self.core.base_url, path))
 
                 #( #required_builders )* ;
 
                 #( #optional_builders )*
 
+                if let Ok(lock) = &self.core.cookie.read() {
+                    match lock.as_ref() {
+                        Some(cookie) => {
+                            request_builder = request_builder.header("Cookie", cookie);
+                        }
+                        _ => {}
+                    }
+                }
+
                 Ok(request_builder.build()?)
             }
 
             async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
-                let request = self.get_request()?;
-                let response = self.client.execute(request).await?;
+                use crate::error::CheckStatus;
 
-                Ok(response.error_for_status()?)
+                let request = self.get_request()?;
+                let response = self.core.client.execute(request).await?;
+
+                response.check_status().await
             }
         }
     }

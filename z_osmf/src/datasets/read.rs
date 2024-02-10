@@ -1,4 +1,5 @@
 pub use crate::utils::RecordRange;
+use crate::ClientCore;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -8,11 +9,11 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 
-use super::{get_session_ref, DataType, MigratedRecall, ObtainEnq};
+use super::{get_session_ref, DatasetDataType, Enqueue, MigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetRead<T> {
@@ -121,8 +122,7 @@ pub struct DatasetReadBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
@@ -141,7 +141,7 @@ where
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
     if_none_match: Option<Box<str>>,
     #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
-    data_type: Option<DataType>,
+    data_type: Option<DatasetDataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_return_etag)]
@@ -151,7 +151,7 @@ where
     #[endpoint(optional, header = "X-IBM-Record-Range")]
     record_range: Option<RecordRange>,
     #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<ObtainEnq>,
+    obtain_enq: Option<Enqueue>,
     #[endpoint(optional, header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_release_enq)]
@@ -170,8 +170,7 @@ where
 {
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -179,7 +178,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Binary),
+            data_type: Some(DatasetDataType::Binary),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -195,8 +194,7 @@ where
 
     pub fn record(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -204,7 +202,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Record),
+            data_type: Some(DatasetDataType::Record),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -220,8 +218,7 @@ where
 
     pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -229,7 +226,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Text),
+            data_type: Some(DatasetDataType::Text),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -248,8 +245,7 @@ where
         E: Into<Box<str>>,
     {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
@@ -278,8 +274,7 @@ where
 {
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -287,7 +282,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Binary),
+            data_type: Some(DatasetDataType::Binary),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -303,8 +298,7 @@ where
 
     pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -312,7 +306,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Record),
+            data_type: Some(DatasetDataType::Record),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -328,8 +322,7 @@ where
 
     pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -337,7 +330,7 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            data_type: Some(DataType::Text),
+            data_type: Some(DatasetDataType::Text),
             if_none_match: self.if_none_match,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -485,13 +478,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds/SYS1.PARMLIB(SMFPRM00)")
             .build()
             .unwrap();
 
         let read_member = zosmf
-            .read_dataset("SYS1.PARMLIB")
+            .datasets()
+            .read("SYS1.PARMLIB")
             .member("SMFPRM00")
             .get_request()
             .unwrap();
@@ -507,13 +502,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.SRVMP")
             .build()
             .unwrap();
 
         let read_dataset = zosmf
-            .read_dataset("JIAHJ.REST.SRVMP")
+            .datasets()
+            .read("JIAHJ.REST.SRVMP")
             .get_request()
             .unwrap();
 

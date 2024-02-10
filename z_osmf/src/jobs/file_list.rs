@@ -4,7 +4,8 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
+use crate::ClientCore;
 
 use super::JobIdentifier;
 
@@ -28,16 +29,20 @@ pub struct JobFile {
     job_name: Box<str>,
     #[serde(rename = "recfm")]
     record_format: Box<str>,
+    #[getter(copy)]
     byte_count: i32,
+    #[getter(copy)]
     record_count: i32,
     job_correlator: Option<Box<str>>,
     class: Box<str>,
     #[serde(rename = "jobid")]
     job_id: Box<str>,
+    #[getter(copy)]
     id: i32,
     #[serde(rename = "ddname")]
     dd_name: Box<str>,
     records_url: Box<str>,
+    #[getter(copy)]
     #[serde(rename = "lrecl")]
     record_length: i32,
     subsystem: Box<str>,
@@ -53,8 +58,7 @@ pub struct JobFileListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -85,13 +89,14 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restjobs/jobs/TESTJOB1/JOB00023/files")
             .build()
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
-        let job_files = zosmf.list_job_files(identifier).get_request().unwrap();
+        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
     }

@@ -6,11 +6,12 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
-use super::DataType;
+use super::FileDataType;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileRead<T> {
@@ -114,8 +115,7 @@ pub struct FileReadBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     path: Box<str>,
@@ -128,7 +128,7 @@ where
     #[endpoint(optional, skip_builder)]
     search_max_return: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
-    data_type: Option<DataType>,
+    data_type: Option<FileDataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
@@ -145,14 +145,13 @@ where
 {
     pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Binary),
+            data_type: Some(FileDataType::Binary),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -161,14 +160,13 @@ where
 
     pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Text),
+            data_type: Some(FileDataType::Text),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -180,8 +178,7 @@ where
         E: Into<Box<str>>,
     {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
@@ -201,14 +198,13 @@ where
 {
     pub fn binary(self) -> FileReadBuilder<FileRead<Option<Bytes>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Binary),
+            data_type: Some(FileDataType::Binary),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -217,14 +213,13 @@ where
 
     pub fn text(self) -> FileReadBuilder<FileRead<Option<Box<str>>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(DataType::Text),
+            data_type: Some(FileDataType::Text),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -307,12 +302,13 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
             .build()
             .unwrap();
 
-        let read_file = zosmf.read_file("/etc/inetd.conf").get_request().unwrap();
+        let read_file = zosmf.files().read("/etc/inetd.conf").get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
     }

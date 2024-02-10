@@ -6,12 +6,14 @@ pub mod purge;
 pub mod status;
 pub mod submit;
 
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
 use crate::convert::TryFromResponse;
 use crate::error::Error;
-use crate::ZOsmf;
+use crate::ClientCore;
 
 use self::feedback::{ClassJson, JobFeedback, JobFeedbackBuilder, RequestJson};
 use self::file_list::{JobFileList, JobFileListBuilder};
@@ -21,8 +23,17 @@ use self::purge::JobPurgeBuilder;
 use self::status::JobStatusBuilder;
 use self::submit::{JclSource, JobSubmitBuilder};
 
+#[derive(Clone, Debug)]
+pub struct JobsClient {
+    core: Arc<ClientCore>,
+}
+
 /// # Jobs
-impl ZOsmf {
+impl JobsClient {
+    pub(crate) fn new(core: &Arc<ClientCore>) -> Self {
+        JobsClient { core: core.clone() }
+    }
+
     /// # Examples
     ///
     /// Cancel job TESTJOB2 with ID JOB0084:
@@ -32,22 +43,18 @@ impl ZOsmf {
     /// let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
     ///
     /// let job_feedback = zosmf
-    ///     .cancel_job(identifier)
+    ///     .jobs()
+    ///     .cancel(identifier)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel_job(
+    pub fn cancel(
         &self,
         identifier: JobIdentifier,
     ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("cancel"),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, RequestJson::new("cancel"))
     }
 
     /// # Examples
@@ -59,14 +66,15 @@ impl ZOsmf {
     /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
     ///
     /// let job_feedback = zosmf
-    ///     .cancel_and_purge_job(identifier)
+    ///     .jobs()
+    ///     .cancel_and_purge(identifier)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel_and_purge_job(&self, identifier: JobIdentifier) -> JobPurgeBuilder<JobFeedback> {
-        JobPurgeBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> JobPurgeBuilder<JobFeedback> {
+        JobPurgeBuilder::new(self.core.clone(), identifier)
     }
 
     /// # Examples
@@ -78,13 +86,14 @@ impl ZOsmf {
     /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
     ///
     /// let job_feedback = zosmf
-    ///     .change_job_class(identifier, 'A')
+    ///     .jobs()
+    ///     .change_class(identifier, 'A')
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_job_class<C>(
+    pub fn change_class<C>(
         &self,
         identifier: JobIdentifier,
         class: C,
@@ -92,12 +101,7 @@ impl ZOsmf {
     where
         C: Into<char>,
     {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            ClassJson::new(class),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, ClassJson::new(class))
     }
 
     /// # Examples
@@ -109,42 +113,35 @@ impl ZOsmf {
     /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
     ///
     /// let job_feedback = zosmf
-    ///     .hold_job(identifier)
+    ///     .jobs()
+    ///     .hold(identifier)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn hold_job(
-        &self,
-        identifier: JobIdentifier,
-    ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("hold"),
-        )
+    pub fn hold(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
+        JobFeedbackBuilder::new(self.core.clone(), identifier, RequestJson::new("hold"))
     }
 
     /// # Examples
     ///
-    /// Obtain the status of the job BLSJPRMI, job ID STC00052:
+    /// List jobs with exec-data by owner and prefix:
     /// ```
-    /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
-    ///
-    /// let job_status = zosmf
-    ///     .job_status(identifier)
+    /// let job_list = zosmf
+    ///     .jobs()
+    ///     .list()
+    ///     .owner("IBMUSER")
+    ///     .prefix("TESTJOB*")
     ///     .exec_data()
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn job_status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobData> {
-        JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+    pub fn list(&self) -> JobListBuilder<JobList<JobData>> {
+        JobListBuilder::new(self.core.clone())
     }
 
     /// # Examples
@@ -156,33 +153,15 @@ impl ZOsmf {
     /// let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
     ///
     /// let job_files = zosmf
-    ///     .list_job_files(identifier)
+    ///     .jobs()
+    ///     .list_files(identifier)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_job_files(&self, identifier: JobIdentifier) -> JobFileListBuilder<JobFileList> {
-        JobFileListBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
-    }
-
-    /// # Examples
-    ///
-    /// List jobs with exec-data by owner and prefix:
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let job_list = zosmf
-    ///     .list_jobs()
-    ///     .owner("IBMUSER")
-    ///     .prefix("TESTJOB*")
-    ///     .exec_data()
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn list_jobs(&self) -> JobListBuilder<JobList<JobData>> {
-        JobListBuilder::new(self.base_url.clone(), self.client.clone())
+    pub fn list_files(&self, identifier: JobIdentifier) -> JobFileListBuilder<JobFileList> {
+        JobFileListBuilder::new(self.core.clone(), identifier)
     }
 
     /// # Examples
@@ -196,7 +175,8 @@ impl ZOsmf {
     /// let file_id = JobFileID::ID(1);
     ///
     /// let job_file = zosmf
-    ///     .read_job_file(identifier, file_id)
+    ///     .jobs()
+    ///     .read_file(identifier, file_id)
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -213,7 +193,8 @@ impl ZOsmf {
     /// let file_id = JobFileID::ID(8);
     ///
     /// let job_file = zosmf
-    ///     .read_job_file(identifier, file_id)
+    ///     .jobs()
+    ///     .read_file(identifier, file_id)
     ///     .record_range(RecordRange::from_str("0-249")?)
     ///     .build()
     ///     .await?;
@@ -230,18 +211,19 @@ impl ZOsmf {
     /// let file_id = JobFileID::JCL;
     ///
     /// let job_file = zosmf
-    ///     .read_job_file(identifier, file_id)
+    ///     .jobs()
+    ///     .read_file(identifier, file_id)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read_job_file(
+    pub fn read_file(
         &self,
         identifier: JobIdentifier,
         id: JobFileID,
     ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
-        JobFileReadBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
+        JobFileReadBuilder::new(self.core.clone(), identifier, id)
     }
 
     /// # Examples
@@ -253,22 +235,39 @@ impl ZOsmf {
     /// let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
     ///
     /// let job_feedback = zosmf
-    ///     .release_job(identifier)
+    ///     .jobs()
+    ///     .release(identifier)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn release_job(
+    pub fn release(
         &self,
         identifier: JobIdentifier,
     ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("release"),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, RequestJson::new("release"))
+    }
+
+    /// # Examples
+    ///
+    /// Obtain the status of the job BLSJPRMI, job ID STC00052:
+    /// ```
+    /// # use z_osmf::jobs::JobIdentifier;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
+    ///
+    /// let job_status = zosmf
+    ///     .jobs()
+    ///     .status(identifier)
+    ///     .exec_data()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobData> {
+        JobStatusBuilder::new(self.core.clone(), identifier)
     }
 
     /// # Examples
@@ -282,7 +281,8 @@ impl ZOsmf {
     /// "#;
     ///
     /// let job_data = zosmf
-    ///     .submit_job(JclSource::Jcl(JclData::Text(jcl.into())))
+    ///     .jobs()
+    ///     .submit(JclSource::Jcl(JclData::Text(jcl.into())))
     ///     .message_class('A')
     ///     .record_format(RecordFormat::Fixed)
     ///     .record_length(80)
@@ -291,8 +291,8 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submit_job(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
-        JobSubmitBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
+    pub fn submit(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
+        JobSubmitBuilder::new(self.core.clone(), jcl_source)
     }
 }
 
@@ -313,7 +313,9 @@ pub struct JobData {
     name: Box<str>,
     subsystem: Option<Box<str>>,
     owner: Box<str>,
+    #[getter(copy)]
     status: Option<Status>,
+    #[getter(copy)]
     job_type: Option<JobType>,
     class: Box<str>,
     #[serde(rename = "retcode")]
@@ -321,6 +323,7 @@ pub struct JobData {
     url: Box<str>,
     files_url: Box<str>,
     job_correlator: Option<Box<str>>,
+    #[getter(copy)]
     phase: i32,
     phase_name: Box<str>,
     reason_not_running: Option<Box<str>>,
@@ -328,7 +331,7 @@ pub struct JobData {
 
 impl JobData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
     }
 }
 
@@ -341,22 +344,8 @@ impl TryFromResponse for JobData {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecData {
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    subsystem: Option<Box<str>>,
-    owner: Box<str>,
-    status: Option<Status>,
-    job_type: Option<JobType>,
-    class: Box<str>,
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    url: Box<str>,
-    files_url: Box<str>,
-    job_correlator: Option<Box<str>>,
-    phase: i32,
-    phase_name: Box<str>,
+    #[serde(flatten)]
+    job_data: JobData,
     #[serde(default)]
     exec_system: Option<Box<str>>,
     #[serde(default)]
@@ -365,12 +354,19 @@ pub struct JobExecData {
     exec_submitted: Option<Box<str>>,
     #[serde(default)]
     exec_ended: Option<Box<str>>,
-    reason_not_running: Option<Box<str>>,
 }
 
 impl JobExecData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+    }
+}
+
+impl std::ops::Deref for JobExecData {
+    type Target = JobData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.job_data
     }
 }
 
@@ -383,22 +379,8 @@ impl TryFromResponse for JobExecData {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecStepData {
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    subsystem: Option<Box<str>>,
-    owner: Box<str>,
-    status: Option<Status>,
-    job_type: Option<JobType>,
-    class: Box<str>,
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    url: Box<str>,
-    files_url: Box<str>,
-    job_correlator: Option<Box<str>>,
-    phase: i32,
-    phase_name: Box<str>,
+    #[serde(flatten)]
+    job_data: JobData,
     step_data: Box<[StepData]>,
     #[serde(default)]
     exec_system: Option<Box<str>>,
@@ -408,12 +390,19 @@ pub struct JobExecStepData {
     exec_submitted: Option<Box<str>>,
     #[serde(default)]
     exec_ended: Option<Box<str>>,
-    reason_not_running: Option<Box<str>>,
 }
 
 impl JobExecStepData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+    }
+}
+
+impl std::ops::Deref for JobExecStepData {
+    type Target = JobData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.job_data
     }
 }
 
@@ -426,29 +415,22 @@ impl TryFromResponse for JobExecStepData {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobStepData {
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    subsystem: Option<Box<str>>,
-    owner: Box<str>,
-    status: Option<Status>,
-    job_type: Option<JobType>,
-    class: Box<str>,
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    url: Box<str>,
-    files_url: Box<str>,
-    job_correlator: Option<Box<str>>,
-    phase: i32,
-    phase_name: Box<str>,
+    #[serde(flatten)]
+    job_data: JobData,
     step_data: Box<[StepData]>,
-    reason_not_running: Option<Box<str>>,
 }
 
 impl JobStepData {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.clone(), self.id.clone())
+        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+    }
+}
+
+impl std::ops::Deref for JobStepData {
+    type Target = JobData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.job_data
     }
 }
 
@@ -460,8 +442,8 @@ impl TryFromResponse for JobStepData {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JobIdentifier {
-    Correlator(Box<str>),
-    NameId(Box<str>, Box<str>),
+    Correlator(String),
+    NameId(String, String),
 }
 
 impl std::fmt::Display for JobIdentifier {
@@ -496,9 +478,11 @@ pub enum Status {
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct StepData {
+    #[getter(copy)]
     active: bool,
     #[serde(default, rename = "smfid")]
     smf_id: Option<Box<str>>,
+    #[getter(copy)]
     step_number: i32,
     #[serde(default)]
     selected_time: Option<Box<str>>,
@@ -508,6 +492,7 @@ pub struct StepData {
     step_name: Box<str>,
     #[serde(default)]
     path_name: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(default)]
     substep_number: Option<i32>,
     #[serde(default)]

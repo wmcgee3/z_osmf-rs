@@ -13,18 +13,30 @@
 
 pub use bytes::Bytes;
 
+pub mod error;
+
 #[cfg(feature = "datasets")]
 pub mod datasets;
-pub mod error;
 #[cfg(feature = "files")]
 pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
+#[cfg(feature = "datasets")]
+use datasets::DatasetsClient;
+#[cfg(feature = "files")]
+use files::FilesClient;
+#[cfg(feature = "jobs")]
+use jobs::JobsClient;
+
 mod convert;
 mod utils;
 
-use self::error::Error;
+use std::sync::{Arc, RwLock};
+
+use reqwest::header::HeaderValue;
+
+use self::error::{CheckStatus, Error};
 
 /// # ZOsmf
 ///
@@ -33,25 +45,24 @@ use self::error::Error;
 /// ```
 /// # async fn example() -> anyhow::Result<()> {
 /// # use z_osmf::ZOsmf;
-/// let client_builder = reqwest::ClientBuilder::new();
+/// let client = reqwest::Client::new();
 /// let base_url = "https://zosmf.mainframe.my-company.com";
 /// let username = "USERNAME";
 ///
-/// let zosmf = ZOsmf::new(client_builder, base_url)?;
+/// let zosmf = ZOsmf::new(client, base_url)?;
 /// zosmf.login(username, "PASSWORD").await?;
 ///
-/// let my_datasets = zosmf.list_datasets(username).build().await?;
+/// let my_datasets = zosmf.datasets().list(username).build().await?;
 ///
 /// for dataset in my_datasets.items().iter() {
-///     println!("{:?}", dataset);
+///     println!("{:#?}", dataset);
 /// }
 /// # Ok(())
 /// # }
 /// ```
 #[derive(Clone, Debug)]
 pub struct ZOsmf {
-    base_url: Box<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 }
 
 impl ZOsmf {
@@ -61,21 +72,25 @@ impl ZOsmf {
     /// ```
     /// # async fn example() -> anyhow::Result<()> {
     /// # use z_osmf::ZOsmf;
-    /// let client_builder = reqwest::ClientBuilder::new();
+    /// let client = reqwest::Client::new();
     /// let base_url = "https://zosmf.mainframe.my-company.com";
     ///
-    /// let zosmf = ZOsmf::new(client_builder, base_url)?;
+    /// let zosmf = ZOsmf::new(client, base_url)?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new<B>(client_builder: reqwest::ClientBuilder, base_url: B) -> Result<Self, Error>
+    pub fn new<B>(client: reqwest::Client, base_url: B) -> Result<Self, Error>
     where
         B: std::fmt::Display,
     {
         let base_url = format!("{}", base_url).trim_end_matches('/').into();
-        let client = client_builder.cookie_store(true).build()?;
+        let core = Arc::new(ClientCore {
+            base_url,
+            client,
+            cookie: RwLock::new(None),
+        });
 
-        Ok(ZOsmf { base_url, client })
+        Ok(ZOsmf { core })
     }
 
     /// Authenticate with z/OSMF.
@@ -92,12 +107,35 @@ impl ZOsmf {
         U: std::fmt::Display,
         P: std::fmt::Display,
     {
-        self.client
-            .post(format!("{}/zosmf/services/authenticate", self.base_url))
+        let response = self
+            .core
+            .client
+            .post(format!(
+                "{}/zosmf/services/authenticate",
+                self.core.base_url
+            ))
             .basic_auth(username, Some(password))
             .send()
             .await?
-            .error_for_status()?;
+            .check_status()
+            .await?;
+
+        match self.core.cookie.write() {
+            Ok(mut cookie) => {
+                *cookie = Some(
+                    response
+                        .headers()
+                        .get("Set-Cookie")
+                        .ok_or(Error::Custom("failed to get authentication token".into()))?
+                        .clone(),
+                );
+            }
+            Err(_) => {
+                return Err(Error::Custom(
+                    "failed to retrieve authentication header".into(),
+                ))
+            }
+        }
 
         Ok(())
     }
@@ -117,14 +155,79 @@ impl ZOsmf {
     /// # }
     /// ```
     pub async fn logout(&self) -> Result<(), Error> {
-        self.client
-            .delete(format!("{}/zosmf/services/authenticate", self.base_url))
+        self.core
+            .client
+            .delete(format!(
+                "{}/zosmf/services/authenticate",
+                self.core.base_url
+            ))
             .send()
             .await?
-            .error_for_status()?;
+            .check_status()
+            .await?;
+
+        match self.core.cookie.write() {
+            Ok(mut cookie) => {
+                *cookie = None;
+            }
+            Err(_) => {
+                return Err(Error::Custom(
+                    "failed to retrieve authentication header".into(),
+                ))
+            }
+        }
 
         Ok(())
     }
+
+    /// Create a sub-client for interacting with datasets.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let datasets_client = zosmf.datasets();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "datasets")]
+    pub fn datasets(&self) -> DatasetsClient {
+        DatasetsClient::new(&self.core)
+    }
+
+    /// Create a sub-client for interacting with files.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let files_client = zosmf.files();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "files")]
+    pub fn files(&self) -> FilesClient {
+        FilesClient::new(&self.core)
+    }
+
+    /// Create a sub-client for interacting with jobs.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let jobs_client = zosmf.jobs();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "jobs")]
+    pub fn jobs(&self) -> JobsClient {
+        JobsClient::new(&self.core)
+    }
+}
+
+#[derive(Debug)]
+struct ClientCore {
+    base_url: Box<str>,
+    client: reqwest::Client,
+    cookie: RwLock<Option<HeaderValue>>,
 }
 
 #[cfg(test)]
@@ -132,7 +235,7 @@ mod tests {
     use super::*;
 
     pub(crate) fn get_zosmf() -> ZOsmf {
-        ZOsmf::new(reqwest::Client::builder(), "https://test.com").unwrap()
+        ZOsmf::new(reqwest::Client::new(), "https://test.com").unwrap()
     }
 
     pub(crate) trait GetJson {

@@ -14,7 +14,7 @@ pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
         client_builder = client_builder.use_rustls_tls().add_root_certificate(cert);
     }
 
-    let zosmf = z_osmf::ZOsmf::new(client_builder, base_url)?;
+    let zosmf = z_osmf::ZOsmf::new(client_builder.build()?, base_url)?;
 
     zosmf.login(username, password).await?;
 

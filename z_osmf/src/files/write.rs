@@ -5,9 +5,10 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileWrite {
@@ -33,8 +34,7 @@ pub struct FileWriteBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     path: Box<str>,
@@ -129,6 +129,7 @@ mod tests {
         let text_data = "here is some text!";
 
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
             .body(text_data)
@@ -136,7 +137,8 @@ mod tests {
             .unwrap();
 
         let write_file = zosmf
-            .write_file("/etc/inetd.conf")
+            .files()
+            .write("/etc/inetd.conf")
             .text(text_data)
             .get_request()
             .unwrap();

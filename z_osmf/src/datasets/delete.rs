@@ -4,9 +4,10 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::get_transaction_id;
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetDelete {
@@ -27,8 +28,7 @@ pub struct DatasetDeleteBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
@@ -70,13 +70,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.DATASET")
             .build()
             .unwrap();
 
         let delete_dataset = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.DATASET")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.DATASET")
             .get_request()
             .unwrap();
 
@@ -91,13 +93,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete("https://test.com/zosmf/restfiles/ds/-(ZMF046)/JIAHJ.REST.TEST.DATASET2")
             .build()
             .unwrap();
 
         let delete_uncataloged = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.DATASET2")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.DATASET2")
             .volume("ZMF046")
             .get_request()
             .unwrap();
@@ -113,13 +117,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.TEST.PDS(MEMBER01)")
             .build()
             .unwrap();
 
         let delete_member = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.PDS")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.PDS")
             .member("MEMBER01")
             .get_request()
             .unwrap();
@@ -135,6 +141,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete(
                 "https://test.com/zosmf/restfiles/ds/-(ZMF046)/JIAHJ.REST.TEST.PDS.UNCAT(MEMBER01)",
@@ -143,7 +150,8 @@ mod tests {
             .unwrap();
 
         let delete_uncataloged_member = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.PDS.UNCAT")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.PDS.UNCAT")
             .member("MEMBER01")
             .volume("ZMF046")
             .get_request()

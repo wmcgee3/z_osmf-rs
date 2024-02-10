@@ -20,8 +20,16 @@ impl Getter {
                 .iter()
                 .filter(|f| !f.skip)
                 .map(|f| {
-                    let GetterField { ident, ty, .. } = f;
-                    if let Some(ty) = extract_optional_type(ty) {
+                    let GetterField {
+                        ident, ty, copy, ..
+                    } = f;
+                    if *copy {
+                        quote! {
+                            pub fn #ident(&self) -> #ty {
+                                self.#ident
+                            }
+                        }
+                    } else if let Some(ty) = extract_optional_type(ty) {
                         if let Some(ty) = extract_box_type(&ty) {
                             quote! {
                                 pub fn #ident(&self) -> Option<&#ty> {
@@ -29,11 +37,11 @@ impl Getter {
                                 }
                             }
                         } else {
-                            let (ty, method) = string_to_str_type(vec_to_slice_type(ty));
+                            let ty = vec_to_slice_type(ty);
 
                             quote! {
                                 pub fn #ident(&self) -> Option<&#ty> {
-                                    self.#ident.as_ref()#method
+                                    self.#ident.as_ref()
                                 }
                             }
                         }
@@ -44,7 +52,7 @@ impl Getter {
                             }
                         }
                     } else {
-                        let (ty, _) = string_to_str_type(vec_to_slice_type(ty.clone()));
+                        let ty = vec_to_slice_type(ty.clone());
 
                         quote! {
                             pub fn #ident(&self) -> &#ty {
@@ -67,4 +75,6 @@ pub(crate) struct GetterField {
 
     #[darling(default)]
     skip: bool,
+    #[darling(default)]
+    copy: bool,
 }

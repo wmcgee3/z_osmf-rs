@@ -4,18 +4,23 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
-use crate::convert::{TryFromResponse, TryIntoTarget};
+use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
+use crate::ClientCore;
 
 use super::MigratedRecall;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetMemberList<T> {
     items: Box<[T]>,
+    #[getter(copy)]
     json_version: i32,
+    #[getter(copy)]
     more_rows: Option<bool>,
+    #[getter(copy)]
     returned_rows: i32,
+    #[getter(copy)]
     total_rows: Option<i32>,
 }
 
@@ -46,18 +51,23 @@ where
 pub struct MemberBase {
     #[serde(rename = "member")]
     name: Box<str>,
+    #[getter(copy)]
     #[serde(default, rename = "vers")]
     version: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "mod")]
     modification_level: Option<i32>,
     #[serde(default, rename = "c4date")]
     creation_date: Option<Box<str>>,
     #[serde(default, rename = "m4date")]
     modification_date: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(default, rename = "cnorc")]
     current_number_of_records: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "inorc")]
     initial_number_of_records: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "mnorc")]
     modified_number_of_records: Option<i32>,
     #[serde(default, rename = "mtime")]
@@ -66,6 +76,7 @@ pub struct MemberBase {
     modified_seconds: Option<Box<str>>,
     #[serde(default)]
     user: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(
         default,
         rename = "sclm",
@@ -101,8 +112,7 @@ pub struct DatasetMemberListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
@@ -129,8 +139,7 @@ where
 {
     pub fn attributes_base(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberBase>> {
         DatasetMemberListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             dataset_name: self.dataset_name,
             start: self.start,
             pattern: self.pattern,
@@ -144,8 +153,7 @@ where
 
     pub fn attributes_member(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
         DatasetMemberListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             dataset_name: self.dataset_name,
             start: self.start,
             pattern: self.pattern,
@@ -223,13 +231,15 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
-            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .get("https://test.com/zosmf/restfiles/ds/NOTSYS1.PROCLIB/member")
             .build()
             .unwrap();
 
         let list_members = zosmf
-            .list_dataset_members("SYS1.PROCLIB")
+            .datasets()
+            .members("NOTSYS1.PROCLIB")
             .get_request()
             .unwrap();
 
@@ -244,14 +254,16 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
-            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .get("https://test.com/zosmf/restfiles/ds/NOTSYS1.PROCLIB/member")
             .header("X-IBM-Attributes", "base")
             .build()
             .unwrap();
 
         let list_members_base = zosmf
-            .list_dataset_members("SYS1.PROCLIB")
+            .datasets()
+            .members("NOTSYS1.PROCLIB")
             .attributes_base()
             .get_request()
             .unwrap();
