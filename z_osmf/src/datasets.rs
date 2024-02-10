@@ -41,10 +41,63 @@ impl DatasetsClient {
         DatasetsClient { core: core.clone() }
     }
 
+    /// #Examples
+    ///
+    /// Copy a dataset:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let copy_dataset = zosmf
+    ///     .datasets()
+    ///     .copy("MY.OLD.DS", "MY.NEW.DS")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Copy a PDS member:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let copy_dataset = zosmf
+    ///     .datasets()
+    ///     .copy("MY.OLD.PDS", "MY.NEW.PDS")
+    ///     .from_member("OLD")
+    ///     .to_member("NEW")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<DatasetCopy> {
         DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
+    /// #Examples
+    ///
+    /// Copy a file to a dataset:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let copy_dataset = zosmf
+    ///     .datasets()
+    ///     .copy_file("/u/jiahj/text.txt", "MY.NEW.DS")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Copy a file to a PDS member:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let copy_dataset = zosmf
+    ///     .datasets()
+    ///     .copy_file("/u/jiahj/text.txt", "MY.NEW.PDS")
+    ///     .to_member("TEXT")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn copy_file(
         &self,
         from_path: &str,
@@ -222,7 +275,7 @@ impl DatasetsClient {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members = zosmf
     ///     .datasets()
-    ///     .members("SYS1.PROCLIB")
+    ///     .members("NOTSYS1.PROCLIB")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -234,7 +287,7 @@ impl DatasetsClient {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members_base = zosmf
     ///     .datasets()
-    ///     .members("SYS1.PROCLIB")
+    ///     .members("NOTSYS1.PROCLIB")
     ///     .attributes_base()
     ///     .build()
     ///     .await?;
@@ -248,6 +301,19 @@ impl DatasetsClient {
         DatasetMemberListBuilder::new(self.core.clone(), dataset_name)
     }
 
+    /// # Examples
+    ///
+    /// Migrate a dataset:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let migrate_dataset = zosmf
+    ///     .datasets()
+    ///     .migrate("MY.TEST.DS")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn migrate(&self, name: &str) -> DatasetMigrateBuilder<DatasetMigrate> {
         DatasetMigrateBuilder::new(self.core.clone(), name)
     }
@@ -282,6 +348,19 @@ impl DatasetsClient {
         DatasetReadBuilder::new(self.core.clone(), dataset_name)
     }
 
+    /// # Examples
+    ///
+    /// Recall a dataset:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let recall_dataset = zosmf
+    ///     .datasets()
+    ///     .recall("MY.MIGR.DS")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn recall(&self, name: &str) -> DatasetRecallBuilder<DatasetRecall> {
         DatasetRecallBuilder::new(self.core.clone(), name)
     }

@@ -233,13 +233,13 @@ mod tests {
         let manual_request = zosmf
             .core
             .client
-            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .get("https://test.com/zosmf/restfiles/ds/NOTSYS1.PROCLIB/member")
             .build()
             .unwrap();
 
         let list_members = zosmf
             .datasets()
-            .members("SYS1.PROCLIB")
+            .members("NOTSYS1.PROCLIB")
             .get_request()
             .unwrap();
 
@@ -256,14 +256,14 @@ mod tests {
         let manual_request = zosmf
             .core
             .client
-            .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
+            .get("https://test.com/zosmf/restfiles/ds/NOTSYS1.PROCLIB/member")
             .header("X-IBM-Attributes", "base")
             .build()
             .unwrap();
 
         let list_members_base = zosmf
             .datasets()
-            .members("SYS1.PROCLIB")
+            .members("NOTSYS1.PROCLIB")
             .attributes_base()
             .get_request()
             .unwrap();
