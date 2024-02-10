@@ -190,7 +190,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let list_files = zosmf.list_files("/usr").get_request().unwrap();
+        let list_files = zosmf.files().list("/usr").get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", list_files))
     }
@@ -208,7 +208,8 @@ mod tests {
             .unwrap();
 
         let list_files = zosmf
-            .list_files("/u/ibmuser/myFile.txt")
+            .files()
+            .list("/u/ibmuser/myFile.txt")
             .get_request()
             .unwrap();
 
@@ -228,7 +229,8 @@ mod tests {
             .unwrap();
 
         let list_files = zosmf
-            .list_files("/usr/include")
+            .files()
+            .list("/usr/include")
             .name("f*.h")
             .get_request()
             .unwrap();

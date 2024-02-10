@@ -105,7 +105,8 @@ mod tests {
             .unwrap();
 
         let create_file = zosmf
-            .create_file("/u/jiahj/text.txt")
+            .files()
+            .create("/u/jiahj/text.txt")
             .file_type(CreateFileType::File)
             .mode("RWXRW-RW-")
             .get_request()
@@ -140,7 +141,8 @@ mod tests {
             .unwrap();
 
         let create_file = zosmf
-            .create_file("/u/jiahj/testDir")
+            .files()
+            .create("/u/jiahj/testDir")
             .file_type(CreateFileType::Directory)
             .mode("rwxr-xrwx")
             .get_request()

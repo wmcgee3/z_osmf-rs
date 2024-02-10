@@ -10,11 +10,13 @@ pub mod recall;
 pub mod rename;
 pub mod write;
 
+use std::sync::Arc;
+
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::ZOsmf;
+use crate::ClientCore;
 
 use self::copy::{DatasetCopy, DatasetCopyBuilder};
 use self::copy_file::{CopyFileToDataset, CopyFileToDatasetBuilder};
@@ -28,17 +30,22 @@ use self::recall::{DatasetRecall, DatasetRecallBuilder};
 use self::rename::{DatasetRename, DatasetRenameBuilder};
 use self::write::{DatasetWrite, DatasetWriteBuilder};
 
+#[derive(Clone, Debug)]
+pub struct DatasetsClient {
+    core: Arc<ClientCore>,
+}
+
 /// # Datasets
-impl ZOsmf {
-    pub fn copy_dataset(
-        &self,
-        from_dataset: &str,
-        to_dataset: &str,
-    ) -> DatasetCopyBuilder<DatasetCopy> {
+impl DatasetsClient {
+    pub(crate) fn new(core: &Arc<ClientCore>) -> Self {
+        DatasetsClient { core: core.clone() }
+    }
+
+    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<DatasetCopy> {
         DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
-    pub fn copy_file_to_dataset(
+    pub fn copy_file(
         &self,
         from_path: &str,
         to_dataset: &str,
@@ -52,7 +59,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_dataset = zosmf
-    ///     .create_dataset("JIAHJ.REST.TEST.NEWDS")
+    ///     .datasets()
+    ///     .create("JIAHJ.REST.TEST.NEWDS")
     ///     .volume("zmf046")
     ///     .device_type("3390")
     ///     .organization("PS")
@@ -73,7 +81,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pds = zosmf
-    ///     .create_dataset("JIAHJ.REST.TEST.NEWDS02")
+    ///     .datasets()
+    ///     .create("JIAHJ.REST.TEST.NEWDS02")
     ///     .volume("zmf046")
     ///     .device_type("3390")
     ///     .organization("PO")
@@ -95,7 +104,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pdse = zosmf
-    ///     .create_dataset("JIAHJ.REST.TEST.NEWDS02")
+    ///     .datasets()
+    ///     .create("JIAHJ.REST.TEST.NEWDS02")
     ///     .volume("zmf046")
     ///     .device_type("3390")
     ///     .organization("PO")
@@ -113,7 +123,7 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_dataset(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
+    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
         DatasetCreateBuilder::new(self.core.clone(), dataset_name)
     }
 
@@ -123,7 +133,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_dataset = zosmf
-    ///     .delete_dataset("JIAHJ.REST.TEST.DATASET")
+    ///     .datasets()
+    ///     .delete("JIAHJ.REST.TEST.DATASET")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -134,7 +145,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged = zosmf
-    ///     .delete_dataset("JIAHJ.REST.TEST.DATASET2")
+    ///     .datasets()
+    ///     .delete("JIAHJ.REST.TEST.DATASET2")
     ///     .volume("ZMF046")
     ///     .build()
     ///     .await?;
@@ -146,7 +158,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_member = zosmf
-    ///     .delete_dataset("JIAHJ.REST.TEST.PDS")
+    ///     .datasets()
+    ///     .delete("JIAHJ.REST.TEST.PDS")
     ///     .member("MEMBER01")
     ///     .build()
     ///     .await?;
@@ -158,7 +171,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged_member = zosmf
-    ///     .delete_dataset("JIAHJ.REST.TEST.PDS.UNCAT")
+    ///     .datasets()
+    ///     .delete("JIAHJ.REST.TEST.PDS.UNCAT")
     ///     .member("MEMBER01")
     ///     .volume("ZMF046")
     ///     .build()
@@ -166,39 +180,8 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete_dataset(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
+    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
         DatasetDeleteBuilder::new(self.core.clone(), dataset_name)
-    }
-
-    /// # Examples
-    ///
-    /// Listing PDS members:
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_members = zosmf
-    ///     .list_dataset_members("SYS1.PROCLIB")
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    ///
-    /// Listing the base attributes of PDS members:
-    /// ```
-    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let list_members_base = zosmf
-    ///     .list_dataset_members("SYS1.PROCLIB")
-    ///     .attributes_base()
-    ///     .build()
-    ///     .await?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn list_dataset_members(
-        &self,
-        dataset_name: &str,
-    ) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
-        DatasetMemberListBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -207,7 +190,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets = zosmf
-    ///     .list_datasets("IBMUSER.CONFIG.*")
+    ///     .datasets()
+    ///     .list("IBMUSER.CONFIG.*")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -218,7 +202,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets_base = zosmf
-    ///     .list_datasets("**")
+    ///     .datasets()
+    ///     .list("**")
     ///     .volume("PEVTS2")
     ///     .attributes_base()
     ///     .build()
@@ -226,14 +211,44 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_datasets(
-        &self,
-        name_pattern: &str,
-    ) -> DatasetListBuilder<DatasetList<DatasetName>> {
+    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder::new(self.core.clone(), name_pattern)
     }
 
-    pub fn migrate_dataset(&self, name: &str) -> DatasetMigrateBuilder<DatasetMigrate> {
+    /// # Examples
+    ///
+    /// Listing PDS members:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_members = zosmf
+    ///     .datasets()
+    ///     .members("SYS1.PROCLIB")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Listing the base attributes of PDS members:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_members_base = zosmf
+    ///     .datasets()
+    ///     .members("SYS1.PROCLIB")
+    ///     .attributes_base()
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn members(
+        &self,
+        dataset_name: &str,
+    ) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
+        DatasetMemberListBuilder::new(self.core.clone(), dataset_name)
+    }
+
+    pub fn migrate(&self, name: &str) -> DatasetMigrateBuilder<DatasetMigrate> {
         DatasetMigrateBuilder::new(self.core.clone(), name)
     }
 
@@ -243,7 +258,8 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_member = zosmf
-    ///     .read_dataset("SYS1.PARMLIB")
+    ///     .datasets()
+    ///     .read("SYS1.PARMLIB")
     ///     .member("SMFPRM00")
     ///     .build()
     ///     .await?;
@@ -255,17 +271,18 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_dataset = zosmf
-    ///     .read_dataset("JIAHJ.REST.SRVMP")
+    ///     .datasets()
+    ///     .read("JIAHJ.REST.SRVMP")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read_dataset(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
+    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder::new(self.core.clone(), dataset_name)
     }
 
-    pub fn recall_dataset(&self, name: &str) -> DatasetRecallBuilder<DatasetRecall> {
+    pub fn recall(&self, name: &str) -> DatasetRecallBuilder<DatasetRecall> {
         DatasetRecallBuilder::new(self.core.clone(), name)
     }
 
@@ -275,13 +292,14 @@ impl ZOsmf {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let rename_dataset = zosmf
-    ///     .rename_dataset("MY.OLD.DSN", "MY.NEW.DSN")
+    ///     .datasets()
+    ///     .rename("MY.OLD.DSN", "MY.NEW.DSN")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename_dataset(
+    pub fn rename(
         &self,
         from_dataset: &str,
         to_dataset: &str,
@@ -296,7 +314,8 @@ impl ZOsmf {
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// # let string_data = "".to_string();
     /// let write_dataset = zosmf
-    ///     .write_dataset("SYS1.PARMLIB")
+    ///     .datasets()
+    ///     .write("SYS1.PARMLIB")
     ///     .member("SMFPRM00")
     ///     .if_match("B5C6454F783590AA8EC15BD88E29EA63")
     ///     .text(string_data)
@@ -305,7 +324,7 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write_dataset(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
+    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
         DatasetWriteBuilder::new(self.core.clone(), dataset_name)
     }
 }

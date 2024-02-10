@@ -202,7 +202,8 @@ mod tests {
         let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
         let file_id = JobFileID::ID(1);
         let job_file = zosmf
-            .read_job_file(identifier, file_id)
+            .jobs()
+            .read_file(identifier, file_id)
             .get_request()
             .unwrap();
 
@@ -224,7 +225,8 @@ mod tests {
         let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
         let file_id = JobFileID::ID(8);
         let job_file = zosmf
-            .read_job_file(identifier, file_id)
+            .jobs()
+            .read_file(identifier, file_id)
             .record_range(RecordRange::from_str("0-249").unwrap())
             .get_request()
             .unwrap();
@@ -247,7 +249,8 @@ mod tests {
         let file_id = JobFileID::JCL;
 
         let job_file = zosmf
-            .read_job_file(identifier, file_id)
+            .jobs()
+            .read_file(identifier, file_id)
             .get_request()
             .unwrap();
 

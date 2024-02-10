@@ -308,7 +308,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let read_file = zosmf.read_file("/etc/inetd.conf").get_request().unwrap();
+        let read_file = zosmf.files().read("/etc/inetd.conf").get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
     }

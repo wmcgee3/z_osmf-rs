@@ -485,7 +485,8 @@ mod tests {
             .unwrap();
 
         let read_member = zosmf
-            .read_dataset("SYS1.PARMLIB")
+            .datasets()
+            .read("SYS1.PARMLIB")
             .member("SMFPRM00")
             .get_request()
             .unwrap();
@@ -508,7 +509,8 @@ mod tests {
             .unwrap();
 
         let read_dataset = zosmf
-            .read_dataset("JIAHJ.REST.SRVMP")
+            .datasets()
+            .read("JIAHJ.REST.SRVMP")
             .get_request()
             .unwrap();
 

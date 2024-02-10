@@ -139,7 +139,8 @@ mod tests {
             .unwrap();
 
         let job_list = zosmf
-            .list_jobs()
+            .jobs()
+            .list()
             .owner("IBMUSER")
             .prefix("TESTJOB*")
             .exec_data()

@@ -77,7 +77,8 @@ mod tests {
             .unwrap();
 
         let delete_dataset = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.DATASET")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.DATASET")
             .get_request()
             .unwrap();
 
@@ -99,7 +100,8 @@ mod tests {
             .unwrap();
 
         let delete_uncataloged = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.DATASET2")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.DATASET2")
             .volume("ZMF046")
             .get_request()
             .unwrap();
@@ -122,7 +124,8 @@ mod tests {
             .unwrap();
 
         let delete_member = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.PDS")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.PDS")
             .member("MEMBER01")
             .get_request()
             .unwrap();
@@ -147,7 +150,8 @@ mod tests {
             .unwrap();
 
         let delete_uncataloged_member = zosmf
-            .delete_dataset("JIAHJ.REST.TEST.PDS.UNCAT")
+            .datasets()
+            .delete("JIAHJ.REST.TEST.PDS.UNCAT")
             .member("MEMBER01")
             .volume("ZMF046")
             .get_request()

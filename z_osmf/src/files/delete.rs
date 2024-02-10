@@ -69,7 +69,8 @@ mod tests {
             .unwrap();
 
         let delete_file = zosmf
-            .delete_file("/u/jiahj/text.txt")
+            .files()
+            .delete("/u/jiahj/text.txt")
             .get_request()
             .unwrap();
 
@@ -90,7 +91,11 @@ mod tests {
             .build()
             .unwrap();
 
-        let delete_file = zosmf.delete_file("/u/jiahj/testDir").get_request().unwrap();
+        let delete_file = zosmf
+            .files()
+            .delete("/u/jiahj/testDir")
+            .get_request()
+            .unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),

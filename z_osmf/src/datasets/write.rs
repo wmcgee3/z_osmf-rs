@@ -204,7 +204,8 @@ mod tests {
             .unwrap();
 
         let write_dataset = zosmf
-            .write_dataset("SYS1.PARMLIB")
+            .datasets()
+            .write("SYS1.PARMLIB")
             .member("SMFPRM00")
             .if_match("B5C6454F783590AA8EC15BD88E29EA63")
             .text(string_data)

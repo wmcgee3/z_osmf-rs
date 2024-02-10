@@ -10,7 +10,9 @@ async fn main() -> anyhow::Result<()> {
 
     let username = std::env::var("ZOSMF_USERNAME")?;
 
-    let dataset_list = zosmf.list_datasets(&username).build().await?;
+    let datasets_client = zosmf.datasets();
+
+    let dataset_list = datasets_client.list(&username).build().await?;
 
     let dataset_names: Vec<&str> = dataset_list.items().iter().map(|d| d.name()).collect();
     println!("Datasets:\n{}\n", dataset_names.join("\n"));
@@ -25,8 +27,8 @@ async fn main() -> anyhow::Result<()> {
 
     println!("Randomly selected dataset: {}\n", random_dataset_name);
 
-    let random_dataset_list = zosmf
-        .list_datasets(random_dataset_name)
+    let random_dataset_list = datasets_client
+        .list(random_dataset_name)
         .attributes_base()
         .max_items(1)
         .build()
@@ -38,10 +40,7 @@ async fn main() -> anyhow::Result<()> {
 
     match random_dataset_attributes.organization() {
         Some(dsorg) if dsorg.starts_with("PO") => {
-            let member_list = zosmf
-                .list_dataset_members(random_dataset_name)
-                .build()
-                .await?;
+            let member_list = datasets_client.members(random_dataset_name).build().await?;
             let member_names: Vec<&str> = member_list.items().iter().map(|m| m.name()).collect();
 
             println!(
@@ -50,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
             );
         }
         Some(_) => {
-            let dataset_read = zosmf.read_dataset(random_dataset_name).build().await?;
+            let dataset_read = datasets_client.read(random_dataset_name).build().await?;
 
             println!("Sequential dataset contents: \n{}\n", dataset_read.data());
         }

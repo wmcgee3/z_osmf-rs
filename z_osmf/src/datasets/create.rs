@@ -190,7 +190,8 @@ mod tests {
             .unwrap();
 
         let create_dataset = zosmf
-            .create_dataset("test.dataset")
+            .datasets()
+            .create("test.dataset")
             .volume("zmf046")
             .device_type("3390")
             .organization("PS")
@@ -242,7 +243,8 @@ mod tests {
             .unwrap();
 
         let create_dataset = zosmf
-            .create_dataset("JIAHJ.REST.TEST.NEWDS02")
+            .datasets()
+            .create("JIAHJ.REST.TEST.NEWDS02")
             .volume("zmf046")
             .device_type("3390")
             .organization("PO")
@@ -296,7 +298,8 @@ mod tests {
             .unwrap();
 
         let create_pdse = zosmf
-            .create_dataset("JIAHJ.REST.TEST.NEWDS02")
+            .datasets()
+            .create("JIAHJ.REST.TEST.NEWDS02")
             .volume("zmf046")
             .device_type("3390")
             .organization("PO")

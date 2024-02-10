@@ -195,7 +195,7 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
 
-        let job_feedback = zosmf.cancel_job(identifier).get_request().unwrap();
+        let job_feedback = zosmf.jobs().cancel(identifier).get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),
@@ -226,7 +226,8 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf
-            .change_job_class(identifier, 'A')
+            .jobs()
+            .change_class(identifier, 'A')
             .get_request()
             .unwrap();
 
@@ -258,7 +259,7 @@ mod tests {
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
-        let job_feedback = zosmf.hold_job(identifier).get_request().unwrap();
+        let job_feedback = zosmf.jobs().hold(identifier).get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),
@@ -288,7 +289,7 @@ mod tests {
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
-        let job_feedback = zosmf.release_job(identifier).get_request().unwrap();
+        let job_feedback = zosmf.jobs().release(identifier).get_request().unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),

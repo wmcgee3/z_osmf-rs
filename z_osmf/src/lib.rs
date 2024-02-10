@@ -22,6 +22,13 @@ pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
+#[cfg(feature = "datasets")]
+use datasets::DatasetsClient;
+#[cfg(feature = "files")]
+use files::FilesClient;
+#[cfg(feature = "jobs")]
+use jobs::JobsClient;
+
 mod convert;
 mod utils;
 
@@ -45,10 +52,10 @@ use self::error::{CheckStatus, Error};
 /// let zosmf = ZOsmf::new(client, base_url)?;
 /// zosmf.login(username, "PASSWORD").await?;
 ///
-/// let my_datasets = zosmf.list_datasets(username).build().await?;
+/// let my_datasets = zosmf.datasets().list(username).build().await?;
 ///
 /// for dataset in my_datasets.items().iter() {
-///     println!("{:?}", dataset);
+///     println!("{:#?}", dataset);
 /// }
 /// # Ok(())
 /// # }
@@ -171,6 +178,18 @@ impl ZOsmf {
         }
 
         Ok(())
+    }
+
+    pub fn datasets(&self) -> DatasetsClient {
+        DatasetsClient::new(&self.core)
+    }
+
+    pub fn files(&self) -> FilesClient {
+        FilesClient::new(&self.core)
+    }
+
+    pub fn jobs(&self) -> JobsClient {
+        JobsClient::new(&self.core)
     }
 }
 

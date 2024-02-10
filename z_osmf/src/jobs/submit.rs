@@ -213,7 +213,8 @@ mod tests {
             .unwrap();
 
         let job_data = zosmf
-            .submit_job(JclSource::Jcl(JclData::Text(jcl.into())))
+            .jobs()
+            .submit(JclSource::Jcl(JclData::Text(jcl.into())))
             .message_class('A')
             .record_format(RecordFormat::Fixed)
             .record_length(80)

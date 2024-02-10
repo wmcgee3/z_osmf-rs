@@ -238,7 +238,8 @@ mod tests {
             .unwrap();
 
         let list_members = zosmf
-            .list_dataset_members("SYS1.PROCLIB")
+            .datasets()
+            .members("SYS1.PROCLIB")
             .get_request()
             .unwrap();
 
@@ -261,7 +262,8 @@ mod tests {
             .unwrap();
 
         let list_members_base = zosmf
-            .list_dataset_members("SYS1.PROCLIB")
+            .datasets()
+            .members("SYS1.PROCLIB")
             .attributes_base()
             .get_request()
             .unwrap();

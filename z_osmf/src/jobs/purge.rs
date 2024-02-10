@@ -84,7 +84,8 @@ mod tests {
 
         let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
         let job_feedback = zosmf
-            .cancel_and_purge_job(identifier)
+            .jobs()
+            .cancel_and_purge(identifier)
             .get_request()
             .unwrap();
 

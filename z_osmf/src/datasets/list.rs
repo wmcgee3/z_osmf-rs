@@ -307,7 +307,8 @@ mod tests {
             .unwrap();
 
         let list_datasets = zosmf
-            .list_datasets("IBMUSER.CONFIG.*")
+            .datasets()
+            .list("IBMUSER.CONFIG.*")
             .get_request()
             .unwrap();
 
@@ -331,7 +332,8 @@ mod tests {
             .unwrap();
 
         let list_datasets_base = zosmf
-            .list_datasets("**")
+            .datasets()
+            .list("**")
             .volume("PEVTS2")
             .attributes_base()
             .get_request()

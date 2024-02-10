@@ -96,7 +96,7 @@ mod tests {
             .unwrap();
 
         let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
-        let job_files = zosmf.list_job_files(identifier).get_request().unwrap();
+        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
     }

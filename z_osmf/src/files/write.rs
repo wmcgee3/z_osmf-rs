@@ -137,7 +137,8 @@ mod tests {
             .unwrap();
 
         let write_file = zosmf
-            .write_file("/etc/inetd.conf")
+            .files()
+            .write("/etc/inetd.conf")
             .text(text_data)
             .get_request()
             .unwrap();
