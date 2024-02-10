@@ -6,6 +6,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 use crate::utils::get_transaction_id;
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CopyFileToDataset {
@@ -26,8 +27,7 @@ pub struct CopyFileToDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
     from_path: Box<str>,

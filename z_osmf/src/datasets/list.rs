@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use reqwest::{Client, RequestBuilder};
+use reqwest::RequestBuilder;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -11,6 +11,7 @@ use crate::utils::{
     de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
     ser_optional_yes_no, ser_yes_no,
 };
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetList<T> {
@@ -171,8 +172,7 @@ pub struct DatasetListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(query = "dslevel")]
     name_pattern: Box<str>,
@@ -197,8 +197,7 @@ where
 {
     pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetBase>> {
         DatasetListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
@@ -211,8 +210,7 @@ where
 
     pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetName>> {
         DatasetListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
@@ -225,8 +223,7 @@ where
 
     pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVolume>> {
         DatasetListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
             start: self.start,
@@ -302,6 +299,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds")
             .query(&[("dslevel", "IBMUSER.CONFIG.*")])
@@ -324,6 +322,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds")
             .query(&[("dslevel", "**"), ("volser", "PEVTS2")])

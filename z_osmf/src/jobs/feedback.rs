@@ -6,6 +6,7 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::error::Error;
+use crate::ClientCore;
 
 use super::{AsynchronousResponse, JobIdentifier};
 
@@ -41,8 +42,7 @@ where
     T: TryFromResponse,
     U: Clone + FeedbackJson + Serialize,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -64,8 +64,7 @@ where
 {
     pub fn asynchronous(self) -> JobFeedbackBuilder<AsynchronousResponse, U> {
         JobFeedbackBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             data: self.data,
@@ -187,6 +186,7 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
 
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOB2/JOB00084")
             .json(&json)
@@ -217,6 +217,7 @@ mod tests {
         "#;
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
             .json(&json)
@@ -249,6 +250,7 @@ mod tests {
         "#;
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
             .json(&json)
@@ -278,6 +280,7 @@ mod tests {
         "#;
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
             .json(&json)

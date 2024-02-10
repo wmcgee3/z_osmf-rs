@@ -8,6 +8,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::get_transaction_id;
+use crate::ClientCore;
 
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -35,8 +36,7 @@ pub struct FileCreateBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     path: Box<str>,
@@ -97,6 +97,7 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
 
         let manual_request = zosmf
+            .core
             .client
             .post("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
             .json(&json)
@@ -131,6 +132,7 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
 
         let manual_request = zosmf
+            .core
             .client
             .post("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
             .json(&json)

@@ -35,12 +35,7 @@ impl ZOsmf {
         from_dataset: &str,
         to_dataset: &str,
     ) -> DatasetCopyBuilder<DatasetCopy> {
-        DatasetCopyBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            from_dataset,
-            to_dataset,
-        )
+        DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     pub fn copy_file_to_dataset(
@@ -48,12 +43,7 @@ impl ZOsmf {
         from_path: &str,
         to_dataset: &str,
     ) -> CopyFileToDatasetBuilder<CopyFileToDataset> {
-        CopyFileToDatasetBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            from_path,
-            to_dataset,
-        )
+        CopyFileToDatasetBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
     /// # Examples
@@ -124,7 +114,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn create_dataset(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
-        DatasetCreateBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+        DatasetCreateBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -177,7 +167,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn delete_dataset(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
-        DatasetDeleteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+        DatasetDeleteBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -208,7 +198,7 @@ impl ZOsmf {
         &self,
         dataset_name: &str,
     ) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
-        DatasetMemberListBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+        DatasetMemberListBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -240,11 +230,11 @@ impl ZOsmf {
         &self,
         name_pattern: &str,
     ) -> DatasetListBuilder<DatasetList<DatasetName>> {
-        DatasetListBuilder::new(self.base_url.clone(), self.client.clone(), name_pattern)
+        DatasetListBuilder::new(self.core.clone(), name_pattern)
     }
 
     pub fn migrate_dataset(&self, name: &str) -> DatasetMigrateBuilder<DatasetMigrate> {
-        DatasetMigrateBuilder::new(self.base_url.clone(), self.client.clone(), name)
+        DatasetMigrateBuilder::new(self.core.clone(), name)
     }
 
     /// # Examples
@@ -272,11 +262,11 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn read_dataset(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
-        DatasetReadBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+        DatasetReadBuilder::new(self.core.clone(), dataset_name)
     }
 
     pub fn recall_dataset(&self, name: &str) -> DatasetRecallBuilder<DatasetRecall> {
-        DatasetRecallBuilder::new(self.base_url.clone(), self.client.clone(), name)
+        DatasetRecallBuilder::new(self.core.clone(), name)
     }
 
     /// # Examples
@@ -296,12 +286,7 @@ impl ZOsmf {
         from_dataset: &str,
         to_dataset: &str,
     ) -> DatasetRenameBuilder<DatasetRename> {
-        DatasetRenameBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            from_dataset,
-            to_dataset,
-        )
+        DatasetRenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// # Examples
@@ -321,7 +306,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn write_dataset(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
-        DatasetWriteBuilder::new(self.base_url.clone(), self.client.clone(), dataset_name)
+        DatasetWriteBuilder::new(self.core.clone(), dataset_name)
     }
 }
 

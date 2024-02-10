@@ -7,6 +7,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::get_transaction_id;
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct FileList {
@@ -65,8 +66,7 @@ pub struct FileListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(query = "path")]
     path: Box<str>,
@@ -183,6 +183,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/fs")
             .query(&[("path", "/usr")])
@@ -199,6 +200,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/fs")
             .query(&[("path", "/u/ibmuser/myFile.txt")])
@@ -218,6 +220,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/fs")
             .query(&[("path", "/usr/include"), ("name", "f*.h")])

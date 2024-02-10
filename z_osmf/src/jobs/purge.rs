@@ -4,6 +4,7 @@ use std::sync::Arc;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::ClientCore;
 
 use super::{AsynchronousResponse, JobIdentifier};
 
@@ -13,8 +14,7 @@ pub struct JobPurgeBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -33,8 +33,7 @@ where
 {
     pub fn asynchronous(self) -> JobPurgeBuilder<AsynchronousResponse> {
         JobPurgeBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             asynchronous: true,
@@ -76,6 +75,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .delete("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00085")
             .header("X-IBM-Job-Modify-Version", "2.0")

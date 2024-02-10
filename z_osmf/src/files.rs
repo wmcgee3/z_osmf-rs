@@ -44,7 +44,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn create_file(&self, path: &str) -> FileCreateBuilder<FileCreate> {
-        FileCreateBuilder::new(self.base_url.clone(), self.client.clone(), path)
+        FileCreateBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -71,7 +71,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn delete_file(&self, path: &str) -> FileDeleteBuilder<FileDelete> {
-        FileDeleteBuilder::new(self.base_url.clone(), self.client.clone(), path)
+        FileDeleteBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -110,7 +110,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn list_files(&self, path: &str) -> FileListBuilder<FileList> {
-        FileListBuilder::new(self.base_url.clone(), self.client.clone(), path)
+        FileListBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -126,7 +126,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn read_file(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
-        FileReadBuilder::new(self.base_url.clone(), self.client.clone(), path)
+        FileReadBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -144,7 +144,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn write_file(&self, path: &str) -> FileWriteBuilder<FileWrite> {
-        FileWriteBuilder::new(self.base_url.clone(), self.client.clone(), path)
+        FileWriteBuilder::new(self.core.clone(), path)
     }
 }
 

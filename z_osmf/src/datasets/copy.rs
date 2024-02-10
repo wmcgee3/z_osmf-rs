@@ -6,6 +6,7 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::utils::get_transaction_id;
+use crate::ClientCore;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CopyEnqueue {
@@ -36,8 +37,7 @@ pub struct DatasetCopyBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
     from_dataset: Box<str>,

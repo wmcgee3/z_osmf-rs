@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum JclSource {
@@ -52,8 +53,7 @@ pub struct JobSubmitBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -201,6 +201,7 @@ mod tests {
         "#;
 
         let manual_request = zosmf
+            .core
             .client
             .put("https://test.com/zosmf/restjobs/jobs")
             .header("X-IBM-Intrdr-Class", "A")

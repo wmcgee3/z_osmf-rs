@@ -9,6 +9,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
 use super::FileDataType;
 
@@ -114,8 +115,7 @@ pub struct FileReadBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     path: Box<str>,
@@ -145,8 +145,7 @@ where
 {
     pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
@@ -161,8 +160,7 @@ where
 
     pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
@@ -180,8 +178,7 @@ where
         E: Into<Box<str>>,
     {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
@@ -201,8 +198,7 @@ where
 {
     pub fn binary(self) -> FileReadBuilder<FileRead<Option<Bytes>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
@@ -217,8 +213,7 @@ where
 
     pub fn text(self) -> FileReadBuilder<FileRead<Option<Box<str>>>> {
         FileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             path: self.path,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
@@ -307,6 +302,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
             .build()

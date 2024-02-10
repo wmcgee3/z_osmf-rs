@@ -5,6 +5,7 @@ use serde::Serialize;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::ClientCore;
 
 use super::Enqueue;
 
@@ -22,8 +23,7 @@ pub struct DatasetRenameBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(skip_setter, builder_fn = build_body)]
     from_dataset: Box<str>,

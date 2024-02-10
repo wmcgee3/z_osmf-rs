@@ -42,12 +42,7 @@ impl ZOsmf {
         &self,
         identifier: JobIdentifier,
     ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("cancel"),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, RequestJson::new("cancel"))
     }
 
     /// # Examples
@@ -66,7 +61,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn cancel_and_purge_job(&self, identifier: JobIdentifier) -> JobPurgeBuilder<JobFeedback> {
-        JobPurgeBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+        JobPurgeBuilder::new(self.core.clone(), identifier)
     }
 
     /// # Examples
@@ -92,12 +87,7 @@ impl ZOsmf {
     where
         C: Into<char>,
     {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            ClassJson::new(class),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, ClassJson::new(class))
     }
 
     /// # Examples
@@ -119,12 +109,7 @@ impl ZOsmf {
         &self,
         identifier: JobIdentifier,
     ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("hold"),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, RequestJson::new("hold"))
     }
 
     /// # Examples
@@ -144,7 +129,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn job_status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobData> {
-        JobStatusBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+        JobStatusBuilder::new(self.core.clone(), identifier)
     }
 
     /// # Examples
@@ -163,7 +148,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn list_job_files(&self, identifier: JobIdentifier) -> JobFileListBuilder<JobFileList> {
-        JobFileListBuilder::new(self.base_url.clone(), self.client.clone(), identifier)
+        JobFileListBuilder::new(self.core.clone(), identifier)
     }
 
     /// # Examples
@@ -182,7 +167,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn list_jobs(&self) -> JobListBuilder<JobList<JobData>> {
-        JobListBuilder::new(self.base_url.clone(), self.client.clone())
+        JobListBuilder::new(self.core.clone())
     }
 
     /// # Examples
@@ -241,7 +226,7 @@ impl ZOsmf {
         identifier: JobIdentifier,
         id: JobFileID,
     ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
-        JobFileReadBuilder::new(self.base_url.clone(), self.client.clone(), identifier, id)
+        JobFileReadBuilder::new(self.core.clone(), identifier, id)
     }
 
     /// # Examples
@@ -263,12 +248,7 @@ impl ZOsmf {
         &self,
         identifier: JobIdentifier,
     ) -> JobFeedbackBuilder<JobFeedback, RequestJson> {
-        JobFeedbackBuilder::new(
-            self.base_url.clone(),
-            self.client.clone(),
-            identifier,
-            RequestJson::new("release"),
-        )
+        JobFeedbackBuilder::new(self.core.clone(), identifier, RequestJson::new("release"))
     }
 
     /// # Examples
@@ -292,7 +272,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub fn submit_job(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
-        JobSubmitBuilder::new(self.base_url.clone(), self.client.clone(), jcl_source)
+        JobSubmitBuilder::new(self.core.clone(), jcl_source)
     }
 }
 

@@ -1,4 +1,5 @@
 pub use crate::utils::RecordRange;
+use crate::ClientCore;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -121,8 +122,7 @@ pub struct DatasetReadBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
@@ -170,8 +170,7 @@ where
 {
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -195,8 +194,7 @@ where
 
     pub fn record(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -220,8 +218,7 @@ where
 
     pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -248,8 +245,7 @@ where
         E: Into<Box<str>>,
     {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
@@ -278,8 +274,7 @@ where
 {
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -303,8 +298,7 @@ where
 
     pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -328,8 +322,7 @@ where
 
     pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
         DatasetReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             search_pattern: self.search_pattern,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
@@ -485,6 +478,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds/SYS1.PARMLIB(SMFPRM00)")
             .build()
@@ -507,6 +501,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds/JIAHJ.REST.SRVMP")
             .build()

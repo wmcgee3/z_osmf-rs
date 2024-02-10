@@ -4,6 +4,7 @@ use std::sync::Arc;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::ClientCore;
 
 use super::{JobData, JobExecData, JobExecStepData, JobIdentifier, JobStepData};
 
@@ -13,8 +14,7 @@ pub struct JobStatusBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -34,8 +34,7 @@ where
 impl JobStatusBuilder<JobData> {
     pub fn exec_data(self) -> JobStatusBuilder<JobExecData> {
         JobStatusBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             exec_data: true,
@@ -47,8 +46,7 @@ impl JobStatusBuilder<JobData> {
 
     pub fn step_data(self) -> JobStatusBuilder<JobStepData> {
         JobStatusBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             exec_data: self.exec_data,
@@ -62,8 +60,7 @@ impl JobStatusBuilder<JobData> {
 impl JobStatusBuilder<JobExecData> {
     pub fn step_data(self) -> JobStatusBuilder<JobExecStepData> {
         JobStatusBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             exec_data: self.exec_data,
@@ -77,8 +74,7 @@ impl JobStatusBuilder<JobExecData> {
 impl JobStatusBuilder<JobStepData> {
     pub fn exec_data(self) -> JobStatusBuilder<JobExecStepData> {
         JobStatusBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             exec_data: true,
@@ -137,6 +133,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restjobs/jobs/BLSJPRMI/STC00052")
             .query(&[("exec-data", "Y")])

@@ -25,6 +25,10 @@ pub mod jobs;
 mod convert;
 mod utils;
 
+use std::sync::{Arc, RwLock};
+
+use reqwest::header::HeaderValue;
+
 use self::error::{CheckStatus, Error};
 
 /// # ZOsmf
@@ -34,11 +38,11 @@ use self::error::{CheckStatus, Error};
 /// ```
 /// # async fn example() -> anyhow::Result<()> {
 /// # use z_osmf::ZOsmf;
-/// let client_builder = reqwest::ClientBuilder::new();
+/// let client = reqwest::Client::new();
 /// let base_url = "https://zosmf.mainframe.my-company.com";
 /// let username = "USERNAME";
 ///
-/// let zosmf = ZOsmf::new(client_builder, base_url)?;
+/// let zosmf = ZOsmf::new(client, base_url)?;
 /// zosmf.login(username, "PASSWORD").await?;
 ///
 /// let my_datasets = zosmf.list_datasets(username).build().await?;
@@ -51,8 +55,7 @@ use self::error::{CheckStatus, Error};
 /// ```
 #[derive(Clone, Debug)]
 pub struct ZOsmf {
-    base_url: Box<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 }
 
 impl ZOsmf {
@@ -62,21 +65,25 @@ impl ZOsmf {
     /// ```
     /// # async fn example() -> anyhow::Result<()> {
     /// # use z_osmf::ZOsmf;
-    /// let client_builder = reqwest::ClientBuilder::new();
+    /// let client = reqwest::Client::new();
     /// let base_url = "https://zosmf.mainframe.my-company.com";
     ///
-    /// let zosmf = ZOsmf::new(client_builder, base_url)?;
+    /// let zosmf = ZOsmf::new(client, base_url)?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new<B>(client_builder: reqwest::ClientBuilder, base_url: B) -> Result<Self, Error>
+    pub fn new<B>(client: reqwest::Client, base_url: B) -> Result<Self, Error>
     where
         B: std::fmt::Display,
     {
         let base_url = format!("{}", base_url).trim_end_matches('/').into();
-        let client = client_builder.cookie_store(true).build()?;
+        let core = Arc::new(ClientCore {
+            base_url,
+            client,
+            cookie: RwLock::new(None),
+        });
 
-        Ok(ZOsmf { base_url, client })
+        Ok(ZOsmf { core })
     }
 
     /// Authenticate with z/OSMF.
@@ -93,13 +100,35 @@ impl ZOsmf {
         U: std::fmt::Display,
         P: std::fmt::Display,
     {
-        self.client
-            .post(format!("{}/zosmf/services/authenticate", self.base_url))
+        let response = self
+            .core
+            .client
+            .post(format!(
+                "{}/zosmf/services/authenticate",
+                self.core.base_url
+            ))
             .basic_auth(username, Some(password))
             .send()
             .await?
             .check_status()
             .await?;
+
+        match self.core.cookie.write() {
+            Ok(mut cookie) => {
+                *cookie = Some(
+                    response
+                        .headers()
+                        .get("Set-Cookie")
+                        .ok_or(Error::Custom("failed to get authentication token".into()))?
+                        .clone(),
+                );
+            }
+            Err(_) => {
+                return Err(Error::Custom(
+                    "failed to retrieve authentication header".into(),
+                ))
+            }
+        }
 
         Ok(())
     }
@@ -119,15 +148,37 @@ impl ZOsmf {
     /// # }
     /// ```
     pub async fn logout(&self) -> Result<(), Error> {
-        self.client
-            .delete(format!("{}/zosmf/services/authenticate", self.base_url))
+        self.core
+            .client
+            .delete(format!(
+                "{}/zosmf/services/authenticate",
+                self.core.base_url
+            ))
             .send()
             .await?
             .check_status()
             .await?;
 
+        match self.core.cookie.write() {
+            Ok(mut cookie) => {
+                *cookie = None;
+            }
+            Err(_) => {
+                return Err(Error::Custom(
+                    "failed to retrieve authentication header".into(),
+                ))
+            }
+        }
+
         Ok(())
     }
+}
+
+#[derive(Debug)]
+struct ClientCore {
+    base_url: Box<str>,
+    client: reqwest::Client,
+    cookie: RwLock<Option<HeaderValue>>,
 }
 
 #[cfg(test)]
@@ -135,7 +186,7 @@ mod tests {
     use super::*;
 
     pub(crate) fn get_zosmf() -> ZOsmf {
-        ZOsmf::new(reqwest::Client::builder(), "https://test.com").unwrap()
+        ZOsmf::new(reqwest::Client::new(), "https://test.com").unwrap()
     }
 
     pub(crate) trait GetJson {

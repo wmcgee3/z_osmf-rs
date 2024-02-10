@@ -1,4 +1,5 @@
 pub use crate::utils::RecordRange;
+use crate::ClientCore;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -65,8 +66,7 @@ pub struct JobFileReadBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -99,8 +99,7 @@ where
 {
     pub fn binary(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
         JobFileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             id: self.id,
@@ -117,8 +116,7 @@ where
 
     pub fn record(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
         JobFileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             id: self.id,
@@ -135,8 +133,7 @@ where
 
     pub fn text(self) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
         JobFileReadBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
             id: self.id,
@@ -196,6 +193,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00023/files/1/records")
             .build()
@@ -216,6 +214,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00023/files/8/records")
             .header("X-IBM-Record-Range", "0-249")
@@ -238,6 +237,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restjobs/jobs/TESTJOBJ/JOB00060/files/JCL/records")
             .build()

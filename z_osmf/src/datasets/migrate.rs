@@ -6,6 +6,7 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct DatasetMigrate {
@@ -31,8 +32,7 @@ pub struct DatasetMigrateBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     name: Box<str>,

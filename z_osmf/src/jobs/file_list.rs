@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
+use crate::ClientCore;
 
 use super::JobIdentifier;
 
@@ -57,8 +58,7 @@ pub struct JobFileListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
@@ -89,6 +89,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restjobs/jobs/TESTJOB1/JOB00023/files")
             .build()

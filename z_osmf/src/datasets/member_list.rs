@@ -7,6 +7,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{de_optional_y_n, ser_optional_y_n};
+use crate::ClientCore;
 
 use super::MigratedRecall;
 
@@ -111,8 +112,7 @@ pub struct DatasetMemberListBuilder<T>
 where
     T: TryFromResponse,
 {
-    base_url: Arc<str>,
-    client: reqwest::Client,
+    core: Arc<ClientCore>,
 
     #[endpoint(path)]
     dataset_name: Box<str>,
@@ -139,8 +139,7 @@ where
 {
     pub fn attributes_base(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberBase>> {
         DatasetMemberListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             dataset_name: self.dataset_name,
             start: self.start,
             pattern: self.pattern,
@@ -154,8 +153,7 @@ where
 
     pub fn attributes_member(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
         DatasetMemberListBuilder {
-            base_url: self.base_url,
-            client: self.client,
+            core: self.core,
             dataset_name: self.dataset_name,
             start: self.start,
             pattern: self.pattern,
@@ -233,6 +231,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
             .build()
@@ -254,6 +253,7 @@ mod tests {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
+            .core
             .client
             .get("https://test.com/zosmf/restfiles/ds/SYS1.PROCLIB/member")
             .header("X-IBM-Attributes", "base")
