@@ -35,8 +35,8 @@ details: {details:#?}
         message: Box<str>,
         details: Option<Box<[Box<str>]>>,
     },
-    #[error("an error ocurred {0}")]
-    Custom(String),
+    #[error("an error ocurred: {0}")]
+    Custom(Box<str>),
 }
 
 pub trait CheckStatus {
