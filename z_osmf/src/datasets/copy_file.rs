@@ -5,13 +5,18 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::utils::get_transaction_id;
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct CopyFileToDataset {}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CopyFileToDataset {
+    transaction_id: Box<str>,
+}
 
 impl TryFromResponse for CopyFileToDataset {
-    async fn try_from_response(_value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        Ok(CopyFileToDataset {})
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(CopyFileToDataset { transaction_id })
     }
 }
 
@@ -28,11 +33,11 @@ where
     from_path: Box<str>,
     #[endpoint(optional, skip_builder)]
     file_type: Option<CopyFileType>,
-    #[endpoint(optional, path)]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
     #[endpoint(path)]
     to_dataset: Box<str>,
-    #[endpoint(optional, path)]
+    #[endpoint(optional, path, setter_fn = set_to_member)]
     to_member: Box<str>,
     #[endpoint(optional, skip_builder)]
     replace: Option<bool>,
@@ -50,6 +55,7 @@ pub enum CopyFileType {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "kebab-case")]
 struct RequestJson<'a> {
     request: &'a str,
     from_file: FromFile<'a>,
@@ -78,4 +84,28 @@ where
         },
         replace: builder.replace,
     })
+}
+
+fn set_to_member<T>(
+    mut builder: CopyFileToDatasetBuilder<T>,
+    value: Box<str>,
+) -> CopyFileToDatasetBuilder<T>
+where
+    T: TryFromResponse,
+{
+    builder.to_member = format!("({})", value).into();
+
+    builder
+}
+
+fn set_volume<T>(
+    mut builder: CopyFileToDatasetBuilder<T>,
+    value: Box<str>,
+) -> CopyFileToDatasetBuilder<T>
+where
+    T: TryFromResponse,
+{
+    builder.volume = format!("-({})/", value).into();
+
+    builder
 }

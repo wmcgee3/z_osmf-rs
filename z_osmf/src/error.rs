@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use thiserror::Error;
-use z_osmf_macros::Getters;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -16,11 +15,25 @@ pub enum Error {
     Serialization(#[from] std::fmt::Error),
     #[error("failed to convert to string")]
     ToString(#[from] reqwest::header::ToStrError),
-    #[error("")]
+    #[error(
+        "error response from z/OSMF:
+{url}
+{status}
+category: {category}
+return code: {return_code}
+reason: {reason}
+message: {message}
+details: {details:#?}
+"
+    )]
     Zosmf {
         url: Box<reqwest::Url>,
         status: reqwest::StatusCode,
-        json: Box<ErrorJson>,
+        category: i32,
+        return_code: i32,
+        reason: i32,
+        message: Box<str>,
+        details: Option<Box<[Box<str>]>>,
     },
     #[error("an error ocurred {0}")]
     Custom(String),
@@ -39,9 +52,23 @@ impl CheckStatus for reqwest::Response {
             Err(err) => {
                 let url = self.url().clone().into();
                 let status = self.status();
-                let json = self.json().await.map_err(|_| Error::Api(err))?;
+                let ErrorJson {
+                    category,
+                    return_code,
+                    reason,
+                    message,
+                    details,
+                } = self.json().await.map_err(|_| Error::Api(err))?;
 
-                return Err(Error::Zosmf { url, status, json });
+                return Err(Error::Zosmf {
+                    url,
+                    status,
+                    category,
+                    return_code,
+                    reason,
+                    message,
+                    details,
+                });
             }
         }
 
@@ -49,14 +76,11 @@ impl CheckStatus for reqwest::Response {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct ErrorJson {
-    #[getter(copy)]
+#[derive(Deserialize)]
+struct ErrorJson {
     category: i32,
-    #[getter(copy)]
     #[serde(rename = "rc")]
     return_code: i32,
-    #[getter(copy)]
     reason: i32,
     message: Box<str>,
     #[serde(default)]

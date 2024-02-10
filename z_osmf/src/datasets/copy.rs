@@ -2,9 +2,10 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
+use crate::utils::get_transaction_id;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CopyEnqueue {
@@ -16,12 +17,16 @@ pub enum CopyEnqueue {
     Exclusive,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct DatasetCopy {}
+#[derive(Clone, Debug, Getters, Deserialize, Serialize)]
+pub struct DatasetCopy {
+    transaction_id: Box<str>,
+}
 
 impl TryFromResponse for DatasetCopy {
-    async fn try_from_response(_value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        Ok(DatasetCopy {})
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(DatasetCopy { transaction_id })
     }
 }
 
@@ -38,11 +43,11 @@ where
     from_dataset: Box<str>,
     #[endpoint(optional, skip_builder)]
     from_member: Option<Box<str>>,
-    #[endpoint(optional, path)]
+    #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
     #[endpoint(path)]
     to_dataset: Box<str>,
-    #[endpoint(optional, path)]
+    #[endpoint(optional, path, setter_fn = set_to_member)]
     to_member: Box<str>,
     #[endpoint(optional, skip_builder)]
     alias: Option<bool>,
@@ -91,4 +96,22 @@ where
         enq: builder.enqueue,
         replace: builder.replace,
     })
+}
+
+fn set_to_member<T>(mut builder: DatasetCopyBuilder<T>, value: Box<str>) -> DatasetCopyBuilder<T>
+where
+    T: TryFromResponse,
+{
+    builder.to_member = format!("({})", value).into();
+
+    builder
+}
+
+fn set_volume<T>(mut builder: DatasetCopyBuilder<T>, value: Box<str>) -> DatasetCopyBuilder<T>
+where
+    T: TryFromResponse,
+{
+    builder.volume = format!("-({})/", value).into();
+
+    builder
 }
