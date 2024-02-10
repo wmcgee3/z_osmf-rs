@@ -180,14 +180,44 @@ impl ZOsmf {
         Ok(())
     }
 
+    /// Create a sub-client for interacting with datasets.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let datasets_client = zosmf.datasets();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "datasets")]
     pub fn datasets(&self) -> DatasetsClient {
         DatasetsClient::new(&self.core)
     }
 
+    /// Create a sub-client for interacting with files.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let files_client = zosmf.files();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "files")]
     pub fn files(&self) -> FilesClient {
         FilesClient::new(&self.core)
     }
 
+    /// Create a sub-client for interacting with jobs.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let jobs_client = zosmf.jobs();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "jobs")]
     pub fn jobs(&self) -> JobsClient {
         JobsClient::new(&self.core)
     }
