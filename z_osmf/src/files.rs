@@ -2,6 +2,7 @@ pub mod create;
 pub mod delete;
 pub mod list;
 pub mod read;
+pub mod rename;
 pub mod write;
 
 use std::sync::Arc;
@@ -12,6 +13,7 @@ use self::create::{FileCreate, FileCreateBuilder};
 use self::delete::{FileDelete, FileDeleteBuilder};
 use self::list::{FileList, FileListBuilder};
 use self::read::{FileRead, FileReadBuilder};
+use self::rename::{FileRename, FileRenameBuilder};
 use self::write::{FileWrite, FileWriteBuilder};
 
 #[derive(Clone, Debug)]
@@ -23,6 +25,26 @@ pub struct FilesClient {
 impl FilesClient {
     pub(crate) fn new(core: &Arc<ClientCore>) -> Self {
         FilesClient { core: core.clone() }
+    }
+
+    pub fn chmod(&self) {
+        todo!()
+    }
+
+    pub fn chown(&self) {
+        todo!()
+    }
+
+    pub fn chtag(&self) {
+        todo!()
+    }
+
+    pub fn copy(&self) {
+        todo!()
+    }
+
+    pub fn copy_dataset(&self) {
+        todo!()
     }
 
     /// # Examples
@@ -89,6 +111,18 @@ impl FilesClient {
         FileDeleteBuilder::new(self.core.clone(), path)
     }
 
+    pub fn extattr(&self) {
+        todo!()
+    }
+
+    pub fn getfacl(&self) {
+        todo!()
+    }
+
+    pub fn link(&self) {
+        todo!()
+    }
+
     /// # Examples
     ///
     /// List files and directories:
@@ -146,6 +180,44 @@ impl FilesClient {
     /// ```
     pub fn read(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
         FileReadBuilder::new(self.core.clone(), path)
+    }
+
+    /// # Examples
+    ///
+    /// Rename (move) a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_rename = zosmf
+    ///     .files()
+    ///     .rename("/u/jiahj/test.txt", "/u/jiahj/test2.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Rename (move) a file and overwrite the target, if it exists:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_rename = zosmf
+    ///     .files()
+    ///     .rename("/u/jiahj/test.txt", "/u/jiahj/test2.txt")
+    ///     .overwrite(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rename(&self, from_path: &str, to_path: &str) -> FileRenameBuilder<FileRename> {
+        FileRenameBuilder::new(self.core.clone(), from_path, to_path)
+    }
+
+    pub fn setfacl(&self) {
+        todo!()
+    }
+
+    pub fn unlink(&self) {
+        todo!()
     }
 
     /// # Examples
