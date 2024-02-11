@@ -1,19 +1,27 @@
+pub mod copy;
+pub mod copy_dataset;
 pub mod create;
 pub mod delete;
 pub mod list;
 pub mod read;
 pub mod rename;
+pub mod list_tag;
 pub mod write;
 
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 use crate::ClientCore;
 
+use self::copy::{FileCopy, FileCopyBuilder};
+use self::copy_dataset::{FileCopyDataset, FileCopyDatasetBuilder};
 use self::create::{FileCreate, FileCreateBuilder};
 use self::delete::{FileDelete, FileDeleteBuilder};
 use self::list::{FileList, FileListBuilder};
 use self::read::{FileRead, FileReadBuilder};
 use self::rename::{FileRename, FileRenameBuilder};
+use self::list_tag::{FileListTag, FileListTagBuilder};
 use self::write::{FileWrite, FileWriteBuilder};
 
 #[derive(Clone, Debug)]
@@ -39,12 +47,68 @@ impl FilesClient {
         todo!()
     }
 
-    pub fn copy(&self) {
-        todo!()
+    /// # Examples
+    ///
+    /// Copy a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_copy = zosmf
+    ///     .files()
+    ///     .copy("/u/jiahj/test.txt", "/u/jiahj/test2.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Copy a file and overwrite the target, if it exists:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_copy = zosmf
+    ///     .files()
+    ///     .copy("/u/jiahj/test.txt", "/u/jiahj/test2.txt")
+    ///     .overwrite(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn copy(&self, from_path: &str, to_path: &str) -> FileCopyBuilder<FileCopy> {
+        FileCopyBuilder::new(self.core.clone(), from_path, to_path)
     }
 
-    pub fn copy_dataset(&self) {
-        todo!()
+    /// # Examples
+    ///
+    /// Copy a dataset to a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_copy_dataset = zosmf
+    ///     .files()
+    ///     .copy_dataset("MY.SRC.DS", "/u/jiahj/test2.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Copy a PDS member to a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_copy_dataset = zosmf
+    ///     .files()
+    ///     .copy_dataset("MY.SRC.PDS", "/u/jiahj/test2.txt")
+    ///     .from_member("TEST")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn copy_dataset(
+        &self,
+        from_dataset: &str,
+        to_path: &str,
+    ) -> FileCopyDatasetBuilder<FileCopyDataset> {
+        FileCopyDatasetBuilder::new(self.core.clone(), from_dataset, to_path)
     }
 
     /// # Examples
@@ -167,6 +231,36 @@ impl FilesClient {
 
     /// # Examples
     ///
+    /// List the tag of a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_tag = zosmf
+    ///     .files()
+    ///     .list_tag("/u/jiahj/text.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// List the tags of files in a directory:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let list_tag = zosmf
+    ///     .files()
+    ///     .list_tag("/u/jiahj/testDir")
+    ///     .recursive(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list_tag(&self, path: &str) -> FileListTagBuilder<FileListTag> {
+        FileListTagBuilder::new(self.core.clone(), path)
+    }
+
+    /// # Examples
+    ///
     /// Read a file:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
@@ -240,7 +334,8 @@ impl FilesClient {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase", untagged)]
 pub enum FileDataType {
     Binary,
     #[default]
@@ -258,6 +353,15 @@ impl std::fmt::Display for FileDataType {
             }
         )
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FileTagType {
+    Binary,
+    #[default]
+    Mixed,
+    Text,
 }
 
 #[cfg(test)]
