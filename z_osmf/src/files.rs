@@ -276,7 +276,6 @@ impl FilesClient {
         FileReadBuilder::new(self.core.clone(), path)
     }
 
-
     /// # Examples
     ///
     /// Remove the tag on a file:
