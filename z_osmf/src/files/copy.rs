@@ -47,7 +47,7 @@ where
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum FileCopyLinks {
     All,
     #[default]
@@ -57,7 +57,7 @@ pub enum FileCopyLinks {
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum FileCopyPreserve {
     All,
     #[serde(rename = "modtime")]

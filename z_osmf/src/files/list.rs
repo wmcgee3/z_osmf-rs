@@ -107,7 +107,6 @@ pub enum FileSystem {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(untagged)]
 pub enum ListFileType {
     #[serde(rename = "c")]
     CharacterSpecialFile,

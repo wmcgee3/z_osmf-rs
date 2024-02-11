@@ -3,9 +3,11 @@ pub mod copy_dataset;
 pub mod create;
 pub mod delete;
 pub mod list;
-pub mod read;
-pub mod rename;
 pub mod list_tag;
+pub mod read;
+pub mod remove_tag;
+pub mod rename;
+pub mod set_tag;
 pub mod write;
 
 use std::sync::Arc;
@@ -19,9 +21,11 @@ use self::copy_dataset::{FileCopyDataset, FileCopyDatasetBuilder};
 use self::create::{FileCreate, FileCreateBuilder};
 use self::delete::{FileDelete, FileDeleteBuilder};
 use self::list::{FileList, FileListBuilder};
-use self::read::{FileRead, FileReadBuilder};
-use self::rename::{FileRename, FileRenameBuilder};
 use self::list_tag::{FileListTag, FileListTagBuilder};
+use self::read::{FileRead, FileReadBuilder};
+use self::remove_tag::{FileRemoveTag, FileRemoveTagBuilder};
+use self::rename::{FileRename, FileRenameBuilder};
+use self::set_tag::{FileSetTag, FileSetTagBuilder};
 use self::write::{FileWrite, FileWriteBuilder};
 
 #[derive(Clone, Debug)]
@@ -40,10 +44,6 @@ impl FilesClient {
     }
 
     pub fn chown(&self) {
-        todo!()
-    }
-
-    pub fn chtag(&self) {
         todo!()
     }
 
@@ -276,6 +276,39 @@ impl FilesClient {
         FileReadBuilder::new(self.core.clone(), path)
     }
 
+
+    /// # Examples
+    ///
+    /// Remove the tag on a file:
+    /// ```
+    /// # use z_osmf::files::FileTagType;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let remove_tag = zosmf
+    ///     .files()
+    ///     .remove_tag("/u/jiahj/test.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Remove the tag on all files in a directory:
+    /// ```
+    /// # use z_osmf::files::FileTagType;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let remove_tag = zosmf
+    ///     .files()
+    ///     .remove_tag("/u/jiahj/testDir")
+    ///     .recursive(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn remove_tag(&self, path: &str) -> FileRemoveTagBuilder<FileRemoveTag> {
+        FileRemoveTagBuilder::new(self.core.clone(), path)
+    }
+
     /// # Examples
     ///
     /// Rename (move) a file:
@@ -304,6 +337,42 @@ impl FilesClient {
     /// ```
     pub fn rename(&self, from_path: &str, to_path: &str) -> FileRenameBuilder<FileRename> {
         FileRenameBuilder::new(self.core.clone(), from_path, to_path)
+    }
+
+    /// # Examples
+    ///
+    /// Set the tag on a file:
+    /// ```
+    /// # use z_osmf::files::FileTagType;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let set_tag = zosmf
+    ///     .files()
+    ///     .set_tag("/u/jiahj/test.txt")
+    ///     .tag_type(FileTagType::Text)
+    ///     .code_set("IBM-1047")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Set the tag on all files in a directory:
+    /// ```
+    /// # use z_osmf::files::FileTagType;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let set_tag = zosmf
+    ///     .files()
+    ///     .set_tag("/u/jiahj/testDir")
+    ///     .tag_type(FileTagType::Text)
+    ///     .code_set("IBM-1047")
+    ///     .recursive(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_tag(&self, path: &str) -> FileSetTagBuilder<FileSetTag> {
+        FileSetTagBuilder::new(self.core.clone(), path)
     }
 
     pub fn setfacl(&self) {
@@ -335,7 +404,7 @@ impl FilesClient {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum FileDataType {
     Binary,
     #[default]
@@ -353,6 +422,14 @@ impl std::fmt::Display for FileDataType {
             }
         )
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FileTagLinks {
+    #[default]
+    Change,
+    Suppress,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]

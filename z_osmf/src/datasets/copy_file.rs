@@ -47,7 +47,7 @@ where
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum CopyFileType {
     Binary,
     Executable,

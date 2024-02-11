@@ -42,26 +42,6 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
-pub enum FileCopyDatasetLinks {
-    All,
-    #[default]
-    None,
-    #[serde(rename = "src")]
-    Source,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
-pub enum FileCopyDatasetPreserve {
-    All,
-    #[serde(rename = "modtime")]
-    ModificationTime,
-    #[default]
-    None,
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileCopyDatasetType {
