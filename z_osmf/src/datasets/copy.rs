@@ -2,10 +2,9 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -16,19 +15,6 @@ pub enum CopyEnqueue {
     SharedReadWrite,
     #[serde(rename = "EXCLU")]
     Exclusive,
-}
-
-#[derive(Clone, Debug, Getters, Deserialize, Serialize)]
-pub struct DatasetCopy {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for DatasetCopy {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(DatasetCopy { transaction_id })
-    }
 }
 
 #[derive(Clone, Debug, Endpoint)]

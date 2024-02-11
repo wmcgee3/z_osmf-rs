@@ -1,17 +1,15 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{FileTagLinks, FileTagType};
-
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileSetTagBuilder<T>
+pub struct FileChangeOwnerBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -19,12 +17,12 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_body)]
-    tag_type: Option<FileTagType>,
+    #[endpoint(builder_fn = build_body)]
+    owner: Box<str>,
     #[endpoint(optional, skip_builder)]
-    code_set: Option<Box<str>>,
+    group: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    links: Option<FileTagLinks>,
+    links: Option<ChangeOwnerLinks>,
     #[endpoint(optional, skip_builder)]
     recursive: bool,
 
@@ -32,31 +30,36 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ChangeOwnerLinks {
+    Change,
+    #[default]
+    Follow,
+}
+
+#[derive(Serialize)]
 struct RequestJson<'a> {
     request: &'static str,
-    action: &'static str,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    tag_type: Option<FileTagType>,
+    owner: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    codeset: Option<&'a str>,
+    group: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<FileTagLinks>,
+    links: Option<ChangeOwnerLinks>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileSetTagBuilder<T>,
+    builder: &FileChangeOwnerBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     request_builder.json(&RequestJson {
-        request: "chtag",
-        action: "set",
-        tag_type: builder.tag_type,
-        codeset: builder.code_set.as_deref(),
+        request: "chown",
+        owner: &builder.owner,
+        group: builder.group.as_deref(),
         links: builder.links,
         recursive: builder.recursive,
     })

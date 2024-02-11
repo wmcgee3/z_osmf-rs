@@ -22,21 +22,24 @@ pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
-#[cfg(feature = "datasets")]
-use datasets::DatasetsClient;
-#[cfg(feature = "files")]
-use files::FilesClient;
-#[cfg(feature = "jobs")]
-use jobs::JobsClient;
-
 mod convert;
 mod utils;
 
 use std::sync::{Arc, RwLock};
 
 use reqwest::header::HeaderValue;
+use z_osmf_macros::Getters;
 
+use self::convert::TryFromResponse;
 use self::error::{CheckStatus, Error};
+use self::utils::get_transaction_id;
+
+#[cfg(feature = "datasets")]
+use self::datasets::DatasetsClient;
+#[cfg(feature = "files")]
+use self::files::FilesClient;
+#[cfg(feature = "jobs")]
+use self::jobs::JobsClient;
 
 /// # ZOsmf
 ///
@@ -220,6 +223,19 @@ impl ZOsmf {
     #[cfg(feature = "jobs")]
     pub fn jobs(&self) -> JobsClient {
         JobsClient::new(&self.core)
+    }
+}
+
+#[derive(Clone, Debug, Getters)]
+pub struct TransactionId {
+    transaction_id: Box<str>,
+}
+
+impl TryFromResponse for TransactionId {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        Ok(TransactionId { transaction_id })
     }
 }
 

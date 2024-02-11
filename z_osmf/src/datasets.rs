@@ -16,18 +16,18 @@ use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::ClientCore;
+use crate::{ClientCore, TransactionId};
 
-use self::copy::{DatasetCopy, DatasetCopyBuilder};
-use self::copy_file::{CopyFileToDataset, CopyFileToDatasetBuilder};
-use self::create::{DatasetCreate, DatasetCreateBuilder};
-use self::delete::{DatasetDelete, DatasetDeleteBuilder};
+use self::copy::DatasetCopyBuilder;
+use self::copy_file::CopyFileToDatasetBuilder;
+use self::create::DatasetCreateBuilder;
+use self::delete::DatasetDeleteBuilder;
 use self::list::{DatasetList, DatasetListBuilder, DatasetName};
 use self::member_list::{DatasetMemberList, DatasetMemberListBuilder, MemberName};
 use self::migrate::{DatasetMigrate, DatasetMigrateBuilder};
 use self::read::{DatasetRead, DatasetReadBuilder};
-use self::recall::{DatasetRecall, DatasetRecallBuilder};
-use self::rename::{DatasetRename, DatasetRenameBuilder};
+use self::recall::DatasetRecallBuilder;
+use self::rename::DatasetRenameBuilder;
 use self::write::{DatasetWrite, DatasetWriteBuilder};
 
 #[derive(Clone, Debug)]
@@ -68,7 +68,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<DatasetCopy> {
+    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<TransactionId> {
         DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
@@ -102,7 +102,7 @@ impl DatasetsClient {
         &self,
         from_path: &str,
         to_dataset: &str,
-    ) -> CopyFileToDatasetBuilder<CopyFileToDataset> {
+    ) -> CopyFileToDatasetBuilder<TransactionId> {
         CopyFileToDatasetBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
@@ -176,7 +176,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<DatasetCreate> {
+    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<TransactionId> {
         DatasetCreateBuilder::new(self.core.clone(), dataset_name)
     }
 
@@ -233,7 +233,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<DatasetDelete> {
+    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<TransactionId> {
         DatasetDeleteBuilder::new(self.core.clone(), dataset_name)
     }
 
@@ -361,7 +361,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn recall(&self, name: &str) -> DatasetRecallBuilder<DatasetRecall> {
+    pub fn recall(&self, name: &str) -> DatasetRecallBuilder<TransactionId> {
         DatasetRecallBuilder::new(self.core.clone(), name)
     }
 
@@ -382,7 +382,7 @@ impl DatasetsClient {
         &self,
         from_dataset: &str,
         to_dataset: &str,
-    ) -> DatasetRenameBuilder<DatasetRename> {
+    ) -> DatasetRenameBuilder<TransactionId> {
         DatasetRenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
