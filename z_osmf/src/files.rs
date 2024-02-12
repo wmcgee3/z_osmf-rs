@@ -500,7 +500,7 @@ pub enum FileTagLinks {
     Suppress,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileTagType {
     Binary,

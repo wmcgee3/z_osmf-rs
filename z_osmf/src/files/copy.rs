@@ -58,7 +58,9 @@ struct RequestJson<'a> {
     from: &'a str,
     overwrite: bool,
     recursive: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     links: Option<FileCopyLinks>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     preserve: Option<FileCopyPreserve>,
 }
 
@@ -77,4 +79,85 @@ where
         links: builder.links,
         preserve: builder.preserve,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_str, Value};
+
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn maximal_request() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "copy",
+                "from": "/u/jiahj/sourceDir",
+                "overwrite": true,
+                "recursive": true,
+                "links": "src",
+                "preserve": "modtime"
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/targetDir")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .copy("/u/jiahj/sourceDir", "/u/jiahj/targetDir")
+            .overwrite(true)
+            .recursive(true)
+            .links(FileCopyLinks::Source)
+            .preserve(FileCopyPreserve::ModificationTime)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
+
+    #[test]
+    fn minimal_request() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "copy",
+                "from": "/u/jiahj/sourceFile.txt",
+                "overwrite": false,
+                "recursive": false
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/targetFile.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .copy("/u/jiahj/sourceFile.txt", "/u/jiahj/targetFile.txt")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
 }

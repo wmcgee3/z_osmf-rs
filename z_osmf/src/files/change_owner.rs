@@ -64,3 +64,79 @@ where
         recursive: builder.recursive,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn maximal_request() {
+        let zosmf = get_zosmf();
+
+        let json: serde_json::Value = serde_json::from_str(
+            r#"
+        {
+            "request": "chown",
+            "owner": "ibmuser",
+            "group": "ibmgrp",
+            "links": "change",
+            "recursive": true
+        }
+        "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .change_owner("/u/jiahj/testDir", "ibmuser")
+            .group("ibmgrp")
+            .links(ChangeOwnerLinks::Change)
+            .recursive(true)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
+
+    #[test]
+    fn minimal_request() {
+        let zosmf = get_zosmf();
+
+        let json: serde_json::Value = serde_json::from_str(
+            r#"
+        {
+            "request": "chown",
+            "owner": "ibmuser",
+            "recursive": false
+        }
+        "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/test.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .change_owner("/u/jiahj/test.txt", "ibmuser")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
+}

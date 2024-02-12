@@ -52,13 +52,13 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, PartialEq, Serialize)]
 pub struct FileTag {
     #[getter(copy)]
     tag_type: Option<FileTagType>,
     code_set: Option<Box<str>>,
     #[getter(copy)]
-    is_tagged: bool,
+    text_flag: bool,
     path: Box<str>,
 }
 
@@ -77,12 +77,12 @@ impl std::str::FromStr for FileTag {
             "untagged" => None,
             code_set => Some(code_set.into()),
         };
-        let is_tagged = s[14..18].trim_end() == "T=on";
+        let text_flag = s[14..18].trim_end() == "T=on";
 
         Ok(FileTag {
             tag_type,
             code_set,
-            is_tagged,
+            text_flag,
             path: s[20..].into(),
         })
     }
@@ -112,4 +112,91 @@ where
         action: "list",
         recursive: builder.recursive,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_str, Value};
+
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn file_tag_from_str() {
+        assert_eq!(
+            FileTag::from_str("b untagged    T=off /tmp/file").unwrap(),
+            FileTag {
+                tag_type: Some(FileTagType::Binary),
+                code_set: None,
+                text_flag: false,
+                path: "/tmp/file".into(),
+            }
+        );
+
+        assert_eq!(
+            FileTag::from_str("m ISO8859-1   T=off /tmp/file").unwrap(),
+            FileTag {
+                tag_type: Some(FileTagType::Mixed),
+                code_set: Some("ISO8859-1".into()),
+                text_flag: false,
+                path: "/tmp/file".into(),
+            }
+        );
+
+        assert_eq!(
+            FileTag::from_str("t IBM-1047    T=on  /tmp/file").unwrap(),
+            FileTag {
+                tag_type: Some(FileTagType::Text),
+                code_set: Some("IBM-1047".into()),
+                text_flag: true,
+                path: "/tmp/file".into(),
+            }
+        );
+
+        assert_eq!(
+            FileTag::from_str("- untagged    T=off /tmp/file").unwrap(),
+            FileTag {
+                tag_type: None,
+                code_set: None,
+                text_flag: false,
+                path: "/tmp/file".into(),
+            }
+        );
+
+        assert!(FileTag::from_str("some nonsense").is_err());
+    }
+
+    #[test]
+    fn maximal_request() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "chtag",
+                "action": "list",
+                "recursive": true
+            }
+        "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .list_tag("/u/jiahj/testDir")
+            .recursive(true)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
 }

@@ -68,3 +68,81 @@ where
         },
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_str, Value};
+
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn maximal_request() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "copy",
+                "from-dataset": {
+                    "dsn": "MY.TEST.PDS",
+                    "member": "TEST",
+                    "type": "text"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/copyFile.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .copy_dataset("MY.TEST.PDS", "/u/jiahj/copyFile.txt")
+            .from_member("TEST")
+            .dataset_type(FileCopyDatasetType::Text)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request))
+    }
+
+    #[test]
+    fn minimal_request() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "copy",
+                "from-dataset": {
+                    "dsn": "MY.TEST.DS"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/copyFile.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .copy_dataset("MY.TEST.DS", "/u/jiahj/copyFile.txt")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json())
+    }
+}

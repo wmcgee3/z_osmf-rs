@@ -46,3 +46,45 @@ where
         overwrite: builder.overwrite,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_str, Value};
+
+    use crate::tests::*;
+
+    use super::*;
+
+    #[test]
+    fn overwrite() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "move",
+                "from": "/u/jiahj/sourceFile.txt",
+                "overwrite": false
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .rename("/u/jiahj/sourceFile.txt", "/u/jiahj/testFile.txt")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+
+        assert_eq!(manual_request.json(), request.json());
+    }
+}

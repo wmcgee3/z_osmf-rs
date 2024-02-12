@@ -26,10 +26,7 @@ where
     #[endpoint(path)]
     path: Box<str>,
 
-    #[endpoint(optional, skip_setter, builder_fn = build_json)]
-    json: PhantomData<RequestJson<'static>>,
-
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, builder_fn = build_body)]
     file_type: Option<CreateFileType>,
     #[endpoint(optional, skip_builder)]
     mode: Option<Box<str>>,
@@ -46,20 +43,16 @@ struct RequestJson<'a> {
     mode: Option<&'a str>,
 }
 
-fn build_json<T>(
+fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &FileCreateBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileCreateBuilder {
-        file_type, mode, ..
-    } = builder;
-
     request_builder.json(&RequestJson {
-        file_type: file_type.as_ref(),
-        mode: mode.as_deref(),
+        file_type: builder.file_type.as_ref(),
+        mode: builder.mode.as_deref(),
     })
 }
 

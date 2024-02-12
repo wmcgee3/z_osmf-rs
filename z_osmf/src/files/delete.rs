@@ -72,12 +72,14 @@ mod tests {
             .core
             .client
             .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .header("X-IBM-Option", "recursive")
             .build()
             .unwrap();
 
         let delete_file = zosmf
             .files()
             .delete("/u/jiahj/testDir")
+            .recursive(true)
             .get_request()
             .unwrap();
 

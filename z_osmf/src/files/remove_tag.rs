@@ -50,3 +50,47 @@ where
         recursive: builder.recursive,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_str, Value};
+
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn maximal() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "chtag",
+                "action": "remove",
+                "links": "suppress",
+                "recursive": true
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .remove_tag("/u/jiahj/testFile.txt")
+            .links(FileTagLinks::Suppress)
+            .recursive(true)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
+}

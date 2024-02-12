@@ -61,3 +61,52 @@ where
         recursive: builder.recursive,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fmt::format;
+
+    use serde_json::{from_str, Value};
+
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn maximal() {
+        let zosmf = get_zosmf();
+
+        let json: Value = from_str(
+            r#"
+            {
+                "request": "chtag",
+                "action": "set",
+                "recursive": false,
+                "type": "mixed",
+                "codeset": "IBM-1047",
+                "links": "suppress"
+            }
+            "#,
+        )
+        .unwrap();
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .json(&json)
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .set_tag("/u/jiahj/testFile.txt")
+            .tag_type(FileTagType::Mixed)
+            .code_set("IBM-1047")
+            .links(FileTagLinks::Suppress)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
+}

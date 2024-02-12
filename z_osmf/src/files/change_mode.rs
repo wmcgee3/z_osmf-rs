@@ -40,6 +40,7 @@ pub enum FileModeLinks {
 struct RequestJson<'a> {
     request: &'static str,
     mode: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
     links: Option<FileModeLinks>,
     recursive: bool,
 }
@@ -57,4 +58,72 @@ where
         links: builder.links,
         recursive: builder.recursive,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::{get_zosmf, GetJson};
+
+    use super::*;
+
+    #[test]
+    fn maximal_request() {
+        let zosmf = get_zosmf();
+
+        let json = r#"
+        {
+            "request": "chmod",
+            "mode": "755",
+            "links": "suppress",
+            "recursive": true
+        }
+        "#;
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .json(&serde_json::from_str::<serde_json::Value>(json).unwrap())
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .change_mode("/u/jiahj/text.txt", "755")
+            .links(FileModeLinks::Suppress)
+            .recursive(true)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
+
+    #[test]
+    fn minimal_request() {
+        let zosmf = get_zosmf();
+
+        let json = r#"
+        {
+            "request": "chmod",
+            "mode": "755",
+            "recursive": false
+        }
+        "#;
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .json(&serde_json::from_str::<serde_json::Value>(json).unwrap())
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .change_mode("/u/jiahj/text.txt", "755")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+        assert_eq!(manual_request.json(), request.json());
+    }
 }
