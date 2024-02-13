@@ -53,8 +53,6 @@ mod tests {
 
     use crate::tests::*;
 
-    use super::*;
-
     #[test]
     fn overwrite() {
         let zosmf = get_zosmf();

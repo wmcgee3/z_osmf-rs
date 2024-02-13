@@ -64,8 +64,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::format;
-
     use serde_json::{from_str, Value};
 
     use crate::tests::{get_zosmf, GetJson};
