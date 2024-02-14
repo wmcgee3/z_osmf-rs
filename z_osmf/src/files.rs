@@ -4,12 +4,14 @@ pub mod copy;
 pub mod copy_dataset;
 pub mod create;
 pub mod delete;
+pub mod link;
 pub mod list;
 pub mod list_tag;
 pub mod read;
 pub mod remove_tag;
 pub mod rename;
 pub mod set_tag;
+pub mod unlink;
 pub mod write;
 
 use std::sync::Arc;
@@ -24,12 +26,14 @@ use self::copy::FileCopyBuilder;
 use self::copy_dataset::FileCopyDatasetBuilder;
 use self::create::FileCreateBuilder;
 use self::delete::FileDeleteBuilder;
+use self::link::{FileLink, FileLinkBuilder, LinkType};
 use self::list::{FileList, FileListBuilder};
 use self::list_tag::{FileListTag, FileListTagBuilder};
 use self::read::{FileRead, FileReadBuilder};
 use self::remove_tag::FileRemoveTagBuilder;
 use self::rename::FileRenameBuilder;
 use self::set_tag::FileSetTagBuilder;
+use self::unlink::{FileUnlink, FileUnlinkBuilder};
 use self::write::{FileWrite, FileWriteBuilder};
 
 #[derive(Clone, Debug)]
@@ -252,8 +256,27 @@ impl FilesClient {
         todo!()
     }
 
-    pub fn link(&self) {
-        todo!()
+    /// # Examples
+    ///
+    /// Link a file or directory:
+    /// ```
+    /// # use z_osmf::files::link::LinkType;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_link = zosmf
+    ///     .files()
+    ///     .link(LinkType::Symbolic, "/u/jiahj/sourceFile.txt", "/u/jiahj/targetFile.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn link(
+        &self,
+        link_type: LinkType,
+        source_path: &str,
+        target_path: &str,
+    ) -> FileLinkBuilder<FileLink> {
+        FileLinkBuilder::new(self.core.clone(), source_path, target_path, link_type)
     }
 
     /// # Examples
@@ -447,8 +470,21 @@ impl FilesClient {
         todo!()
     }
 
-    pub fn unlink(&self) {
-        todo!()
+    /// # Examples
+    ///
+    /// Unlink a file or directory:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_unlink = zosmf
+    ///     .files()
+    ///     .unlink("/u/jiahj/targetFile.txt")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn unlink(&self, path: &str) -> FileUnlinkBuilder<FileUnlink> {
+        FileUnlinkBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
