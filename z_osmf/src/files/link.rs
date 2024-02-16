@@ -7,17 +7,6 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-pub struct FileLink {}
-
-impl TryFromResponse for FileLink {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        println!("{:#?}", value.headers());
-        println!("{}", value.text().await?);
-
-        Ok(FileLink {})
-    }
-}
-
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{target_path}")]
 pub struct FileLinkBuilder<T>
@@ -31,7 +20,7 @@ where
     #[endpoint(path)]
     target_path: Box<str>,
     #[endpoint(skip_builder)]
-    link_type: LinkType,
+    link_type: FileLinkType,
     #[endpoint(optional, skip_builder)]
     recursive: bool,
     #[endpoint(optional, skip_builder)]
@@ -43,9 +32,9 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum LinkType {
+pub enum FileLinkType {
     External,
-    Symbolic,
+    Symbol,
 }
 
 #[derive(Serialize)]
@@ -53,7 +42,7 @@ struct RequestJson<'a> {
     request: &'static str,
     from: &'a str,
     #[serde(rename = "type")]
-    link_type: LinkType,
+    link_type: FileLinkType,
     recursive: bool,
     force: bool,
 }
@@ -80,7 +69,7 @@ mod tests {
 
     use crate::tests::*;
 
-    use super::LinkType;
+    use super::FileLinkType;
 
     #[test]
     fn maximal() {
@@ -109,7 +98,7 @@ mod tests {
         let request = zosmf
             .files()
             .link(
-                LinkType::Symbolic,
+                FileLinkType::Symbol,
                 "/u/jiahj/sourceFile.txt",
                 "/u/jiahj/targetFile.txt",
             )

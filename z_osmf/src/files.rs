@@ -1,3 +1,4 @@
+pub mod access_control_list;
 pub mod change_mode;
 pub mod change_owner;
 pub mod copy;
@@ -21,6 +22,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ClientCore, TransactionId};
 
+use self::access_control_list::{FileGetAccessControlList, FileGetAccessControlListBuilder};
 use self::change_mode::FileChangeModeBuilder;
 use self::change_owner::FileChangeOwnerBuilder;
 use self::copy::FileCopyBuilder;
@@ -30,14 +32,14 @@ use self::delete::FileDeleteBuilder;
 use self::extra_attributes::{
     FileGetExtraAttributes, FileResetExtraAttributesBuilder, FileSetExtraAttributesBuilder,
 };
-use self::link::{FileLink, FileLinkBuilder, LinkType};
+use self::link::{FileLinkBuilder, FileLinkType};
 use self::list::{FileList, FileListBuilder};
 use self::list_tag::{FileListTag, FileListTagBuilder};
 use self::read::{FileRead, FileReadBuilder};
 use self::remove_tag::FileRemoveTagBuilder;
 use self::rename::FileRenameBuilder;
 use self::set_tag::FileSetTagBuilder;
-use self::unlink::{FileUnlink, FileUnlinkBuilder};
+use self::unlink::FileUnlinkBuilder;
 use self::write::{FileWrite, FileWriteBuilder};
 
 #[derive(Clone, Debug)]
@@ -271,8 +273,11 @@ impl FilesClient {
         FileGetExtraAttributes::new(&self.core, path).await
     }
 
-    pub fn getfacl(&self) {
-        todo!()
+    pub fn get_access_control_list(
+        &self,
+        path: &str,
+    ) -> FileGetAccessControlListBuilder<FileGetAccessControlList> {
+        FileGetAccessControlListBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -291,10 +296,10 @@ impl FilesClient {
     /// ```
     pub fn link(
         &self,
-        link_type: LinkType,
+        link_type: FileLinkType,
         source_path: &str,
         target_path: &str,
-    ) -> FileLinkBuilder<FileLink> {
+    ) -> FileLinkBuilder<TransactionId> {
         FileLinkBuilder::new(self.core.clone(), source_path, target_path, link_type)
     }
 
@@ -538,13 +543,14 @@ impl FilesClient {
     /// let file_unlink = zosmf
     ///     .files()
     ///     .unlink("/u/jiahj/targetFile.txt")
-    ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn unlink(&self, path: &str) -> FileUnlinkBuilder<FileUnlink> {
+    pub async fn unlink(&self, path: &str) -> Result<TransactionId, crate::error::Error> {
         FileUnlinkBuilder::new(self.core.clone(), path)
+            .build()
+            .await
     }
 
     /// # Examples

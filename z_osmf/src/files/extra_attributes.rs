@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
+use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
@@ -14,6 +15,7 @@ pub struct FileGetExtraAttributes {
     program_controlled: bool,
     shared_address_space: bool,
     shared_library: bool,
+    transaction_id: Box<str>,
 }
 
 impl FileGetExtraAttributes {
@@ -29,6 +31,8 @@ impl FileGetExtraAttributes {
 
 impl TryFromResponse for FileGetExtraAttributes {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
         let json: ResponseJson = value.json().await?;
 
         if let [name, a, p, s, l] = &json.stdout[..] {
@@ -43,6 +47,7 @@ impl TryFromResponse for FileGetExtraAttributes {
                 program_controlled,
                 shared_address_space,
                 shared_library,
+                transaction_id,
             })
         } else {
             Err(crate::error::Error::Custom(
