@@ -4,6 +4,7 @@ pub mod copy;
 pub mod copy_dataset;
 pub mod create;
 pub mod delete;
+pub mod extra_attributes;
 pub mod link;
 pub mod list;
 pub mod list_tag;
@@ -26,6 +27,9 @@ use self::copy::FileCopyBuilder;
 use self::copy_dataset::FileCopyDatasetBuilder;
 use self::create::FileCreateBuilder;
 use self::delete::FileDeleteBuilder;
+use self::extra_attributes::{
+    FileGetExtraAttributes, FileResetExtraAttributesBuilder, FileSetExtraAttributesBuilder,
+};
 use self::link::{FileLink, FileLinkBuilder, LinkType};
 use self::list::{FileList, FileListBuilder};
 use self::list_tag::{FileListTag, FileListTagBuilder};
@@ -248,8 +252,23 @@ impl FilesClient {
         FileDeleteBuilder::new(self.core.clone(), path)
     }
 
-    pub fn extattr(&self) {
-        todo!()
+    /// # Examples
+    ///
+    /// Get the extra attributes of a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_extra_attributes = zosmf
+    ///     .files()
+    ///     .get_extra_attributes("/u/jiahj/testFile.txt")
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_extra_attributes(
+        &self,
+        path: &str,
+    ) -> Result<FileGetExtraAttributes, crate::error::Error> {
+        FileGetExtraAttributes::new(&self.core, path).await
     }
 
     pub fn getfacl(&self) {
@@ -428,6 +447,47 @@ impl FilesClient {
     /// ```
     pub fn rename(&self, from_path: &str, to_path: &str) -> FileRenameBuilder<TransactionId> {
         FileRenameBuilder::new(self.core.clone(), from_path, to_path)
+    }
+
+    /// # Examples
+    ///
+    /// Remove extra attributes from a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_reset_extra_attributes = zosmf
+    ///     .files()
+    ///     .reset_extra_attributes("/u/jiahj/testFile.txt")
+    ///     .apf_authorized(true)
+    ///     .shared_library(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn reset_extra_attributes(
+        &self,
+        path: &str,
+    ) -> FileResetExtraAttributesBuilder<TransactionId> {
+        FileResetExtraAttributesBuilder::new(self.core.clone(), path)
+    }
+
+    /// # Examples
+    ///
+    /// Add extra attributes to a file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let file_set_extra_attributes = zosmf
+    ///     .files()
+    ///     .set_extra_attributes("/u/jiahj/testFile.txt")
+    ///     .program_controlled(true)
+    ///     .shared_address_space(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_extra_attributes(&self, path: &str) -> FileSetExtraAttributesBuilder<TransactionId> {
+        FileSetExtraAttributesBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
