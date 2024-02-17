@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -55,7 +56,7 @@ pub struct FileAttributes {
     #[getter(copy)]
     gid: i32,
     group: Box<str>,
-    mtime: Box<str>,
+    mtime: NaiveDateTime,
     #[serde(default)]
     target: Option<Box<str>>,
 }
@@ -75,7 +76,7 @@ where
     #[endpoint(optional, query = "group")]
     group: Option<Box<str>>,
     #[endpoint(optional, query = "mtime")]
-    mtime: Option<Box<str>>,
+    modified_days: Option<DaysLastModified>,
     #[endpoint(optional, query = "name")]
     name: Option<Box<str>>,
     #[endpoint(optional, query = "size")]
@@ -97,6 +98,27 @@ where
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize)]
+pub enum DaysLastModified {
+    Exactly(u32),
+    LessThan(u32),
+    MoreThan(u32),
+}
+
+impl Serialize for DaysLastModified {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            DaysLastModified::Exactly(mtime) => format!("{}", mtime),
+            DaysLastModified::LessThan(mtime) => format!("-{}", mtime),
+            DaysLastModified::MoreThan(mtime) => format!("+{}", mtime),
+        }
+        .serialize(serializer)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -230,7 +252,7 @@ mod tests {
             .query(&[
                 ("path", "/usr/include"),
                 ("group", "ibmgrp"),
-                ("mtime", "something"),
+                ("mtime", "1"),
                 ("name", "f*.h"),
                 ("size", "10k"),
                 ("perm", "755"),
@@ -255,7 +277,7 @@ mod tests {
             .group("ibmgrp")
             .limit(100)
             .lstat(true)
-            .mtime("something")
+            .modified_days(DaysLastModified::Exactly(1))
             .permissions("755")
             .size("10k")
             .symlinks(SymLinks::Follow)
