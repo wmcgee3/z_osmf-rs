@@ -1,4 +1,3 @@
-pub mod access_control_list;
 pub mod change_mode;
 pub mod change_owner;
 pub mod copy;
@@ -22,7 +21,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ClientCore, TransactionId};
 
-use self::access_control_list::{FileGetAccessControlList, FileGetAccessControlListBuilder};
 use self::change_mode::FileChangeModeBuilder;
 use self::change_owner::FileChangeOwnerBuilder;
 use self::copy::FileCopyBuilder;
@@ -273,22 +271,15 @@ impl FilesClient {
         FileGetExtraAttributes::new(&self.core, path).await
     }
 
-    pub fn get_access_control_list(
-        &self,
-        path: &str,
-    ) -> FileGetAccessControlListBuilder<FileGetAccessControlList> {
-        FileGetAccessControlListBuilder::new(self.core.clone(), path)
-    }
-
     /// # Examples
     ///
     /// Link a file or directory:
     /// ```
-    /// # use z_osmf::files::link::LinkType;
+    /// # use z_osmf::files::link::FileLinkType;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let file_link = zosmf
     ///     .files()
-    ///     .link(LinkType::Symbolic, "/u/jiahj/sourceFile.txt", "/u/jiahj/targetFile.txt")
+    ///     .link(FileLinkType::Symbol, "/u/jiahj/sourceFile.txt", "/u/jiahj/targetFile.txt")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -529,10 +520,6 @@ impl FilesClient {
     /// ```
     pub fn set_tag(&self, path: &str) -> FileSetTagBuilder<TransactionId> {
         FileSetTagBuilder::new(self.core.clone(), path)
-    }
-
-    pub fn setfacl(&self) {
-        todo!()
     }
 
     /// # Examples

@@ -80,7 +80,7 @@ mod tests {
             {
                 "request": "link",
                 "from": "/u/jiahj/sourceFile.txt",
-                "type": "symbolic",
+                "type": "symbol",
                 "recursive": true,
                 "force": false
             }

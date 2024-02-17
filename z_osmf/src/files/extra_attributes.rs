@@ -23,9 +23,9 @@ impl FileGetExtraAttributes {
         core: &Arc<ClientCore>,
         path: &str,
     ) -> Result<Self, crate::error::Error> {
-        Ok(FileExtraAttributesBuilder::new(core.clone(), path)
+        FileExtraAttributesBuilder::new(core.clone(), path)
             .build()
-            .await?)
+            .await
     }
 }
 
