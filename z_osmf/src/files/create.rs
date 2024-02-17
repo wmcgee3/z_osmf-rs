@@ -2,12 +2,10 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use reqwest::RequestBuilder;
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use serde::Serialize;
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -15,19 +13,6 @@ use crate::ClientCore;
 pub enum CreateFileType {
     Directory,
     File,
-}
-
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileCreate {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for FileCreate {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(FileCreate { transaction_id })
-    }
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -41,10 +26,7 @@ where
     #[endpoint(path)]
     path: Box<str>,
 
-    #[endpoint(optional, skip_setter, builder_fn = build_json)]
-    json: PhantomData<RequestJson<'static>>,
-
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, builder_fn = build_body)]
     file_type: Option<CreateFileType>,
     #[endpoint(optional, skip_builder)]
     mode: Option<Box<str>>,
@@ -61,20 +43,16 @@ struct RequestJson<'a> {
     mode: Option<&'a str>,
 }
 
-fn build_json<T>(
+fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &FileCreateBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileCreateBuilder {
-        file_type, mode, ..
-    } = builder;
-
     request_builder.json(&RequestJson {
-        file_type: file_type.as_ref(),
-        mode: mode.as_deref(),
+        file_type: builder.file_type.as_ref(),
+        mode: builder.mode.as_deref(),
     })
 }
 

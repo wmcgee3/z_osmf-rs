@@ -356,12 +356,6 @@ pub struct JobExecData {
     exec_ended: Option<Box<str>>,
 }
 
-impl JobExecData {
-    pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
-    }
-}
-
 impl std::ops::Deref for JobExecData {
     type Target = JobData;
 
@@ -380,29 +374,15 @@ impl TryFromResponse for JobExecData {
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecStepData {
     #[serde(flatten)]
-    job_data: JobData,
+    job_exec_data: JobExecData,
     step_data: Box<[StepData]>,
-    #[serde(default)]
-    exec_system: Option<Box<str>>,
-    #[serde(default)]
-    exec_member: Option<Box<str>>,
-    #[serde(default)]
-    exec_submitted: Option<Box<str>>,
-    #[serde(default)]
-    exec_ended: Option<Box<str>>,
-}
-
-impl JobExecStepData {
-    pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
-    }
 }
 
 impl std::ops::Deref for JobExecStepData {
     type Target = JobData;
 
     fn deref(&self) -> &Self::Target {
-        &self.job_data
+        &self.job_exec_data
     }
 }
 
@@ -418,12 +398,6 @@ pub struct JobStepData {
     #[serde(flatten)]
     job_data: JobData,
     step_data: Box<[StepData]>,
-}
-
-impl JobStepData {
-    pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
-    }
 }
 
 impl std::ops::Deref for JobStepData {

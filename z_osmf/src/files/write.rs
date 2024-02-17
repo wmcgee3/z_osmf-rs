@@ -120,7 +120,55 @@ enum Data {
 
 #[cfg(test)]
 mod tests {
+    use bytes::Bytes;
+
     use crate::tests::*;
+
+    #[test]
+    fn binary() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .header("x-ibm-data-type", "binary")
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .write("/u/jiahj/testFile.txt")
+            .binary(Bytes::from("some text"))
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request))
+    }
+
+    #[test]
+    fn encoding() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .header("x-ibm-data-type", "text;fileEncoding=IBM-1047;crlf=true")
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .write("/u/jiahj/testFile.txt")
+            .text("some data")
+            .crlf_newlines(true)
+            .encoding("IBM-1047")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request))
+    }
 
     #[test]
     fn example_1() {

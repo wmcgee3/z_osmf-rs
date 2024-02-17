@@ -1,25 +1,11 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use serde::Serialize;
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::utils::get_transaction_id;
 use crate::ClientCore;
-
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetRecall {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for DatasetRecall {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(DatasetRecall { transaction_id })
-    }
-}
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{name}{member}")]

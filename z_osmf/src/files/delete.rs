@@ -1,26 +1,10 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::utils::get_transaction_id;
 use crate::ClientCore;
-
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileDelete {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for FileDelete {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(FileDelete { transaction_id })
-    }
-}
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
@@ -88,12 +72,14 @@ mod tests {
             .core
             .client
             .delete("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .header("X-IBM-Option", "recursive")
             .build()
             .unwrap();
 
         let delete_file = zosmf
             .files()
             .delete("/u/jiahj/testDir")
+            .recursive(true)
             .get_request()
             .unwrap();
 

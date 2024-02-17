@@ -298,6 +298,56 @@ mod tests {
     use crate::tests::*;
 
     #[test]
+    fn data_type() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .header("X-IBM-Data-Type", "binary")
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .read("/u/jiahj/testFile.txt")
+            .binary()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+    }
+
+    #[test]
+    fn etag() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .header("X-IBM-Data-Type", "text;fileEncoding=IBM-1047")
+            .header("If-None-Match", "abcd1234")
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .read("/u/jiahj/testFile.txt")
+            .binary()
+            .text()
+            .if_none_match("abcd1234")
+            .binary()
+            .text()
+            .encoding("IBM-1047")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+    }
+
+    #[test]
     fn example_1() {
         let zosmf = get_zosmf();
 
@@ -309,6 +359,79 @@ mod tests {
             .unwrap();
 
         let read_file = zosmf.files().read("/etc/inetd.conf").get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
+    }
+
+    #[test]
+    fn encoding() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
+            .header("X-IBM-Data-Type", "text;fileEncoding=ISO8859-1")
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .read("/u/jiahj/testFile.txt")
+            .encoding("ISO8859-1")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
+    }
+
+    #[test]
+    fn regex() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
+            .query(&[("research", ".*")])
+            .build()
+            .unwrap();
+
+        let read_file = zosmf
+            .files()
+            .read("/etc/inetd.conf")
+            .search_pattern(".*")
+            .search_is_regex(true)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
+    }
+
+    #[test]
+    fn search() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restfiles/fs/etc/inetd.conf")
+            .query(&[
+                ("search", "something"),
+                ("insensitive", "false"),
+                ("maxreturnsize", "10"),
+            ])
+            .build()
+            .unwrap();
+
+        let read_file = zosmf
+            .files()
+            .read("/etc/inetd.conf")
+            .search_pattern("something")
+            .search_case_sensitive(true)
+            .search_max_return(10)
+            .get_request()
+            .unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", read_file))
     }

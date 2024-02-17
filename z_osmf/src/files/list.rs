@@ -80,8 +80,8 @@ where
     name: Option<Box<str>>,
     #[endpoint(optional, query = "size")]
     size: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_perm)]
-    perm: Option<i16>,
+    #[endpoint(optional, query = "perm")]
+    permissions: Option<Box<str>>,
     #[endpoint(optional, query = "type")]
     file_type: Option<ListFileType>,
     #[endpoint(optional, query = "user")]
@@ -107,7 +107,6 @@ pub enum FileSystem {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(untagged)]
 pub enum ListFileType {
     #[serde(rename = "c")]
     CharacterSpecialFile,
@@ -154,29 +153,11 @@ where
     request_builder
 }
 
-fn build_perm<T>(
-    mut request_builder: reqwest::RequestBuilder,
-    builder: &FileListBuilder<T>,
-) -> reqwest::RequestBuilder
-where
-    T: TryFromResponse,
-{
-    if let Some(perm) = builder.perm {
-        let value = if perm < 0 {
-            format!("-{:05o}", -perm)
-        } else {
-            format!("{:05o}", perm)
-        };
-
-        request_builder = request_builder.query(&[("perm", &value)]);
-    }
-
-    request_builder
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::tests::*;
+    use crate::tests::get_zosmf;
+
+    use super::*;
 
     #[test]
     fn example_1() {
@@ -236,5 +217,52 @@ mod tests {
             .unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", list_files))
+    }
+
+    #[test]
+    fn maximal_request() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restfiles/fs")
+            .query(&[
+                ("path", "/usr/include"),
+                ("group", "ibmgrp"),
+                ("mtime", "something"),
+                ("name", "f*.h"),
+                ("size", "10k"),
+                ("perm", "755"),
+                ("type", "d"),
+                ("user", "ibmuser"),
+                ("depth", "5"),
+                ("limit", "100"),
+                ("filesys", "all"),
+                ("symlinks", "follow"),
+            ])
+            .header("X-IBM-Lstat", "true")
+            .build()
+            .unwrap();
+
+        let request = zosmf
+            .files()
+            .list("/usr/include")
+            .name("f*.h")
+            .depth(5)
+            .file_system(FileSystem::All)
+            .file_type(ListFileType::Directory)
+            .group("ibmgrp")
+            .limit(100)
+            .lstat(true)
+            .mtime("something")
+            .permissions("755")
+            .size("10k")
+            .symlinks(SymLinks::Follow)
+            .user("ibmuser")
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request))
     }
 }

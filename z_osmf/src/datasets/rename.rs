@@ -9,14 +9,6 @@ use crate::ClientCore;
 
 use super::Enqueue;
 
-pub struct DatasetRename {}
-
-impl TryFromResponse for DatasetRename {
-    async fn try_from_response(_value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        Ok(DatasetRename {})
-    }
-}
-
 #[derive(Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{to_dataset}{to_member}")]
 pub struct DatasetRenameBuilder<T>

@@ -5,21 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::utils::get_transaction_id;
 use crate::ClientCore;
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct CopyFileToDataset {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for CopyFileToDataset {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(CopyFileToDataset { transaction_id })
-    }
-}
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{to_dataset}{to_member}")]
@@ -47,7 +33,7 @@ where
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase", untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum CopyFileType {
     Binary,
     Executable,
