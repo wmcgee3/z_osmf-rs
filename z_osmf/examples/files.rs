@@ -1,4 +1,4 @@
-use z_osmf::files::list::DaysLastModified;
+use z_osmf::files::list::{FileFilter, FileSize, ListFileType};
 
 #[path = "_setup/mod.rs"]
 mod _setup;
@@ -11,7 +11,9 @@ async fn main() -> anyhow::Result<()> {
         .files()
         .list("/home/mcgeew2")
         .depth(1)
-        .modified_days(DaysLastModified::MoreThan(1))
+        .modified_days(FileFilter::GreaterThan(1))
+        .size(FileFilter::GreaterThan(FileSize::Megabytes(1)))
+        .file_type(ListFileType::File)
         .build()
         .await?;
 

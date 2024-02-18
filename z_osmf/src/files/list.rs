@@ -76,11 +76,11 @@ where
     #[endpoint(optional, query = "group")]
     group: Option<Box<str>>,
     #[endpoint(optional, query = "mtime")]
-    modified_days: Option<DaysLastModified>,
+    modified_days: Option<FileFilter<u32>>,
     #[endpoint(optional, query = "name")]
     name: Option<Box<str>>,
     #[endpoint(optional, query = "size")]
-    size: Option<Box<str>>,
+    size: Option<FileFilter<FileSize>>,
     #[endpoint(optional, query = "perm")]
     permissions: Option<Box<str>>,
     #[endpoint(optional, query = "type")]
@@ -100,24 +100,91 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
-pub enum DaysLastModified {
-    Exactly(u32),
-    LessThan(u32),
-    MoreThan(u32),
+#[derive(Clone, Debug)]
+pub enum FileFilter<T>
+where
+    T: std::fmt::Display + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    Exactly(T),
+    GreaterThan(T),
+    LessThan(T),
 }
 
-impl Serialize for DaysLastModified {
+impl<'de, T> Deserialize<'de> for FileFilter<T>
+where
+    T: std::fmt::Display + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let v = match s {
+            s if s.starts_with('+') => FileFilter::GreaterThan(
+                T::from_str(s.trim_start_matches('+')).map_err(serde::de::Error::custom)?,
+            ),
+            s if s.starts_with('-') => FileFilter::LessThan(
+                T::from_str(s.trim_start_matches('-')).map_err(serde::de::Error::custom)?,
+            ),
+            s => FileFilter::Exactly(T::from_str(&s).map_err(serde::de::Error::custom)?),
+        };
+
+        Ok(v)
+    }
+}
+
+impl<T> Serialize for FileFilter<T>
+where
+    T: std::fmt::Display + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::fmt::Display,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
+        let s = match self {
+            FileFilter::Exactly(f) => format!("{}", f),
+            FileFilter::GreaterThan(f) => format!("+{}", f),
+            FileFilter::LessThan(f) => format!("-{}", f),
+        };
+
+        serializer.serialize_str(&s)
+    }
+}
+
+pub enum FileSize {
+    Bytes(u32),
+    Kilobytes(u32),
+    Megabytes(u32),
+    Gigabytes(u32),
+}
+
+impl std::fmt::Display for FileSize {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DaysLastModified::Exactly(mtime) => format!("{}", mtime),
-            DaysLastModified::LessThan(mtime) => format!("-{}", mtime),
-            DaysLastModified::MoreThan(mtime) => format!("+{}", mtime),
+            FileSize::Bytes(s) => write!(f, "{}", s),
+            FileSize::Kilobytes(s) => write!(f, "{}K", s),
+            FileSize::Megabytes(s) => write!(f, "{}M", s),
+            FileSize::Gigabytes(s) => write!(f, "{}G", s),
         }
-        .serialize(serializer)
+    }
+}
+
+impl std::str::FromStr for FileSize {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let v = match s {
+            s if s.ends_with('K') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
+            s if s.ends_with('M') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('M'))?),
+            s if s.ends_with('G') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('G'))?),
+            s => FileSize::Kilobytes(u32::from_str(s)?),
+        };
+
+        Ok(v)
     }
 }
 
@@ -254,9 +321,9 @@ mod tests {
                 ("group", "ibmgrp"),
                 ("mtime", "1"),
                 ("name", "f*.h"),
-                ("size", "10k"),
+                ("size", "10K"),
                 ("perm", "755"),
-                ("type", "d"),
+                ("type", "f"),
                 ("user", "ibmuser"),
                 ("depth", "5"),
                 ("limit", "100"),
@@ -273,13 +340,13 @@ mod tests {
             .name("f*.h")
             .depth(5)
             .file_system(FileSystem::All)
-            .file_type(ListFileType::Directory)
+            .file_type(ListFileType::File)
             .group("ibmgrp")
             .limit(100)
             .lstat(true)
-            .modified_days(DaysLastModified::Exactly(1))
+            .modified_days(FileFilter::Exactly(1))
             .permissions("755")
-            .size("10k")
+            .size(FileFilter::Exactly(FileSize::Kilobytes(10)))
             .symlinks(SymLinks::Follow)
             .user("ibmuser")
             .get_request()

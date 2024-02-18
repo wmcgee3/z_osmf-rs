@@ -62,7 +62,11 @@ pub struct DatasetBase {
     block_size: Option<Box<str>>,
     #[serde(rename = "catnm")]
     catalog: Option<Box<str>>,
-    #[serde(default, deserialize_with = "deserialize_optional_date", rename = "cdate")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_date",
+        rename = "cdate"
+    )]
     creation_date: Option<NaiveDate>,
     #[serde(rename = "dev")]
     device_type: Option<Box<str>>,
@@ -70,7 +74,11 @@ pub struct DatasetBase {
     dataset_type: Option<Box<str>>,
     #[serde(rename = "dsorg")]
     organization: Option<Box<str>>,
-    #[serde(default, deserialize_with = "deserialize_optional_date", rename = "edate")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_date",
+        rename = "edate"
+    )]
     expiration_date: Option<NaiveDate>,
     #[serde(rename = "extx")]
     extents_used: Option<Box<str>>,
@@ -99,7 +107,11 @@ pub struct DatasetBase {
         serialize_with = "ser_optional_yes_no"
     )]
     space_overflow: Option<bool>,
-    #[serde(default, deserialize_with = "deserialize_optional_date", rename = "rdate")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_date",
+        rename = "rdate"
+    )]
     last_referenced_date: Option<NaiveDate>,
     #[serde(rename = "recfm")]
     record_format: Option<Box<str>>,
