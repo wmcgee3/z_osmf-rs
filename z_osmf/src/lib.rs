@@ -1,15 +1,6 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc = include_str!("../../README.md")]
 #![forbid(unsafe_code)]
-
-//! # z_osmf
-//!
-//! The VERY work in progress Rust z/OSMF<sup>TM</sup> [^1] Client.
-//!
-//! ---
-//!
-//! [^1]: z/OSMF<sup>TM</sup>, z/OS<sup>TM</sup>, and the lowercase letter z<sup>TM</sup> (probably) are trademarks owned by International Business Machines Corporation ("IBM").
-//! This crate is not approved, endorsed, acknowledged, or even tolerated by IBM.
-//! (Please don't sue me, Big Blue)
 
 pub use bytes::Bytes;
 
@@ -22,6 +13,8 @@ pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
 
+pub use self::error::Error;
+
 mod convert;
 mod utils;
 
@@ -31,7 +24,7 @@ use reqwest::header::HeaderValue;
 use z_osmf_macros::Getters;
 
 use self::convert::TryFromResponse;
-use self::error::{CheckStatus, Error};
+use self::error::CheckStatus;
 use self::utils::get_transaction_id;
 
 #[cfg(feature = "datasets")]
@@ -52,7 +45,7 @@ use self::jobs::JobsClient;
 /// let base_url = "https://zosmf.mainframe.my-company.com";
 /// let username = "USERNAME";
 ///
-/// let zosmf = ZOsmf::new(client, base_url)?;
+/// let zosmf = ZOsmf::new(client, base_url);
 /// zosmf.login(username, "PASSWORD").await?;
 ///
 /// let my_datasets = zosmf.datasets().list(username).build().await?;
@@ -73,16 +66,15 @@ impl ZOsmf {
     ///
     /// # Example
     /// ```
-    /// # async fn example() -> anyhow::Result<()> {
+    /// # async fn example() {
     /// # use z_osmf::ZOsmf;
     /// let client = reqwest::Client::new();
     /// let base_url = "https://zosmf.mainframe.my-company.com";
     ///
-    /// let zosmf = ZOsmf::new(client, base_url)?;
-    /// # Ok(())
+    /// let zosmf = ZOsmf::new(client, base_url);
     /// # }
     /// ```
-    pub fn new<B>(client: reqwest::Client, base_url: B) -> Result<Self, Error>
+    pub fn new<B>(client: reqwest::Client, base_url: B) -> Self
     where
         B: std::fmt::Display,
     {
@@ -93,7 +85,7 @@ impl ZOsmf {
             cookie: RwLock::new(None),
         });
 
-        Ok(ZOsmf { core })
+        ZOsmf { core }
     }
 
     /// Authenticate with z/OSMF.
@@ -251,7 +243,7 @@ mod tests {
     use super::*;
 
     pub(crate) fn get_zosmf() -> ZOsmf {
-        ZOsmf::new(reqwest::Client::new(), "https://test.com").unwrap()
+        ZOsmf::new(reqwest::Client::new(), "https://test.com")
     }
 
     pub(crate) trait GetJson {

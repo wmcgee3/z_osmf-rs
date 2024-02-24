@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
@@ -58,9 +59,9 @@ pub struct MemberBase {
     #[serde(default, rename = "mod")]
     modification_level: Option<i32>,
     #[serde(default, rename = "c4date")]
-    creation_date: Option<Box<str>>,
+    creation_date: Option<NaiveDate>,
     #[serde(default, rename = "m4date")]
-    modification_date: Option<Box<str>>,
+    modification_date: Option<NaiveDate>,
     #[getter(copy)]
     #[serde(default, rename = "cnorc")]
     current_number_of_records: Option<i32>,

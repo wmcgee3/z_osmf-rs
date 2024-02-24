@@ -1,8 +1,9 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
+use chrono::NaiveDate;
 use reqwest::RequestBuilder;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
@@ -61,16 +62,24 @@ pub struct DatasetBase {
     block_size: Option<Box<str>>,
     #[serde(rename = "catnm")]
     catalog: Option<Box<str>>,
-    #[serde(rename = "cdate")]
-    creation_date: Option<Box<str>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_date",
+        rename = "cdate"
+    )]
+    creation_date: Option<NaiveDate>,
     #[serde(rename = "dev")]
     device_type: Option<Box<str>>,
     #[serde(rename = "dsntp")]
     dataset_type: Option<Box<str>>,
     #[serde(rename = "dsorg")]
     organization: Option<Box<str>>,
-    #[serde(rename = "edate")]
-    expiration_date: Option<Box<str>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_date",
+        rename = "edate"
+    )]
+    expiration_date: Option<NaiveDate>,
     #[serde(rename = "extx")]
     extents_used: Option<Box<str>>,
     #[serde(rename = "lrecl")]
@@ -98,8 +107,12 @@ pub struct DatasetBase {
         serialize_with = "ser_optional_yes_no"
     )]
     space_overflow: Option<bool>,
-    #[serde(rename = "rdate")]
-    last_referenced_date: Option<Box<str>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_date",
+        rename = "rdate"
+    )]
+    last_referenced_date: Option<NaiveDate>,
     #[serde(rename = "recfm")]
     record_format: Option<Box<str>>,
     #[serde(rename = "sizex")]
@@ -287,6 +300,19 @@ where
                 if include_total { ",total" } else { "" }
             ),
         ),
+    }
+}
+
+pub fn deserialize_optional_date<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<NaiveDate>, D::Error> {
+    let s: String = Deserialize::deserialize(deserializer)?;
+
+    match s.as_str() {
+        "***None***" => Ok(None),
+        s => Ok(Some(
+            NaiveDate::parse_from_str(s, "%Y/%m/%d").map_err(serde::de::Error::custom)?,
+        )),
     }
 }
 
