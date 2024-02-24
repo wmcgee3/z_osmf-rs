@@ -8,6 +8,7 @@ use rand::seq::IteratorRandom;
 async fn main() -> anyhow::Result<()> {
     let zosmf = _setup::get_zosmf().await?;
 
+    let _ = dotenvy::dotenv_override();
     let username = std::env::var("ZOSMF_USERNAME")?;
 
     let datasets_client = zosmf.datasets();
