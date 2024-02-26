@@ -5,6 +5,7 @@
 pub use bytes::Bytes;
 
 pub mod error;
+pub mod info;
 
 #[cfg(feature = "datasets")]
 pub mod datasets;
@@ -25,6 +26,7 @@ use z_osmf_macros::Getters;
 
 use self::convert::TryFromResponse;
 use self::error::CheckStatus;
+use self::info::{Info, InfoBuilder};
 use self::utils::get_transaction_id;
 
 #[cfg(feature = "datasets")]
@@ -86,6 +88,19 @@ impl ZOsmf {
         });
 
         ZOsmf { core }
+    }
+
+    /// Retrieve information about z/OSMF.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let info = zosmf.info().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn info(&self) -> Result<Info, Error> {
+        Ok(InfoBuilder::new(self.core.clone()).build().await?)
     }
 
     /// Authenticate with z/OSMF.
