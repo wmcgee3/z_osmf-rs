@@ -314,7 +314,7 @@ pub struct JobData {
     subsystem: Option<Box<str>>,
     owner: Box<str>,
     #[getter(copy)]
-    status: Option<Status>,
+    status: Option<JobStatus>,
     #[getter(copy)]
     job_type: Option<JobType>,
     class: Box<str>,
@@ -343,7 +343,7 @@ impl TryFromResponse for JobData {
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobExecData {
+pub struct JobDataExec {
     #[serde(flatten)]
     job_data: JobData,
     #[serde(default)]
@@ -356,7 +356,7 @@ pub struct JobExecData {
     exec_ended: Option<Box<str>>,
 }
 
-impl std::ops::Deref for JobExecData {
+impl std::ops::Deref for JobDataExec {
     type Target = JobData;
 
     fn deref(&self) -> &Self::Target {
@@ -364,7 +364,7 @@ impl std::ops::Deref for JobExecData {
     }
 }
 
-impl TryFromResponse for JobExecData {
+impl TryFromResponse for JobDataExec {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -372,13 +372,13 @@ impl TryFromResponse for JobExecData {
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobExecStepData {
+pub struct JobDataExecStep {
     #[serde(flatten)]
-    job_exec_data: JobExecData,
+    job_exec_data: JobDataExec,
     step_data: Box<[StepData]>,
 }
 
-impl std::ops::Deref for JobExecStepData {
+impl std::ops::Deref for JobDataExecStep {
     type Target = JobData;
 
     fn deref(&self) -> &Self::Target {
@@ -386,7 +386,7 @@ impl std::ops::Deref for JobExecStepData {
     }
 }
 
-impl TryFromResponse for JobExecStepData {
+impl TryFromResponse for JobDataExecStep {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -394,13 +394,13 @@ impl TryFromResponse for JobExecStepData {
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobStepData {
+pub struct JobDataStep {
     #[serde(flatten)]
     job_data: JobData,
     step_data: Box<[StepData]>,
 }
 
-impl std::ops::Deref for JobStepData {
+impl std::ops::Deref for JobDataStep {
     type Target = JobData;
 
     fn deref(&self) -> &Self::Target {
@@ -408,7 +408,7 @@ impl std::ops::Deref for JobStepData {
     }
 }
 
-impl TryFromResponse for JobStepData {
+impl TryFromResponse for JobDataStep {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -432,6 +432,14 @@ impl std::fmt::Display for JobIdentifier {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum JobStatus {
+    Active,
+    Input,
+    Output,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum JobType {
     #[serde(rename = "JOB")]
     Job,
@@ -439,14 +447,6 @@ pub enum JobType {
     StartedTask,
     #[serde(rename = "TSU")]
     TsoUser,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum Status {
-    Active,
-    Input,
-    Output,
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]

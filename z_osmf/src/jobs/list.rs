@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::JobExecData;
+use super::JobDataExec;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct JobList<T> {
@@ -48,7 +48,7 @@ where
     user_correlator: Option<Box<str>>,
     #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
     exec_data: bool,
-    #[endpoint(optional, skip_setter, builder_fn = build_active_only)]
+    #[endpoint(optional, builder_fn = build_active_only)]
     active_only: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]
@@ -59,13 +59,7 @@ impl<T> JobListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn active_only(mut self) -> Self {
-        self.active_only = true;
-
-        self
-    }
-
-    pub fn exec_data(self) -> JobListBuilder<JobList<JobExecData>> {
+    pub fn exec_data(self) -> JobListBuilder<JobList<JobDataExec>> {
         JobListBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -82,31 +76,29 @@ where
 }
 
 fn build_active_only<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.active_only {
-        request_builder = request_builder.query(&[("status", "active")]);
+    match builder.active_only {
+        true => request_builder.query(&[("status", "active")]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn build_exec_data<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.exec_data {
-        request_builder = request_builder.query(&[("exec-data", "Y")]);
+    match builder.exec_data {
+        true => request_builder.query(&[("exec-data", "Y")]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn set_subsystem<T>(mut builder: JobListBuilder<T>, value: Box<str>) -> JobListBuilder<T>

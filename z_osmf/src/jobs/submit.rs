@@ -105,13 +105,13 @@ struct Source<'a> {
 }
 
 fn build_jcl_source<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    request_builder = match &builder.jcl_source {
+    match &builder.jcl_source {
         JclSource::Jcl(jcl_data) => match jcl_data {
             JclData::Binary(binary) => request_builder
                 .header("X-IBM-Intrdr-Mode", "BINARY")
@@ -127,9 +127,7 @@ where
             file: &format!("//'{}'", dataset),
         }),
         JclSource::File(file) => request_builder.json(&Source { file }),
-    };
-
-    request_builder
+    }
 }
 
 fn build_notification_events<T>(

@@ -56,6 +56,7 @@ pub struct FileAttributes {
     #[getter(copy)]
     gid: i32,
     group: Box<str>,
+    #[getter(copy)]
     mtime: NaiveDateTime,
     #[serde(default)]
     target: Option<Box<str>>,
@@ -229,17 +230,16 @@ struct ResponseJson {
 }
 
 fn build_lstat<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &FileListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.lstat {
-        request_builder = request_builder.header("X-IBM-Lstat", "true");
+    match builder.lstat {
+        true => request_builder.header("X-IBM-Lstat", "true"),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 #[cfg(test)]

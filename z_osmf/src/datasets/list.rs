@@ -62,9 +62,10 @@ pub struct DatasetBase {
     block_size: Option<Box<str>>,
     #[serde(rename = "catnm")]
     catalog: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(
         default,
-        deserialize_with = "deserialize_optional_date",
+        deserialize_with = "de_optional_date",
         rename = "cdate"
     )]
     creation_date: Option<NaiveDate>,
@@ -74,9 +75,10 @@ pub struct DatasetBase {
     dataset_type: Option<Box<str>>,
     #[serde(rename = "dsorg")]
     organization: Option<Box<str>>,
+    #[getter(copy)]
     #[serde(
         default,
-        deserialize_with = "deserialize_optional_date",
+        deserialize_with = "de_optional_date",
         rename = "edate"
     )]
     expiration_date: Option<NaiveDate>,
@@ -107,9 +109,10 @@ pub struct DatasetBase {
         serialize_with = "ser_optional_yes_no"
     )]
     space_overflow: Option<bool>,
+    #[getter(copy)]
     #[serde(
         default,
-        deserialize_with = "deserialize_optional_date",
+        deserialize_with = "de_optional_date",
         rename = "rdate"
     )]
     last_referenced_date: Option<NaiveDate>,
@@ -303,7 +306,7 @@ where
     }
 }
 
-pub fn deserialize_optional_date<'de, D: Deserializer<'de>>(
+pub fn de_optional_date<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<Option<NaiveDate>, D::Error> {
     let s: String = Deserialize::deserialize(deserializer)?;

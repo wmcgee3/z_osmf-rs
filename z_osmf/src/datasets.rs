@@ -3,7 +3,7 @@ pub mod copy_file;
 pub mod create;
 pub mod delete;
 pub mod list;
-pub mod member_list;
+pub mod members;
 pub mod migrate;
 pub mod read;
 pub mod recall;
@@ -23,7 +23,7 @@ use self::copy_file::CopyFileToDatasetBuilder;
 use self::create::DatasetCreateBuilder;
 use self::delete::DatasetDeleteBuilder;
 use self::list::{DatasetList, DatasetListBuilder, DatasetName};
-use self::member_list::{DatasetMemberList, DatasetMemberListBuilder, MemberName};
+use self::members::{DatasetMemberList, DatasetMemberListBuilder, MemberInfoName};
 use self::migrate::{DatasetMigrate, DatasetMigrateBuilder};
 use self::read::{DatasetRead, DatasetReadBuilder};
 use self::recall::DatasetRecallBuilder;
@@ -297,7 +297,7 @@ impl DatasetsClient {
     pub fn members(
         &self,
         dataset_name: &str,
-    ) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
+    ) -> DatasetMemberListBuilder<DatasetMemberList<MemberInfoName>> {
         DatasetMemberListBuilder::new(self.core.clone(), dataset_name)
     }
 

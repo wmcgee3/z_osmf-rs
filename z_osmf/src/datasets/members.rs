@@ -49,7 +49,7 @@ where
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberBase {
+pub struct MemberInfoBase {
     #[serde(rename = "member")]
     name: Box<str>,
     #[getter(copy)]
@@ -58,8 +58,10 @@ pub struct MemberBase {
     #[getter(copy)]
     #[serde(default, rename = "mod")]
     modification_level: Option<i32>,
+    #[getter(copy)]
     #[serde(default, rename = "c4date")]
     creation_date: Option<NaiveDate>,
+    #[getter(copy)]
     #[serde(default, rename = "m4date")]
     modification_date: Option<NaiveDate>,
     #[getter(copy)]
@@ -102,7 +104,7 @@ pub struct MemberBase {
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberName {
+pub struct MemberInfoName {
     #[serde(rename = "member")]
     name: Box<str>,
 }
@@ -125,7 +127,7 @@ where
     max_items: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = build_attributes)]
     attributes: Option<Attrs>,
-    #[endpoint(optional, skip_setter, skip_builder)]
+    #[endpoint(optional, skip_builder)]
     include_total: bool,
     #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
@@ -138,7 +140,7 @@ impl<T> DatasetMemberListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberBase>> {
+    pub fn attributes_base(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberInfoBase>> {
         DatasetMemberListBuilder {
             core: self.core,
             dataset_name: self.dataset_name,
@@ -152,7 +154,7 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberName>> {
+    pub fn attributes_member(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberInfoName>> {
         DatasetMemberListBuilder {
             core: self.core,
             dataset_name: self.dataset_name,

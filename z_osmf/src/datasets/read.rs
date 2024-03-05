@@ -130,13 +130,15 @@ where
     volume: Box<str>,
     #[endpoint(optional, path, setter_fn = set_member)]
     member: Box<str>,
-    #[endpoint(optional, query = "search", builder_fn = build_search)]
-    search_pattern: Option<Box<str>>,
+    #[endpoint(optional, query = "search")]
+    search: Option<Box<str>>,
+    #[endpoint(optional, query = "research")]
+    regex_search: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     search_is_regex: bool,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, builder_fn = build_search_case_sensitive)]
     search_case_sensitive: bool,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, query = "maxreturnsize")]
     search_max_return: Option<i32>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
     if_none_match: Option<Box<str>>,
@@ -171,7 +173,8 @@ where
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
             core: self.core,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -195,7 +198,8 @@ where
     pub fn record(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
         DatasetReadBuilder {
             core: self.core,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -219,7 +223,8 @@ where
     pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
         DatasetReadBuilder {
             core: self.core,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -249,7 +254,8 @@ where
             dataset_name: self.dataset_name,
             volume: self.volume,
             member: self.member,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -275,7 +281,8 @@ where
     pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
             core: self.core,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -299,7 +306,8 @@ where
     pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
         DatasetReadBuilder {
             core: self.core,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -323,7 +331,8 @@ where
     pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
         DatasetReadBuilder {
             core: self.core,
-            search_pattern: self.search_pattern,
+            search: self.search,
+            regex_search: self.regex_search,
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
@@ -373,66 +382,42 @@ where
 }
 
 fn build_release_enq<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.release_enq {
-        request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
+    match builder.release_enq {
+        true => request_builder.header("X-IBM-Release-ENQ", "true"),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn build_return_etag<T>(
-    mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T>,
+    request_builder: reqwest::RequestBuilder,
+    builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if dataset_read_builder.return_etag {
-        request_builder = request_builder.header("X-IBM-Return-Etag", "true");
+    match builder.return_etag {
+        true => request_builder.header("X-IBM-Return-Etag", "true"),
+        false => request_builder,
     }
-
-    request_builder
 }
 
-fn build_search<T>(
-    mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T>,
+fn build_search_case_sensitive<T>(
+    request_builder: reqwest::RequestBuilder,
+    builder: &DatasetReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let DatasetReadBuilder {
-        search_pattern,
-        search_is_regex,
-        search_case_sensitive,
-        search_max_return,
-        ..
-    } = &dataset_read_builder;
-
-    if let Some(search) = search_pattern {
-        request_builder = request_builder.query(&[(
-            if *search_is_regex {
-                "research"
-            } else {
-                "search"
-            },
-            search,
-        )]);
-        if *search_case_sensitive {
-            request_builder = request_builder.query(&[("insensitive", "false")]);
-        }
-        if let Some(max) = search_max_return {
-            request_builder = request_builder.query(&[("maxreturnsize", max)]);
-        }
+    match builder.search_case_sensitive {
+        true => request_builder.query(&[("insensitive", "false")]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 type H = (Option<Box<str>>, Option<Box<str>>, Box<str>);
