@@ -212,6 +212,7 @@ mod tests {
             .header("X-IBM-Intrdr-Class", "A")
             .header("X-IBM-Intrdr-Recfm", "F")
             .header("X-IBM-Intrdr-Lrecl", "80")
+            .header("Content-Type", "text/plain")
             .header("X-IBM-Intrdr-Mode", "TEXT")
             .body(jcl.to_string())
             .build()
