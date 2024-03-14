@@ -63,11 +63,7 @@ pub struct DatasetBase {
     #[serde(rename = "catnm")]
     catalog: Option<Box<str>>,
     #[getter(copy)]
-    #[serde(
-        default,
-        deserialize_with = "de_optional_date",
-        rename = "cdate"
-    )]
+    #[serde(default, deserialize_with = "de_optional_date", rename = "cdate")]
     creation_date: Option<NaiveDate>,
     #[serde(rename = "dev")]
     device_type: Option<Box<str>>,
@@ -76,11 +72,7 @@ pub struct DatasetBase {
     #[serde(rename = "dsorg")]
     organization: Option<Box<str>>,
     #[getter(copy)]
-    #[serde(
-        default,
-        deserialize_with = "de_optional_date",
-        rename = "edate"
-    )]
+    #[serde(default, deserialize_with = "de_optional_date", rename = "edate")]
     expiration_date: Option<NaiveDate>,
     #[serde(rename = "extx")]
     extents_used: Option<Box<str>>,
@@ -110,11 +102,7 @@ pub struct DatasetBase {
     )]
     space_overflow: Option<bool>,
     #[getter(copy)]
-    #[serde(
-        default,
-        deserialize_with = "de_optional_date",
-        rename = "rdate"
-    )]
+    #[serde(default, deserialize_with = "de_optional_date", rename = "rdate")]
     last_referenced_date: Option<NaiveDate>,
     #[serde(rename = "recfm")]
     record_format: Option<Box<str>>,
@@ -144,12 +132,12 @@ pub struct DatasetVolume {
     volume: Volume,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum Volume {
     Alias,
     Migrated,
-    Volume(String),
     Vsam,
+    Volume(String),
 }
 
 impl<'de> Deserialize<'de> for Volume {

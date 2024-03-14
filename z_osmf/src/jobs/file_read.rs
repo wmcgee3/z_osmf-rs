@@ -45,7 +45,7 @@ impl TryFromResponse for JobFileRead<Bytes> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum JobFileID {
     JCL,
     ID(i32),

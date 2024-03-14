@@ -101,15 +101,15 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum FileFilter<T>
 where
     T: std::fmt::Display + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    Exactly(T),
-    GreaterThan(T),
     LessThan(T),
+    EqualTo(T),
+    GreaterThan(T),
 }
 
 impl<'de, T> Deserialize<'de> for FileFilter<T>
@@ -130,7 +130,7 @@ where
             s if s.starts_with('-') => FileFilter::LessThan(
                 T::from_str(s.trim_start_matches('-')).map_err(serde::de::Error::custom)?,
             ),
-            s => FileFilter::Exactly(T::from_str(&s).map_err(serde::de::Error::custom)?),
+            s => FileFilter::EqualTo(T::from_str(&s).map_err(serde::de::Error::custom)?),
         };
 
         Ok(v)
@@ -147,7 +147,7 @@ where
         S: serde::Serializer,
     {
         let s = match self {
-            FileFilter::Exactly(f) => format!("{}", f),
+            FileFilter::EqualTo(f) => format!("{}", f),
             FileFilter::GreaterThan(f) => format!("+{}", f),
             FileFilter::LessThan(f) => format!("-{}", f),
         };
@@ -156,6 +156,7 @@ where
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum FileSize {
     Bytes(u32),
     Kilobytes(u32),
@@ -180,23 +181,23 @@ impl std::str::FromStr for FileSize {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let v = match s {
             s if s.ends_with('K') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
-            s if s.ends_with('M') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('M'))?),
-            s if s.ends_with('G') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('G'))?),
-            s => FileSize::Kilobytes(u32::from_str(s)?),
+            s if s.ends_with('M') => FileSize::Megabytes(u32::from_str(s.trim_end_matches('M'))?),
+            s if s.ends_with('G') => FileSize::Gigabytes(u32::from_str(s.trim_end_matches('G'))?),
+            s => FileSize::Bytes(u32::from_str(s)?),
         };
 
         Ok(v)
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileSystem {
     All,
     Same,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum ListFileType {
     #[serde(rename = "c")]
     CharacterSpecialFile,
@@ -212,7 +213,7 @@ pub enum ListFileType {
     SymbolicLink,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SymLinks {
     Follow,
@@ -344,9 +345,9 @@ mod tests {
             .group("ibmgrp")
             .limit(100)
             .lstat(true)
-            .modified_days(FileFilter::Exactly(1))
+            .modified_days(FileFilter::EqualTo(1))
             .permissions("755")
-            .size(FileFilter::Exactly(FileSize::Kilobytes(10)))
+            .size(FileFilter::EqualTo(FileSize::Kilobytes(10)))
             .symlinks(SymLinks::Follow)
             .user("ibmuser")
             .get_request()

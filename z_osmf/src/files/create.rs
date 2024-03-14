@@ -2,13 +2,13 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use reqwest::RequestBuilder;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CreateFileType {
     Directory,

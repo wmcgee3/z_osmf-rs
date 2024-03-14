@@ -21,7 +21,7 @@ use self::file_read::{JobFileID, JobFileRead, JobFileReadBuilder};
 use self::list::{JobList, JobListBuilder};
 use self::purge::JobPurgeBuilder;
 use self::status::JobStatusBuilder;
-use self::submit::{JclSource, JobSubmitBuilder};
+use self::submit::{Jcl, JobSubmitBuilder};
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
@@ -274,7 +274,7 @@ impl JobsClient {
     ///
     /// Submit a job from text:
     /// ```
-    /// # use z_osmf::jobs::submit::{JclData, JclSource, RecordFormat};
+    /// # use z_osmf::jobs::submit::{Jcl, RecordFormat};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
     /// // EXEC PGM=IEFBR14
@@ -282,7 +282,7 @@ impl JobsClient {
     ///
     /// let job_data = zosmf
     ///     .jobs()
-    ///     .submit(JclSource::Jcl(JclData::Text(jcl.into())))
+    ///     .submit(Jcl::Text(jcl.into()))
     ///     .message_class('A')
     ///     .record_format(RecordFormat::Fixed)
     ///     .record_length(80)
@@ -291,7 +291,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submit(&self, jcl_source: JclSource) -> JobSubmitBuilder<JobData> {
+    pub fn submit(&self, jcl_source: Jcl) -> JobSubmitBuilder<JobData> {
         JobSubmitBuilder::new(self.core.clone(), jcl_source)
     }
 }
@@ -414,7 +414,7 @@ impl TryFromResponse for JobDataStep {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum JobIdentifier {
     Correlator(String),
     NameId(String, String),
@@ -431,7 +431,7 @@ impl std::fmt::Display for JobIdentifier {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum JobStatus {
     Active,
@@ -439,7 +439,7 @@ pub enum JobStatus {
     Output,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum JobType {
     #[serde(rename = "JOB")]
     Job,

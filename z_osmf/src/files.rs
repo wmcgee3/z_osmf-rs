@@ -560,7 +560,9 @@ impl FilesClient {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum FileDataType {
     Binary,
@@ -581,7 +583,9 @@ impl std::fmt::Display for FileDataType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum FileTagLinks {
     #[default]
@@ -589,7 +593,9 @@ pub enum FileTagLinks {
     Suppress,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum FileTagType {
     Binary,

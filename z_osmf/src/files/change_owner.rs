@@ -30,7 +30,9 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum ChangeOwnerLinks {
     Change,
