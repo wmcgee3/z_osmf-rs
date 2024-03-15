@@ -3,7 +3,7 @@ mod _setup;
 
 use anyhow::Context;
 use rand::seq::IteratorRandom;
-use z_osmf::files::list::ListFileType;
+use z_osmf::files::list::FileType;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
     let file_list = files_client
         .list(home_dir_path)
         .depth(1)
-        .file_type(ListFileType::File)
+        .file_type(FileType::File)
         .build()
         .await?;
     let files_names: Vec<&str> = file_list.items().iter().map(|f| f.name()).collect();

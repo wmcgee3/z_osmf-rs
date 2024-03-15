@@ -7,19 +7,9 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
-pub enum CopyEnqueue {
-    #[serde(rename = "SHR")]
-    SharedRead,
-    #[serde(rename = "SHRW")]
-    SharedReadWrite,
-    #[serde(rename = "EXCLU")]
-    Exclusive,
-}
-
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{to_dataset}{to_member}")]
-pub struct DatasetCopyBuilder<T>
+pub struct CopyBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -38,12 +28,22 @@ where
     #[endpoint(optional, skip_builder)]
     alias: Option<bool>,
     #[endpoint(optional, skip_builder)]
-    enqueue: Option<CopyEnqueue>,
+    enqueue: Option<Enqueue>,
     #[endpoint(optional, skip_builder)]
     replace: Option<bool>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+pub enum Enqueue {
+    #[serde(rename = "SHR")]
+    SharedRead,
+    #[serde(rename = "SHRW")]
+    SharedReadWrite,
+    #[serde(rename = "EXCLU")]
+    Exclusive,
 }
 
 #[derive(Serialize)]
@@ -52,7 +52,7 @@ struct RequestJson<'a> {
     request: &'a str,
     from_dataset: FromDataset<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enq: Option<CopyEnqueue>,
+    enq: Option<Enqueue>,
     replace: Option<bool>,
 }
 
@@ -67,7 +67,7 @@ struct FromDataset<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetCopyBuilder<T>,
+    builder: &CopyBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -84,7 +84,7 @@ where
     })
 }
 
-fn set_to_member<T>(mut builder: DatasetCopyBuilder<T>, value: Box<str>) -> DatasetCopyBuilder<T>
+fn set_to_member<T>(mut builder: CopyBuilder<T>, value: Box<str>) -> CopyBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -93,7 +93,7 @@ where
     builder
 }
 
-fn set_volume<T>(mut builder: DatasetCopyBuilder<T>, value: Box<str>) -> DatasetCopyBuilder<T>
+fn set_volume<T>(mut builder: CopyBuilder<T>, value: Box<str>) -> CopyBuilder<T>
 where
     T: TryFromResponse,
 {

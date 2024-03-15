@@ -10,7 +10,7 @@ use super::{AsynchronousResponse, JobIdentifier};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct JobPurgeBuilder<T>
+pub struct PurgeBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -27,12 +27,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobPurgeBuilder<T>
+impl<T> PurgeBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> JobPurgeBuilder<AsynchronousResponse> {
-        JobPurgeBuilder {
+    pub fn asynchronous(self) -> PurgeBuilder<AsynchronousResponse> {
+        PurgeBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -44,7 +44,7 @@ where
 
 fn build_asynchronous<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobPurgeBuilder<T>,
+    builder: &PurgeBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -55,7 +55,7 @@ where
     )
 }
 
-fn set_subsystem<T>(mut builder: JobPurgeBuilder<T>, value: Box<str>) -> JobPurgeBuilder<T>
+fn set_subsystem<T>(mut builder: PurgeBuilder<T>, value: Box<str>) -> PurgeBuilder<T>
 where
     T: TryFromResponse,
 {

@@ -11,8 +11,8 @@ use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileList {
-    items: Box<[FileAttributes]>,
+pub struct Files {
+    items: Box<[File]>,
     #[getter(copy)]
     returned_rows: i32,
     #[getter(copy)]
@@ -22,7 +22,7 @@ pub struct FileList {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for FileList {
+impl TryFromResponse for Files {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
@@ -33,7 +33,7 @@ impl TryFromResponse for FileList {
             json_version,
         } = value.json().await?;
 
-        Ok(FileList {
+        Ok(Files {
             items,
             returned_rows,
             total_rows,
@@ -44,7 +44,7 @@ impl TryFromResponse for FileList {
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileAttributes {
+pub struct File {
     name: Box<str>,
     mode: Box<str>,
     #[getter(copy)]
@@ -64,7 +64,7 @@ pub struct FileAttributes {
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
-pub struct FileListBuilder<T>
+pub struct FilesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -77,15 +77,15 @@ where
     #[endpoint(optional, query = "group")]
     group: Option<Box<str>>,
     #[endpoint(optional, query = "mtime")]
-    modified_days: Option<FileFilter<u32>>,
+    modified_days: Option<Filter<u32>>,
     #[endpoint(optional, query = "name")]
     name: Option<Box<str>>,
     #[endpoint(optional, query = "size")]
-    size: Option<FileFilter<FileSize>>,
+    size: Option<Filter<Size>>,
     #[endpoint(optional, query = "perm")]
     permissions: Option<Box<str>>,
     #[endpoint(optional, query = "type")]
-    file_type: Option<ListFileType>,
+    file_type: Option<FileType>,
     #[endpoint(optional, query = "user")]
     user: Option<Box<str>>,
     #[endpoint(optional, query = "depth")]
@@ -102,7 +102,7 @@ where
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub enum FileFilter<T>
+pub enum Filter<T>
 where
     T: std::fmt::Display + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
@@ -112,7 +112,7 @@ where
     GreaterThan(T),
 }
 
-impl<'de, T> Deserialize<'de> for FileFilter<T>
+impl<'de, T> Deserialize<'de> for Filter<T>
 where
     T: std::fmt::Display + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
@@ -124,20 +124,20 @@ where
         let s = String::deserialize(deserializer)?;
 
         let v = match s {
-            s if s.starts_with('+') => FileFilter::GreaterThan(
+            s if s.starts_with('+') => Filter::GreaterThan(
                 T::from_str(s.trim_start_matches('+')).map_err(serde::de::Error::custom)?,
             ),
-            s if s.starts_with('-') => FileFilter::LessThan(
+            s if s.starts_with('-') => Filter::LessThan(
                 T::from_str(s.trim_start_matches('-')).map_err(serde::de::Error::custom)?,
             ),
-            s => FileFilter::EqualTo(T::from_str(&s).map_err(serde::de::Error::custom)?),
+            s => Filter::EqualTo(T::from_str(&s).map_err(serde::de::Error::custom)?),
         };
 
         Ok(v)
     }
 }
 
-impl<T> Serialize for FileFilter<T>
+impl<T> Serialize for Filter<T>
 where
     T: std::fmt::Display + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
@@ -147,9 +147,9 @@ where
         S: serde::Serializer,
     {
         let s = match self {
-            FileFilter::EqualTo(f) => format!("{}", f),
-            FileFilter::GreaterThan(f) => format!("+{}", f),
-            FileFilter::LessThan(f) => format!("-{}", f),
+            Filter::EqualTo(f) => format!("{}", f),
+            Filter::GreaterThan(f) => format!("+{}", f),
+            Filter::LessThan(f) => format!("-{}", f),
         };
 
         serializer.serialize_str(&s)
@@ -157,33 +157,33 @@ where
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub enum FileSize {
+pub enum Size {
     Bytes(u32),
     Kilobytes(u32),
     Megabytes(u32),
     Gigabytes(u32),
 }
 
-impl std::fmt::Display for FileSize {
+impl std::fmt::Display for Size {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FileSize::Bytes(s) => write!(f, "{}", s),
-            FileSize::Kilobytes(s) => write!(f, "{}K", s),
-            FileSize::Megabytes(s) => write!(f, "{}M", s),
-            FileSize::Gigabytes(s) => write!(f, "{}G", s),
+            Size::Bytes(s) => write!(f, "{}", s),
+            Size::Kilobytes(s) => write!(f, "{}K", s),
+            Size::Megabytes(s) => write!(f, "{}M", s),
+            Size::Gigabytes(s) => write!(f, "{}G", s),
         }
     }
 }
 
-impl std::str::FromStr for FileSize {
+impl std::str::FromStr for Size {
     type Err = std::num::ParseIntError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let v = match s {
-            s if s.ends_with('K') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
-            s if s.ends_with('M') => FileSize::Megabytes(u32::from_str(s.trim_end_matches('M'))?),
-            s if s.ends_with('G') => FileSize::Gigabytes(u32::from_str(s.trim_end_matches('G'))?),
-            s => FileSize::Bytes(u32::from_str(s)?),
+            s if s.ends_with('K') => Size::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
+            s if s.ends_with('M') => Size::Megabytes(u32::from_str(s.trim_end_matches('M'))?),
+            s if s.ends_with('G') => Size::Gigabytes(u32::from_str(s.trim_end_matches('G'))?),
+            s => Size::Bytes(u32::from_str(s)?),
         };
 
         Ok(v)
@@ -198,7 +198,7 @@ pub enum FileSystem {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
-pub enum ListFileType {
+pub enum FileType {
     #[serde(rename = "c")]
     CharacterSpecialFile,
     #[serde(rename = "d")]
@@ -223,7 +223,7 @@ pub enum SymLinks {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    items: Box<[FileAttributes]>,
+    items: Box<[File]>,
     returned_rows: i32,
     total_rows: i32,
     #[serde(rename = "JSONversion")]
@@ -232,7 +232,7 @@ struct ResponseJson {
 
 fn build_lstat<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileListBuilder<T>,
+    builder: &FilesBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -341,13 +341,13 @@ mod tests {
             .name("f*.h")
             .depth(5)
             .file_system(FileSystem::All)
-            .file_type(ListFileType::File)
+            .file_type(FileType::File)
             .group("ibmgrp")
             .limit(100)
             .lstat(true)
-            .modified_days(FileFilter::EqualTo(1))
+            .modified_days(Filter::EqualTo(1))
             .permissions("755")
-            .size(FileFilter::EqualTo(FileSize::Kilobytes(10)))
+            .size(Filter::EqualTo(Size::Kilobytes(10)))
             .symlinks(SymLinks::Follow)
             .user("ibmuser")
             .get_request()

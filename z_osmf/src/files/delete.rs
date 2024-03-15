@@ -8,7 +8,7 @@ use crate::ClientCore;
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileDeleteBuilder<T>
+pub struct DeleteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -25,7 +25,7 @@ where
 
 fn build_recursive<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileDeleteBuilder<T>,
+    builder: &DeleteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

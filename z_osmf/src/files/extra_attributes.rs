@@ -9,7 +9,7 @@ use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileGetExtraAttributes {
+pub struct GetExtraAttributes {
     name: Box<str>,
     apf_authorized: bool,
     program_controlled: bool,
@@ -18,18 +18,18 @@ pub struct FileGetExtraAttributes {
     transaction_id: Box<str>,
 }
 
-impl FileGetExtraAttributes {
+impl GetExtraAttributes {
     pub(super) async fn new(
         core: &Arc<ClientCore>,
         path: &str,
     ) -> Result<Self, crate::error::Error> {
-        FileExtraAttributesBuilder::new(core.clone(), path)
+        ExtraAttributesBuilder::new(core.clone(), path)
             .build()
             .await
     }
 }
 
-impl TryFromResponse for FileGetExtraAttributes {
+impl TryFromResponse for GetExtraAttributes {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
         let transaction_id = get_transaction_id(&value)?;
 
@@ -41,7 +41,7 @@ impl TryFromResponse for FileGetExtraAttributes {
             let shared_address_space = s.ends_with("YES");
             let shared_library = l.ends_with("YES");
 
-            Ok(FileGetExtraAttributes {
+            Ok(GetExtraAttributes {
                 name: name.clone(),
                 apf_authorized,
                 program_controlled,
@@ -59,7 +59,7 @@ impl TryFromResponse for FileGetExtraAttributes {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileResetExtraAttributesBuilder<T>
+pub struct ResetExtraAttributesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -82,7 +82,7 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileSetExtraAttributesBuilder<T>
+pub struct SetExtraAttributesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -105,7 +105,7 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-struct FileExtraAttributesBuilder<T>
+struct ExtraAttributesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -134,7 +134,7 @@ struct ResponseJson {
 
 fn build_get_body<T>(
     request_builder: reqwest::RequestBuilder,
-    _: &FileExtraAttributesBuilder<T>,
+    _: &ExtraAttributesBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -148,7 +148,7 @@ where
 
 fn build_reset_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileResetExtraAttributesBuilder<T>,
+    builder: &ResetExtraAttributesBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -178,7 +178,7 @@ where
 
 fn build_set_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileSetExtraAttributesBuilder<T>,
+    builder: &SetExtraAttributesBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

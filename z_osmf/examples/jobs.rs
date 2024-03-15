@@ -3,6 +3,7 @@ mod _setup;
 
 use anyhow::Context;
 use rand::seq::IteratorRandom;
+use z_osmf::jobs::files::Id;
 use z_osmf::jobs::JobIdentifier;
 
 #[tokio::main]
@@ -35,10 +36,7 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let jcl_read = jobs_client
-        .read_file(
-            random_job_identifier.clone(),
-            z_osmf::jobs::file_read::JobFileID::JCL,
-        )
+        .read_file(random_job_identifier.clone(), Id::Jcl)
         .build()
         .await?;
     println!("Random job JCL:\n{}\n", jcl_read.data());

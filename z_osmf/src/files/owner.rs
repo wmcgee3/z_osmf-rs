@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileChangeOwnerBuilder<T>
+pub struct ChangeOwnerBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -22,7 +22,7 @@ where
     #[endpoint(optional, skip_builder)]
     group: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    links: Option<ChangeOwnerLinks>,
+    links: Option<Links>,
     #[endpoint(optional, skip_builder)]
     recursive: bool,
 
@@ -34,7 +34,7 @@ where
     Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum ChangeOwnerLinks {
+pub enum Links {
     Change,
     #[default]
     Follow,
@@ -47,13 +47,13 @@ struct RequestJson<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     group: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<ChangeOwnerLinks>,
+    links: Option<Links>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileChangeOwnerBuilder<T>,
+    builder: &ChangeOwnerBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -101,7 +101,7 @@ mod tests {
             .files()
             .change_owner("/u/jiahj/testDir", "ibmuser")
             .group("ibmgrp")
-            .links(ChangeOwnerLinks::Change)
+            .links(Links::Change)
             .recursive(true)
             .get_request()
             .unwrap();

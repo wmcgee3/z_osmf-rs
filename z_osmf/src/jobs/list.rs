@@ -11,16 +11,16 @@ use crate::ClientCore;
 use super::JobDataExec;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct JobList<T> {
+pub struct Jobs<T> {
     items: Box<[T]>,
 }
 
-impl<T> TryFromResponse for JobList<T>
+impl<T> TryFromResponse for Jobs<T>
 where
     T: for<'de> Deserialize<'de>,
 {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(JobList {
+        Ok(Jobs {
             items: value.json().await?,
         })
     }
@@ -28,7 +28,7 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct JobListBuilder<T>
+pub struct JobsBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -55,12 +55,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobListBuilder<T>
+impl<T> JobsBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn exec_data(self) -> JobListBuilder<JobList<JobDataExec>> {
-        JobListBuilder {
+    pub fn exec_data(self) -> JobsBuilder<Jobs<JobDataExec>> {
+        JobsBuilder {
             core: self.core,
             subsystem: self.subsystem,
             owner: self.owner,
@@ -77,7 +77,7 @@ where
 
 fn build_active_only<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobListBuilder<T>,
+    builder: &JobsBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -90,7 +90,7 @@ where
 
 fn build_exec_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobListBuilder<T>,
+    builder: &JobsBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -101,7 +101,7 @@ where
     }
 }
 
-fn set_subsystem<T>(mut builder: JobListBuilder<T>, value: Box<str>) -> JobListBuilder<T>
+fn set_subsystem<T>(mut builder: JobsBuilder<T>, value: Box<str>) -> JobsBuilder<T>
 where
     T: TryFromResponse,
 {

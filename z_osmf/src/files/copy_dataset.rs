@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{to_path}")]
-pub struct FileCopyDatasetBuilder<T>
+pub struct CopyDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -22,7 +22,7 @@ where
     #[endpoint(optional, skip_builder)]
     from_member: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
-    dataset_type: Option<FileCopyDatasetType>,
+    dataset_type: Option<DatasetType>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
@@ -30,7 +30,7 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileCopyDatasetType {
+pub enum DatasetType {
     Binary,
     Executable,
     Text,
@@ -49,12 +49,12 @@ struct FromDataset<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     member: Option<&'a str>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    dataset_type: Option<FileCopyDatasetType>,
+    dataset_type: Option<DatasetType>,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileCopyDatasetBuilder<T>,
+    builder: &CopyDatasetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -106,7 +106,7 @@ mod tests {
             .files()
             .copy_dataset("MY.TEST.PDS", "/u/jiahj/copyFile.txt")
             .from_member("TEST")
-            .dataset_type(FileCopyDatasetType::Text)
+            .dataset_type(DatasetType::Text)
             .get_request()
             .unwrap();
 

@@ -1,5 +1,5 @@
-pub mod change_mode;
-pub mod change_owner;
+pub mod mode;
+pub mod owner;
 pub mod copy;
 pub mod copy_dataset;
 pub mod create;
@@ -7,11 +7,9 @@ pub mod delete;
 pub mod extra_attributes;
 pub mod link;
 pub mod list;
-pub mod list_tag;
 pub mod read;
-pub mod remove_tag;
 pub mod rename;
-pub mod set_tag;
+pub mod tags;
 pub mod unlink;
 pub mod write;
 
@@ -21,24 +19,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ClientCore, TransactionId};
 
-use self::change_mode::FileChangeModeBuilder;
-use self::change_owner::FileChangeOwnerBuilder;
-use self::copy::FileCopyBuilder;
-use self::copy_dataset::FileCopyDatasetBuilder;
-use self::create::FileCreateBuilder;
-use self::delete::FileDeleteBuilder;
+use self::mode::ChangeModeBuilder;
+use self::owner::ChangeOwnerBuilder;
+use self::copy::CopyBuilder;
+use self::copy_dataset::CopyDatasetBuilder;
+use self::create::CreateBuilder;
+use self::delete::DeleteBuilder;
 use self::extra_attributes::{
-    FileGetExtraAttributes, FileResetExtraAttributesBuilder, FileSetExtraAttributesBuilder,
+    GetExtraAttributes, ResetExtraAttributesBuilder, SetExtraAttributesBuilder,
 };
-use self::link::{FileLinkBuilder, FileLinkType};
-use self::list::{FileList, FileListBuilder};
-use self::list_tag::{FileListTag, FileListTagBuilder};
-use self::read::{FileRead, FileReadBuilder};
-use self::remove_tag::FileRemoveTagBuilder;
-use self::rename::FileRenameBuilder;
-use self::set_tag::FileSetTagBuilder;
-use self::unlink::FileUnlinkBuilder;
-use self::write::{FileWrite, FileWriteBuilder};
+use self::link::{LinkBuilder, LinkType};
+use self::list::{Files, FilesBuilder};
+use self::read::{Read, ReadBuilder};
+use self::rename::RenameBuilder;
+use self::tags::{RemoveBuilder, SetBuilder, Tags, TagsBuilder};
+use self::unlink::UnlinkBuilder;
+use self::write::{Write, WriteBuilder};
 
 #[derive(Clone, Debug)]
 pub struct FilesClient {
@@ -77,8 +73,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_mode(&self, path: &str, mode: &str) -> FileChangeModeBuilder<TransactionId> {
-        FileChangeModeBuilder::new(self.core.clone(), path, mode)
+    pub fn change_mode(&self, path: &str, mode: &str) -> ChangeModeBuilder<TransactionId> {
+        ChangeModeBuilder::new(self.core.clone(), path, mode)
     }
 
     /// # Examples
@@ -120,8 +116,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_owner(&self, path: &str, owner: &str) -> FileChangeOwnerBuilder<TransactionId> {
-        FileChangeOwnerBuilder::new(self.core.clone(), path, owner)
+    pub fn change_owner(&self, path: &str, owner: &str) -> ChangeOwnerBuilder<TransactionId> {
+        ChangeOwnerBuilder::new(self.core.clone(), path, owner)
     }
 
     /// # Examples
@@ -150,8 +146,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_path: &str, to_path: &str) -> FileCopyBuilder<TransactionId> {
-        FileCopyBuilder::new(self.core.clone(), from_path, to_path)
+    pub fn copy(&self, from_path: &str, to_path: &str) -> CopyBuilder<TransactionId> {
+        CopyBuilder::new(self.core.clone(), from_path, to_path)
     }
 
     /// # Examples
@@ -184,8 +180,8 @@ impl FilesClient {
         &self,
         from_dataset: &str,
         to_path: &str,
-    ) -> FileCopyDatasetBuilder<TransactionId> {
-        FileCopyDatasetBuilder::new(self.core.clone(), from_dataset, to_path)
+    ) -> CopyDatasetBuilder<TransactionId> {
+        CopyDatasetBuilder::new(self.core.clone(), from_dataset, to_path)
     }
 
     /// # Examples
@@ -193,11 +189,11 @@ impl FilesClient {
     /// Create a file:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # use z_osmf::files::create::CreateFileType;
+    /// # use z_osmf::files::create::FileType;
     /// let create_file = zosmf
     ///     .files()
     ///     .create("/u/jiahj/text.txt")
-    ///     .file_type(CreateFileType::File)
+    ///     .file_type(FileType::File)
     ///     .mode("RWXRW-RW-")
     ///     .build()
     ///     .await?;
@@ -208,19 +204,19 @@ impl FilesClient {
     /// Create a directory:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # use z_osmf::files::create::CreateFileType;
+    /// # use z_osmf::files::create::FileType;
     /// let create_file = zosmf
     ///     .files()
     ///     .create("/u/jiahj/testDir")
-    ///     .file_type(CreateFileType::Directory)
+    ///     .file_type(FileType::Directory)
     ///     .mode("rwxr-xrwx")
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, path: &str) -> FileCreateBuilder<TransactionId> {
-        FileCreateBuilder::new(self.core.clone(), path)
+    pub fn create(&self, path: &str) -> CreateBuilder<TransactionId> {
+        CreateBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -248,8 +244,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, path: &str) -> FileDeleteBuilder<TransactionId> {
-        FileDeleteBuilder::new(self.core.clone(), path)
+    pub fn delete(&self, path: &str) -> DeleteBuilder<TransactionId> {
+        DeleteBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -267,19 +263,19 @@ impl FilesClient {
     pub async fn get_extra_attributes(
         &self,
         path: &str,
-    ) -> Result<FileGetExtraAttributes, crate::error::Error> {
-        FileGetExtraAttributes::new(&self.core, path).await
+    ) -> Result<GetExtraAttributes, crate::error::Error> {
+        GetExtraAttributes::new(&self.core, path).await
     }
 
     /// # Examples
     ///
     /// Link a file or directory:
     /// ```
-    /// # use z_osmf::files::link::FileLinkType;
+    /// # use z_osmf::files::link::LinkType;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let file_link = zosmf
     ///     .files()
-    ///     .link(FileLinkType::Symbol, "/u/jiahj/sourceFile.txt", "/u/jiahj/targetFile.txt")
+    ///     .link(LinkType::Symbol, "/u/jiahj/sourceFile.txt", "/u/jiahj/targetFile.txt")
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -287,11 +283,11 @@ impl FilesClient {
     /// ```
     pub fn link(
         &self,
-        link_type: FileLinkType,
+        link_type: LinkType,
         source_path: &str,
         target_path: &str,
-    ) -> FileLinkBuilder<TransactionId> {
-        FileLinkBuilder::new(self.core.clone(), source_path, target_path, link_type)
+    ) -> LinkBuilder<TransactionId> {
+        LinkBuilder::new(self.core.clone(), source_path, target_path, link_type)
     }
 
     /// # Examples
@@ -332,8 +328,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, path: &str) -> FileListBuilder<FileList> {
-        FileListBuilder::new(self.core.clone(), path)
+    pub fn list(&self, path: &str) -> FilesBuilder<Files> {
+        FilesBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -362,8 +358,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_tag(&self, path: &str) -> FileListTagBuilder<FileListTag> {
-        FileListTagBuilder::new(self.core.clone(), path)
+    pub fn list_tag(&self, path: &str) -> TagsBuilder<Tags> {
+        TagsBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -379,15 +375,14 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, path: &str) -> FileReadBuilder<FileRead<Box<str>>> {
-        FileReadBuilder::new(self.core.clone(), path)
+    pub fn read(&self, path: &str) -> ReadBuilder<Read<Box<str>>> {
+        ReadBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
     ///
     /// Remove the tag on a file:
     /// ```
-    /// # use z_osmf::files::FileTagType;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let remove_tag = zosmf
     ///     .files()
@@ -400,7 +395,6 @@ impl FilesClient {
     ///
     /// Remove the tag on all files in a directory:
     /// ```
-    /// # use z_osmf::files::FileTagType;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let remove_tag = zosmf
     ///     .files()
@@ -411,8 +405,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn remove_tag(&self, path: &str) -> FileRemoveTagBuilder<TransactionId> {
-        FileRemoveTagBuilder::new(self.core.clone(), path)
+    pub fn remove_tag(&self, path: &str) -> RemoveBuilder<TransactionId> {
+        RemoveBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -441,8 +435,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(&self, from_path: &str, to_path: &str) -> FileRenameBuilder<TransactionId> {
-        FileRenameBuilder::new(self.core.clone(), from_path, to_path)
+    pub fn rename(&self, from_path: &str, to_path: &str) -> RenameBuilder<TransactionId> {
+        RenameBuilder::new(self.core.clone(), from_path, to_path)
     }
 
     /// # Examples
@@ -460,11 +454,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn reset_extra_attributes(
-        &self,
-        path: &str,
-    ) -> FileResetExtraAttributesBuilder<TransactionId> {
-        FileResetExtraAttributesBuilder::new(self.core.clone(), path)
+    pub fn reset_extra_attributes(&self, path: &str) -> ResetExtraAttributesBuilder<TransactionId> {
+        ResetExtraAttributesBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -482,20 +473,20 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_extra_attributes(&self, path: &str) -> FileSetExtraAttributesBuilder<TransactionId> {
-        FileSetExtraAttributesBuilder::new(self.core.clone(), path)
+    pub fn set_extra_attributes(&self, path: &str) -> SetExtraAttributesBuilder<TransactionId> {
+        SetExtraAttributesBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
     ///
     /// Set the tag on a file:
     /// ```
-    /// # use z_osmf::files::FileTagType;
+    /// # use z_osmf::files::tags::TagType;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let set_tag = zosmf
     ///     .files()
     ///     .set_tag("/u/jiahj/test.txt")
-    ///     .tag_type(FileTagType::Text)
+    ///     .tag_type(TagType::Text)
     ///     .code_set("IBM-1047")
     ///     .build()
     ///     .await?;
@@ -505,12 +496,12 @@ impl FilesClient {
     ///
     /// Set the tag on all files in a directory:
     /// ```
-    /// # use z_osmf::files::FileTagType;
+    /// # use z_osmf::files::tags::TagType;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let set_tag = zosmf
     ///     .files()
     ///     .set_tag("/u/jiahj/testDir")
-    ///     .tag_type(FileTagType::Text)
+    ///     .tag_type(TagType::Text)
     ///     .code_set("IBM-1047")
     ///     .recursive(true)
     ///     .build()
@@ -518,8 +509,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_tag(&self, path: &str) -> FileSetTagBuilder<TransactionId> {
-        FileSetTagBuilder::new(self.core.clone(), path)
+    pub fn set_tag(&self, path: &str) -> SetBuilder<TransactionId> {
+        SetBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -535,9 +526,7 @@ impl FilesClient {
     /// # }
     /// ```
     pub async fn unlink(&self, path: &str) -> Result<TransactionId, crate::error::Error> {
-        FileUnlinkBuilder::new(self.core.clone(), path)
-            .build()
-            .await
+        UnlinkBuilder::new(self.core.clone(), path).build().await
     }
 
     /// # Examples
@@ -555,8 +544,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, path: &str) -> FileWriteBuilder<FileWrite> {
-        FileWriteBuilder::new(self.core.clone(), path)
+    pub fn write(&self, path: &str) -> WriteBuilder<Write> {
+        WriteBuilder::new(self.core.clone(), path)
     }
 }
 
@@ -564,20 +553,20 @@ impl FilesClient {
     Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum FileDataType {
+pub enum DataType {
     Binary,
     #[default]
     Text,
 }
 
-impl std::fmt::Display for FileDataType {
+impl std::fmt::Display for DataType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                FileDataType::Binary => "binary",
-                FileDataType::Text => "text",
+                DataType::Binary => "binary",
+                DataType::Text => "text",
             }
         )
     }
@@ -587,17 +576,7 @@ impl std::fmt::Display for FileDataType {
     Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum FileTagLinks {
-    #[default]
-    Change,
-    Suppress,
-}
-
-#[derive(
-    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
-)]
-#[serde(rename_all = "lowercase")]
-pub enum FileTagType {
+pub enum TagType {
     Binary,
     #[default]
     Mixed,
@@ -610,8 +589,8 @@ mod tests {
 
     #[test]
     fn data_type_display() {
-        assert_eq!(format!("{}", FileDataType::Binary), "binary");
+        assert_eq!(format!("{}", DataType::Binary), "binary");
 
-        assert_eq!(format!("{}", FileDataType::Text), "text");
+        assert_eq!(format!("{}", DataType::Text), "text");
     }
 }

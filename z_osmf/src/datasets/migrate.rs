@@ -9,17 +9,17 @@ use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetMigrate {
+pub struct Migrate {
     etag: Option<Box<str>>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for DatasetMigrate {
+impl TryFromResponse for Migrate {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
         let etag = get_etag(&value)?;
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(DatasetMigrate {
+        Ok(Migrate {
             etag,
             transaction_id,
         })
@@ -28,7 +28,7 @@ impl TryFromResponse for DatasetMigrate {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{name}{member}")]
-pub struct DatasetMigrateBuilder<T>
+pub struct MigrateBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -53,7 +53,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetMigrateBuilder<T>,
+    builder: &MigrateBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -64,7 +64,7 @@ where
     })
 }
 
-fn set_member<T>(mut builder: DatasetMigrateBuilder<T>, value: Box<str>) -> DatasetMigrateBuilder<T>
+fn set_member<T>(mut builder: MigrateBuilder<T>, value: Box<str>) -> MigrateBuilder<T>
 where
     T: TryFromResponse,
 {

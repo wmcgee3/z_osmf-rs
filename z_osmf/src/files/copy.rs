@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{to_path}")]
-pub struct FileCopyBuilder<T>
+pub struct CopyBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -24,9 +24,9 @@ where
     #[endpoint(optional, skip_builder)]
     recursive: bool,
     #[endpoint(optional, skip_builder)]
-    links: Option<FileCopyLinks>,
+    links: Option<Links>,
     #[endpoint(optional, skip_builder)]
-    preserve: Option<FileCopyPreserve>,
+    preserve: Option<Preserve>,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
@@ -36,7 +36,7 @@ where
     Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum FileCopyLinks {
+pub enum Links {
     All,
     #[default]
     None,
@@ -48,7 +48,7 @@ pub enum FileCopyLinks {
     Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum FileCopyPreserve {
+pub enum Preserve {
     All,
     #[serde(rename = "modtime")]
     ModificationTime,
@@ -63,14 +63,14 @@ struct RequestJson<'a> {
     overwrite: bool,
     recursive: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<FileCopyLinks>,
+    links: Option<Links>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    preserve: Option<FileCopyPreserve>,
+    preserve: Option<Preserve>,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileCopyBuilder<T>,
+    builder: &CopyBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -123,8 +123,8 @@ mod tests {
             .copy("/u/jiahj/sourceDir", "/u/jiahj/targetDir")
             .overwrite(true)
             .recursive(true)
-            .links(FileCopyLinks::Source)
-            .preserve(FileCopyPreserve::ModificationTime)
+            .links(Links::Source)
+            .preserve(Preserve::ModificationTime)
             .get_request()
             .unwrap();
 

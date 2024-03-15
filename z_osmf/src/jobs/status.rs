@@ -10,7 +10,7 @@ use super::{JobData, JobDataExec, JobDataExecStep, JobDataStep, JobIdentifier};
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct JobStatusBuilder<T>
+pub struct StatusBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -31,9 +31,9 @@ where
     target_type: PhantomData<T>,
 }
 
-impl JobStatusBuilder<JobData> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobDataExec> {
-        JobStatusBuilder {
+impl StatusBuilder<JobData> {
+    pub fn exec_data(self) -> StatusBuilder<JobDataExec> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -44,8 +44,8 @@ impl JobStatusBuilder<JobData> {
         }
     }
 
-    pub fn step_data(self) -> JobStatusBuilder<JobDataStep> {
-        JobStatusBuilder {
+    pub fn step_data(self) -> StatusBuilder<JobDataStep> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -57,9 +57,9 @@ impl JobStatusBuilder<JobData> {
     }
 }
 
-impl JobStatusBuilder<JobDataExec> {
-    pub fn step_data(self) -> JobStatusBuilder<JobDataExecStep> {
-        JobStatusBuilder {
+impl StatusBuilder<JobDataExec> {
+    pub fn step_data(self) -> StatusBuilder<JobDataExecStep> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -71,9 +71,9 @@ impl JobStatusBuilder<JobDataExec> {
     }
 }
 
-impl JobStatusBuilder<JobDataStep> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobDataExecStep> {
-        JobStatusBuilder {
+impl StatusBuilder<JobDataStep> {
+    pub fn exec_data(self) -> StatusBuilder<JobDataExecStep> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -87,7 +87,7 @@ impl JobStatusBuilder<JobDataStep> {
 
 fn build_exec_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobStatusBuilder<T>,
+    builder: &StatusBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -100,7 +100,7 @@ where
 
 fn build_step_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobStatusBuilder<T>,
+    builder: &StatusBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -111,7 +111,7 @@ where
     }
 }
 
-fn set_subsystem<T>(mut builder: JobStatusBuilder<T>, value: Box<str>) -> JobStatusBuilder<T>
+fn set_subsystem<T>(mut builder: StatusBuilder<T>, value: Box<str>) -> StatusBuilder<T>
 where
     T: TryFromResponse,
 {

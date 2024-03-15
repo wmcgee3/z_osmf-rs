@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{target_path}")]
-pub struct FileLinkBuilder<T>
+pub struct LinkBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -20,7 +20,7 @@ where
     #[endpoint(path)]
     target_path: Box<str>,
     #[endpoint(skip_builder)]
-    link_type: FileLinkType,
+    link_type: LinkType,
     #[endpoint(optional, skip_builder)]
     recursive: bool,
     #[endpoint(optional, skip_builder)]
@@ -32,7 +32,7 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileLinkType {
+pub enum LinkType {
     External,
     Symbol,
 }
@@ -42,14 +42,14 @@ struct RequestJson<'a> {
     request: &'static str,
     from: &'a str,
     #[serde(rename = "type")]
-    link_type: FileLinkType,
+    link_type: LinkType,
     recursive: bool,
     force: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileLinkBuilder<T>,
+    builder: &LinkBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -69,7 +69,7 @@ mod tests {
 
     use crate::tests::*;
 
-    use super::FileLinkType;
+    use super::LinkType;
 
     #[test]
     fn maximal() {
@@ -98,7 +98,7 @@ mod tests {
         let request = zosmf
             .files()
             .link(
-                FileLinkType::Symbol,
+                LinkType::Symbol,
                 "/u/jiahj/sourceFile.txt",
                 "/u/jiahj/targetFile.txt",
             )

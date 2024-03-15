@@ -13,7 +13,7 @@ use crate::ClientCore;
 use super::MigratedRecall;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetMemberList<T> {
+pub struct Members<T> {
     items: Box<[T]>,
     #[getter(copy)]
     json_version: i32,
@@ -25,7 +25,7 @@ pub struct DatasetMemberList<T> {
     total_rows: Option<i32>,
 }
 
-impl<T> TryFromResponse for DatasetMemberList<T>
+impl<T> TryFromResponse for Members<T>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -38,7 +38,7 @@ where
             json_version,
         } = value.json().await?;
 
-        Ok(DatasetMemberList {
+        Ok(Members {
             items,
             json_version,
             more_rows,
@@ -49,7 +49,7 @@ where
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberInfoBase {
+pub struct MemberBase {
     #[serde(rename = "member")]
     name: Box<str>,
     #[getter(copy)]
@@ -104,14 +104,14 @@ pub struct MemberInfoBase {
 }
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct MemberInfoName {
+pub struct MemberName {
     #[serde(rename = "member")]
     name: Box<str>,
 }
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct DatasetMemberListBuilder<T>
+pub struct MembersBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -136,12 +136,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetMemberListBuilder<T>
+impl<T> MembersBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberInfoBase>> {
-        DatasetMemberListBuilder {
+    pub fn attributes_base(self) -> MembersBuilder<Members<MemberBase>> {
+        MembersBuilder {
             core: self.core,
             dataset_name: self.dataset_name,
             start: self.start,
@@ -154,8 +154,8 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> DatasetMemberListBuilder<DatasetMemberList<MemberInfoName>> {
-        DatasetMemberListBuilder {
+    pub fn attributes_member(self) -> MembersBuilder<Members<MemberName>> {
+        MembersBuilder {
             core: self.core,
             dataset_name: self.dataset_name,
             start: self.start,
@@ -203,12 +203,12 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: reqwest::RequestBuilder,
-    member_list_builder: &DatasetMemberListBuilder<T>,
+    member_list_builder: &MembersBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let DatasetMemberListBuilder {
+    let MembersBuilder {
         attributes,
         include_total,
         ..

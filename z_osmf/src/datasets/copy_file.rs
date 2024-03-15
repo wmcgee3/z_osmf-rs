@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{to_dataset}{to_member}")]
-pub struct CopyFileToDatasetBuilder<T>
+pub struct CopyFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -18,7 +18,7 @@ where
     #[endpoint(builder_fn = build_body)]
     from_path: Box<str>,
     #[endpoint(optional, skip_builder)]
-    file_type: Option<CopyFileType>,
+    file_type: Option<FileType>,
     #[endpoint(optional, path, setter_fn = set_volume)]
     volume: Box<str>,
     #[endpoint(path)]
@@ -34,7 +34,7 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum CopyFileType {
+pub enum FileType {
     Binary,
     Executable,
     Text,
@@ -52,12 +52,12 @@ struct RequestJson<'a> {
 struct FromFile<'a> {
     filename: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    file_type: Option<CopyFileType>,
+    file_type: Option<FileType>,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CopyFileToDatasetBuilder<T>,
+    builder: &CopyFileBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -72,10 +72,7 @@ where
     })
 }
 
-fn set_to_member<T>(
-    mut builder: CopyFileToDatasetBuilder<T>,
-    value: Box<str>,
-) -> CopyFileToDatasetBuilder<T>
+fn set_to_member<T>(mut builder: CopyFileBuilder<T>, value: Box<str>) -> CopyFileBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -84,10 +81,7 @@ where
     builder
 }
 
-fn set_volume<T>(
-    mut builder: CopyFileToDatasetBuilder<T>,
-    value: Box<str>,
-) -> CopyFileToDatasetBuilder<T>
+fn set_volume<T>(mut builder: CopyFileBuilder<T>, value: Box<str>) -> CopyFileBuilder<T>
 where
     T: TryFromResponse,
 {

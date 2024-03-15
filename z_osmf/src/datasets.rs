@@ -18,17 +18,17 @@ use serde::{Deserialize, Serialize};
 use crate::error::Error;
 use crate::{ClientCore, TransactionId};
 
-use self::copy::DatasetCopyBuilder;
-use self::copy_file::CopyFileToDatasetBuilder;
-use self::create::DatasetCreateBuilder;
-use self::delete::DatasetDeleteBuilder;
-use self::list::{DatasetList, DatasetListBuilder, DatasetName};
-use self::members::{DatasetMemberList, DatasetMemberListBuilder, MemberInfoName};
-use self::migrate::{DatasetMigrate, DatasetMigrateBuilder};
-use self::read::{DatasetRead, DatasetReadBuilder};
-use self::recall::DatasetRecallBuilder;
-use self::rename::DatasetRenameBuilder;
-use self::write::{DatasetWrite, DatasetWriteBuilder};
+use self::copy::CopyBuilder;
+use self::copy_file::CopyFileBuilder;
+use self::create::CreateBuilder;
+use self::delete::DeleteBuilder;
+use self::list::{DatasetsBuilder, DatasetName, Datasets};
+use self::members::{MemberName, Members, MembersBuilder};
+use self::migrate::{Migrate, MigrateBuilder};
+use self::read::{Read, ReadBuilder};
+use self::recall::RecallBuilder;
+use self::rename::RenameBuilder;
+use self::write::{Write, WriteBuilder};
 
 #[derive(Clone, Debug)]
 pub struct DatasetsClient {
@@ -68,8 +68,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<TransactionId> {
-        DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
+    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> CopyBuilder<TransactionId> {
+        CopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// #Examples
@@ -98,12 +98,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_file(
-        &self,
-        from_path: &str,
-        to_dataset: &str,
-    ) -> CopyFileToDatasetBuilder<TransactionId> {
-        CopyFileToDatasetBuilder::new(self.core.clone(), from_path, to_dataset)
+    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> CopyFileBuilder<TransactionId> {
+        CopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
     /// # Examples
@@ -176,8 +172,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> DatasetCreateBuilder<TransactionId> {
-        DatasetCreateBuilder::new(self.core.clone(), dataset_name)
+    pub fn create(&self, dataset_name: &str) -> CreateBuilder<TransactionId> {
+        CreateBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -233,8 +229,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DatasetDeleteBuilder<TransactionId> {
-        DatasetDeleteBuilder::new(self.core.clone(), dataset_name)
+    pub fn delete(&self, dataset_name: &str) -> DeleteBuilder<TransactionId> {
+        DeleteBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -264,8 +260,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetListBuilder<DatasetList<DatasetName>> {
-        DatasetListBuilder::new(self.core.clone(), name_pattern)
+    pub fn list(&self, name_pattern: &str) -> DatasetsBuilder<Datasets<DatasetName>> {
+        DatasetsBuilder::new(self.core.clone(), name_pattern)
     }
 
     /// # Examples
@@ -294,11 +290,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn members(
-        &self,
-        dataset_name: &str,
-    ) -> DatasetMemberListBuilder<DatasetMemberList<MemberInfoName>> {
-        DatasetMemberListBuilder::new(self.core.clone(), dataset_name)
+    pub fn members(&self, dataset_name: &str) -> MembersBuilder<Members<MemberName>> {
+        MembersBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -314,8 +307,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn migrate(&self, name: &str) -> DatasetMigrateBuilder<DatasetMigrate> {
-        DatasetMigrateBuilder::new(self.core.clone(), name)
+    pub fn migrate(&self, name: &str) -> MigrateBuilder<Migrate> {
+        MigrateBuilder::new(self.core.clone(), name)
     }
 
     /// # Examples
@@ -344,8 +337,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
-        DatasetReadBuilder::new(self.core.clone(), dataset_name)
+    pub fn read(&self, dataset_name: &str) -> ReadBuilder<Read<Box<str>>> {
+        ReadBuilder::new(self.core.clone(), dataset_name)
     }
 
     /// # Examples
@@ -361,8 +354,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn recall(&self, name: &str) -> DatasetRecallBuilder<TransactionId> {
-        DatasetRecallBuilder::new(self.core.clone(), name)
+    pub fn recall(&self, name: &str) -> RecallBuilder<TransactionId> {
+        RecallBuilder::new(self.core.clone(), name)
     }
 
     /// # Examples
@@ -378,12 +371,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(
-        &self,
-        from_dataset: &str,
-        to_dataset: &str,
-    ) -> DatasetRenameBuilder<TransactionId> {
-        DatasetRenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
+    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> RenameBuilder<TransactionId> {
+        RenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// # Examples
@@ -403,8 +392,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> DatasetWriteBuilder<DatasetWrite> {
-        DatasetWriteBuilder::new(self.core.clone(), dataset_name)
+    pub fn write(&self, dataset_name: &str) -> WriteBuilder<Write> {
+        WriteBuilder::new(self.core.clone(), dataset_name)
     }
 }
 
