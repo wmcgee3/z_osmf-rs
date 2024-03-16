@@ -110,13 +110,12 @@ enum Data {
 }
 
 fn build_data<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let key = "X-IBM-Data-Type";
     let DatasetWriteBuilder {
         data,
         encoding,
@@ -124,46 +123,40 @@ where
         ..
     } = builder;
 
-    request_builder = match (data, encoding, crlf_newlines) {
-        (Some(Data::Binary(_)), _, _) => request_builder.header(key, "binary"),
-        (Some(Data::Record(_)), _, _) => request_builder.header(key, "record"),
-        (Some(Data::Text(_)), encoding, crlf) if encoding.is_some() || *crlf => request_builder
-            .header(
-                key,
-                format!(
-                    "text{}{}",
-                    if let Some(encoding) = encoding {
-                        format!(";fileEncoding={}", encoding)
-                    } else {
-                        "".to_string()
-                    },
-                    if *crlf { ";crlf=true" } else { "" }
-                ),
+    match data {
+        Some(Data::Binary(binary)) => request_builder
+            .header("X-IBM-Data-Type", "binary")
+            .body(binary.clone()),
+        Some(Data::Record(record)) => request_builder
+            .header("X-IBM-Data-Type", "record")
+            .body(record.clone()),
+        Some(Data::Text(text)) => match (encoding, crlf_newlines) {
+            (Some(encoding), true) => request_builder.header(
+                "X-IBM-Data-Type",
+                format!("text;fileEncoding={};crlf=true", encoding),
             ),
-        _ => request_builder,
-    };
-    request_builder = match data {
-        Some(Data::Binary(binary)) => request_builder.body(binary.clone()),
-        Some(Data::Record(record)) => request_builder.body(record.clone()),
-        Some(Data::Text(text)) => request_builder.body(text.clone()),
+            (Some(encoding), false) => {
+                request_builder.header("X-IBM-Data-Type", format!("text;fileEncoding={}", encoding))
+            }
+            (None, true) => request_builder.header("X-IBM-Data-Type", "text;crlf=true"),
+            (_, _) => request_builder,
+        }
+        .body(text.clone()),
         None => request_builder,
-    };
-
-    request_builder
+    }
 }
 
 fn build_release_enq<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.release_enq {
-        request_builder = request_builder.header("X-IBM-Release-ENQ", "true");
+    match builder.release_enq {
+        true => request_builder.header("X-IBM-Release-ENQ", "true"),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>

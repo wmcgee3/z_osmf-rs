@@ -17,7 +17,7 @@ where
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(skip_setter, builder_fn = build_body)]
+    #[endpoint(builder_fn = build_body)]
     from_dataset: Box<str>,
     #[endpoint(path)]
     to_dataset: Box<str>,

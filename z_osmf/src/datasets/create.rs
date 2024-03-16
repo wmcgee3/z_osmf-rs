@@ -18,10 +18,7 @@ where
     #[endpoint(path)]
     dataset_name: Box<str>,
 
-    #[endpoint(optional, skip_setter, builder_fn = build_json)]
-    json: PhantomData<RequestJson<'static>>,
-
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, builder_fn = build_body)]
     volume: Option<Box<str>>,
     #[endpoint(optional, skip_builder)]
     device_type: Option<Box<str>>,
@@ -94,7 +91,7 @@ struct RequestJson<'a> {
     model_dataset: Option<&'a str>,
 }
 
-fn build_json<T>(
+fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &DatasetCreateBuilder<T>,
 ) -> reqwest::RequestBuilder

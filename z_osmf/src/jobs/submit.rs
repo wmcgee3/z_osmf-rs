@@ -105,31 +105,36 @@ struct Source<'a> {
 }
 
 fn build_jcl_source<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    request_builder = match &builder.jcl_source {
+    match &builder.jcl_source {
         JclSource::Jcl(jcl_data) => match jcl_data {
             JclData::Binary(binary) => request_builder
+                .header("Content-Type", "application/octet-stream")
                 .header("X-IBM-Intrdr-Mode", "BINARY")
                 .body(binary.clone()),
             JclData::Record(record) => request_builder
+                .header("Content-Type", "application/octet-stream")
                 .header("X-IBM-Intrdr-Mode", "RECORD")
                 .body(record.clone()),
             JclData::Text(text) => request_builder
+                .header("Content-Type", "text/plain")
                 .header("X-IBM-Intrdr-Mode", "TEXT")
                 .body(text.to_string()),
         },
-        JclSource::Dataset(dataset) => request_builder.json(&Source {
-            file: &format!("//'{}'", dataset),
-        }),
-        JclSource::File(file) => request_builder.json(&Source { file }),
-    };
-
-    request_builder
+        JclSource::Dataset(dataset) => request_builder
+            .header("Content-Type", "application/json")
+            .json(&Source {
+                file: &format!("//'{}'", dataset),
+            }),
+        JclSource::File(file) => request_builder
+            .header("Content-Type", "application/json")
+            .json(&Source { file }),
+    }
 }
 
 fn build_notification_events<T>(
@@ -207,6 +212,7 @@ mod tests {
             .header("X-IBM-Intrdr-Class", "A")
             .header("X-IBM-Intrdr-Recfm", "F")
             .header("X-IBM-Intrdr-Lrecl", "80")
+            .header("Content-Type", "text/plain")
             .header("X-IBM-Intrdr-Mode", "TEXT")
             .body(jcl.to_string())
             .build()

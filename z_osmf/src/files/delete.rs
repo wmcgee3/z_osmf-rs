@@ -24,17 +24,16 @@ where
 }
 
 fn build_recursive<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &FileDeleteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.recursive {
-        request_builder = request_builder.header("X-IBM-Option", "recursive");
+    match builder.recursive {
+        true => request_builder.header("X-IBM-Option", "recursive"),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 #[cfg(test)]

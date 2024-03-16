@@ -6,7 +6,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{JobData, JobExecData, JobExecStepData, JobIdentifier, JobStepData};
+use super::{JobData, JobDataExec, JobDataExecStep, JobDataStep, JobIdentifier};
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
@@ -32,7 +32,7 @@ where
 }
 
 impl JobStatusBuilder<JobData> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobExecData> {
+    pub fn exec_data(self) -> JobStatusBuilder<JobDataExec> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -44,7 +44,7 @@ impl JobStatusBuilder<JobData> {
         }
     }
 
-    pub fn step_data(self) -> JobStatusBuilder<JobStepData> {
+    pub fn step_data(self) -> JobStatusBuilder<JobDataStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -57,8 +57,8 @@ impl JobStatusBuilder<JobData> {
     }
 }
 
-impl JobStatusBuilder<JobExecData> {
-    pub fn step_data(self) -> JobStatusBuilder<JobExecStepData> {
+impl JobStatusBuilder<JobDataExec> {
+    pub fn step_data(self) -> JobStatusBuilder<JobDataExecStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -71,8 +71,8 @@ impl JobStatusBuilder<JobExecData> {
     }
 }
 
-impl JobStatusBuilder<JobStepData> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobExecStepData> {
+impl JobStatusBuilder<JobDataStep> {
+    pub fn exec_data(self) -> JobStatusBuilder<JobDataExecStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -86,31 +86,29 @@ impl JobStatusBuilder<JobStepData> {
 }
 
 fn build_exec_data<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobStatusBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.exec_data {
-        request_builder = request_builder.query(&[("exec-data", "Y")]);
+    match builder.exec_data {
+        true => request_builder.query(&[("exec-data", "Y")]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn build_step_data<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobStatusBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.step_data {
-        request_builder = request_builder.query(&[("step-data", "Y")]);
+    match builder.step_data {
+        true => request_builder.query(&[("step-data", "Y")]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn set_subsystem<T>(mut builder: JobStatusBuilder<T>, value: Box<str>) -> JobStatusBuilder<T>

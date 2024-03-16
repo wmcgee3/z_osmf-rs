@@ -119,13 +119,13 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, query = "search", builder_fn = build_search)]
-    search_pattern: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
-    search_is_regex: bool,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, query = "search")]
+    search: Option<Box<str>>,
+    #[endpoint(optional, query = "research")]
+    regex_search: Option<Box<str>>,
+    #[endpoint(optional, builder_fn = build_search_case_sensitive)]
     search_case_sensitive: bool,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(optional, query = "maxreturnsize")]
     search_max_return: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
     data_type: Option<FileDataType>,
@@ -147,8 +147,8 @@ where
         FileReadBuilder {
             core: self.core,
             path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
+            search: self.search,
+            regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             data_type: Some(FileDataType::Binary),
@@ -162,8 +162,8 @@ where
         FileReadBuilder {
             core: self.core,
             path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
+            search: self.search,
+            regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             data_type: Some(FileDataType::Text),
@@ -180,8 +180,8 @@ where
         FileReadBuilder {
             core: self.core,
             path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
+            search: self.search,
+            regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             data_type: self.data_type,
@@ -200,8 +200,8 @@ where
         FileReadBuilder {
             core: self.core,
             path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
+            search: self.search,
+            regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             data_type: Some(FileDataType::Binary),
@@ -215,8 +215,8 @@ where
         FileReadBuilder {
             core: self.core,
             path: self.path,
-            search_pattern: self.search_pattern,
-            search_is_regex: self.search_is_regex,
+            search: self.search,
+            regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
             data_type: Some(FileDataType::Text),
@@ -254,39 +254,17 @@ where
     }
 }
 
-fn build_search<T>(
-    mut request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T>,
+fn build_search_case_sensitive<T>(
+    request_builder: reqwest::RequestBuilder,
+    builder: &FileReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileReadBuilder {
-        search_pattern,
-        search_is_regex,
-        search_case_sensitive,
-        search_max_return,
-        ..
-    } = &dataset_read_builder;
-
-    if let Some(search) = search_pattern {
-        request_builder = request_builder.query(&[(
-            if *search_is_regex {
-                "research"
-            } else {
-                "search"
-            },
-            search,
-        )]);
-        if *search_case_sensitive {
-            request_builder = request_builder.query(&[("insensitive", "false")]);
-        }
-        if let Some(max) = search_max_return {
-            request_builder = request_builder.query(&[("maxreturnsize", max)]);
-        }
+    match builder.search_case_sensitive {
+        true => request_builder.query(&[("insensitive", "false")]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>), Error> {
@@ -400,8 +378,7 @@ mod tests {
         let read_file = zosmf
             .files()
             .read("/etc/inetd.conf")
-            .search_pattern(".*")
-            .search_is_regex(true)
+            .regex_search(".*")
             .get_request()
             .unwrap();
 
@@ -427,7 +404,7 @@ mod tests {
         let read_file = zosmf
             .files()
             .read("/etc/inetd.conf")
-            .search_pattern("something")
+            .search("something")
             .search_case_sensitive(true)
             .search_max_return(10)
             .get_request()

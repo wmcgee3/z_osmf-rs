@@ -158,17 +158,16 @@ enum DataType {
 }
 
 fn build_search_case_sensitive<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &JobFileReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    if builder.search_case_sensitive {
-        request_builder = request_builder.query(&["insensitive", "false"]);
+    match builder.search_case_sensitive {
+        true => request_builder.query(&["insensitive", "false"]),
+        false => request_builder,
     }
-
-    request_builder
 }
 
 fn set_subsystem<T>(mut builder: JobFileReadBuilder<T>, value: Box<str>) -> JobFileReadBuilder<T>

@@ -73,13 +73,12 @@ impl FileWriteBuilder<FileWrite> {
 }
 
 fn build_data<T>(
-    mut request_builder: reqwest::RequestBuilder,
+    request_builder: reqwest::RequestBuilder,
     builder: &FileWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let key = "X-IBM-Data-Type";
     let FileWriteBuilder {
         crlf_newlines,
         data,
@@ -87,27 +86,22 @@ where
         ..
     } = builder;
 
-    request_builder = match (data, encoding, crlf_newlines) {
-        (Some(Data::Text(_)), encoding, crlf) if encoding.is_some() || *crlf => request_builder
-            .header(
-                key,
-                format!(
-                    "text{}{}",
-                    if let Some(encoding) = encoding {
-                        format!(";fileEncoding={}", encoding)
-                    } else {
-                        "".to_string()
-                    },
-                    if *crlf { ";crlf=true" } else { "" }
-                ),
-            ),
-        (Some(Data::Binary(_)), _, _) => request_builder.header(key, "binary"),
-        _ => request_builder,
-    };
-
     match data {
-        Some(Data::Binary(binary)) => request_builder.body(binary.clone()),
-        Some(Data::Text(text)) => request_builder.body(text.to_string()),
+        Some(Data::Binary(binary)) => request_builder
+            .body(binary.clone())
+            .header("X-IBM-Data-Type", "binary"),
+        Some(Data::Text(text)) => match (encoding, crlf_newlines) {
+            (Some(encoding), true) => request_builder.header(
+                "X-IBM-Data-Type",
+                format!("text;fileEncoding={};crlf=true", encoding),
+            ),
+            (Some(encoding), false) => {
+                request_builder.header("X-IBM-Data-Type", format!("text;fileEncoding={}", encoding))
+            }
+            (None, true) => request_builder.header("X-IBM-Data-Type", "text;crlf=true"),
+            _ => request_builder,
+        }
+        .body(text.to_string()),
         _ => request_builder,
     }
 }

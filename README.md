@@ -66,7 +66,7 @@ async fn main() -> Result<(), z_osmf::Error> {
         .jobs()
         .list()
         .owner("*")
-        .active_only()
+        .active_only(true)
         .build()
         .await?;
 
