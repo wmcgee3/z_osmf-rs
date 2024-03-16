@@ -22,7 +22,7 @@ use self::copy::CopyBuilder;
 use self::copy_file::CopyFileBuilder;
 use self::create::CreateBuilder;
 use self::delete::DeleteBuilder;
-use self::list::{DatasetsBuilder, DatasetName, Datasets};
+use self::list::{DatasetName, Datasets, DatasetsBuilder};
 use self::members::{MemberName, Members, MembersBuilder};
 use self::migrate::{Migrate, MigrateBuilder};
 use self::read::{Read, ReadBuilder};

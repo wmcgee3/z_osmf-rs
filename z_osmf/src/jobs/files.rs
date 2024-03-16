@@ -10,7 +10,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::JobIdentifier;
+use super::Identifier;
 
 #[derive(Clone, Debug, Deserialize, Getters, Serialize)]
 pub struct JobFiles {
@@ -66,7 +66,7 @@ where
     #[endpoint(optional, path, setter_fn = set_job_files_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: Identifier,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
@@ -131,7 +131,7 @@ where
     #[endpoint(optional, path, setter_fn = set_read_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: Identifier,
     #[endpoint(path)]
     id: Id,
     #[endpoint(optional, header = "X-IBM-Record-Range")]
@@ -230,7 +230,10 @@ where
     }
 }
 
-fn set_job_files_subsystem<T>(mut builder: JobFilesBuilder<T>, value: Box<str>) -> JobFilesBuilder<T>
+fn set_job_files_subsystem<T>(
+    mut builder: JobFilesBuilder<T>,
+    value: Box<str>,
+) -> JobFilesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -267,12 +270,11 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
+        let identifier = Identifier::NameId("TESTJOB1".into(), "JOB00023".into());
         let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
     }
-
 
     #[test]
     fn read_1() {
@@ -285,7 +287,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
         let file_id = Id::Id(1);
         let job_file = zosmf
             .jobs()
@@ -308,7 +310,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
         let file_id = Id::Id(8);
         let job_file = zosmf
             .jobs()
@@ -331,7 +333,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00060".into());
+        let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00060".into());
         let file_id = Id::Jcl;
 
         let job_file = zosmf

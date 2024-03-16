@@ -6,7 +6,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{JobData, JobDataExec, JobDataExecStep, JobDataStep, JobIdentifier};
+use super::{Identifier, Job, JobExec, JobExecStep, JobStep};
 
 #[derive(Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
@@ -19,7 +19,7 @@ where
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: Identifier,
     #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
     exec_data: bool,
     #[endpoint(optional, skip_setter, builder_fn = build_step_data)]
@@ -31,8 +31,8 @@ where
     target_type: PhantomData<T>,
 }
 
-impl StatusBuilder<JobData> {
-    pub fn exec_data(self) -> StatusBuilder<JobDataExec> {
+impl StatusBuilder<Job> {
+    pub fn exec_data(self) -> StatusBuilder<JobExec> {
         StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -44,7 +44,7 @@ impl StatusBuilder<JobData> {
         }
     }
 
-    pub fn step_data(self) -> StatusBuilder<JobDataStep> {
+    pub fn step_data(self) -> StatusBuilder<JobStep> {
         StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -57,8 +57,8 @@ impl StatusBuilder<JobData> {
     }
 }
 
-impl StatusBuilder<JobDataExec> {
-    pub fn step_data(self) -> StatusBuilder<JobDataExecStep> {
+impl StatusBuilder<JobExec> {
+    pub fn step_data(self) -> StatusBuilder<JobExecStep> {
         StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -71,8 +71,8 @@ impl StatusBuilder<JobDataExec> {
     }
 }
 
-impl StatusBuilder<JobDataStep> {
-    pub fn exec_data(self) -> StatusBuilder<JobDataExecStep> {
+impl StatusBuilder<JobStep> {
+    pub fn exec_data(self) -> StatusBuilder<JobExecStep> {
         StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -138,7 +138,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
+        let identifier = Identifier::NameId("BLSJPRMI".into(), "STC00052".into());
         let job_status = zosmf
             .jobs()
             .status(identifier)

@@ -1,5 +1,3 @@
-pub mod mode;
-pub mod owner;
 pub mod copy;
 pub mod copy_dataset;
 pub mod create;
@@ -7,6 +5,8 @@ pub mod delete;
 pub mod extra_attributes;
 pub mod link;
 pub mod list;
+pub mod mode;
+pub mod owner;
 pub mod read;
 pub mod rename;
 pub mod tags;
@@ -19,8 +19,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ClientCore, TransactionId};
 
-use self::mode::ChangeModeBuilder;
-use self::owner::ChangeOwnerBuilder;
 use self::copy::CopyBuilder;
 use self::copy_dataset::CopyDatasetBuilder;
 use self::create::CreateBuilder;
@@ -30,6 +28,8 @@ use self::extra_attributes::{
 };
 use self::link::{LinkBuilder, LinkType};
 use self::list::{Files, FilesBuilder};
+use self::mode::ChangeModeBuilder;
+use self::owner::ChangeOwnerBuilder;
 use self::read::{Read, ReadBuilder};
 use self::rename::RenameBuilder;
 use self::tags::{RemoveBuilder, SetBuilder, Tags, TagsBuilder};
