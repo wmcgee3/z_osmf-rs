@@ -1,16 +1,16 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
+use serde::Serialize;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::jobs::{AsynchronousResponse, Identifier};
 use crate::ClientCore;
 
-use super::{AsynchronousResponse, Identifier};
-
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct PurgeBuilder<T>
+#[endpoint(method = put, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
+pub struct ClassBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -20,20 +20,23 @@ where
     subsystem: Box<str>,
     #[endpoint(path)]
     identifier: Identifier,
-    #[endpoint(optional, skip_setter, builder_fn = build_asynchronous)]
+    #[endpoint(builder_fn = build_body)]
+    class: char,
+    #[endpoint(optional, skip_setter, skip_builder)]
     asynchronous: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
-impl<T> PurgeBuilder<T>
+impl<T> ClassBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> PurgeBuilder<AsynchronousResponse> {
-        PurgeBuilder {
+    pub fn asynchronous(self) -> ClassBuilder<AsynchronousResponse> {
+        ClassBuilder {
             core: self.core,
+            class: self.class,
             subsystem: self.subsystem,
             identifier: self.identifier,
             asynchronous: true,
@@ -42,20 +45,26 @@ where
     }
 }
 
-fn build_asynchronous<T>(
+#[derive(Clone, Serialize)]
+struct RequestJson {
+    class: char,
+    version: &'static str,
+}
+
+fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &PurgeBuilder<T>,
+    builder: &ClassBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    request_builder.header(
-        "X-IBM-Job-Modify-Version",
-        if builder.asynchronous { "1.0" } else { "2.0" },
-    )
+    request_builder.json(&RequestJson {
+        class: builder.class,
+        version: if builder.asynchronous { "1.0" } else { "2.0" },
+    })
 }
 
-fn set_subsystem<T>(mut builder: PurgeBuilder<T>, value: Box<str>) -> PurgeBuilder<T>
+fn set_subsystem<T>(mut builder: ClassBuilder<T>, value: Box<str>) -> ClassBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -71,27 +80,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn example_1() {
+    fn class_example_1() {
         let zosmf = get_zosmf();
 
+        let raw_json = r#"
+        {
+            "class": "A",
+            "version": "2.0"
+        }
+        "#;
+        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
         let manual_request = zosmf
             .core
             .client
-            .delete("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00085")
-            .header("X-IBM-Job-Modify-Version", "2.0")
+            .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
+            .json(&json)
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00085".into());
+        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf
             .jobs()
-            .cancel_and_purge(identifier)
+            .change_class(identifier, 'A')
             .get_request()
             .unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),
             format!("{:?}", job_feedback)
-        )
+        );
+
+        assert_eq!(manual_request.json(), job_feedback.json())
     }
 }

@@ -8,11 +8,11 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::{AsynchronousResponse, JobIdentifier};
+use super::{AsynchronousResponse, Identifier};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobFeedback {
+pub struct Feedback {
     #[serde(rename = "jobid")]
     id: Box<str>,
     #[serde(rename = "jobname")]
@@ -29,7 +29,7 @@ pub struct JobFeedback {
     message: Option<Box<str>>,
 }
 
-impl TryFromResponse for JobFeedback {
+impl TryFromResponse for Feedback {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -37,19 +37,18 @@ impl TryFromResponse for JobFeedback {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct JobFeedbackBuilder<T, U>
+pub struct FeedbackBuilder<T>
 where
     T: TryFromResponse,
-    U: Clone + FeedbackJson + Serialize,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
-    #[endpoint(builder_fn = build_data)]
-    data: U,
+    identifier: Identifier,
+    #[endpoint(builder_fn = build_body)]
+    request: &'static str,
     #[endpoint(optional, skip_setter, skip_builder)]
     asynchronous: bool,
 
@@ -57,114 +56,48 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T, U> JobFeedbackBuilder<T, U>
+impl<T> FeedbackBuilder<T>
 where
     T: TryFromResponse,
-    U: Clone + FeedbackJson + Serialize,
 {
-    pub fn asynchronous(self) -> JobFeedbackBuilder<AsynchronousResponse, U> {
-        JobFeedbackBuilder {
+    pub fn asynchronous(self) -> FeedbackBuilder<AsynchronousResponse> {
+        FeedbackBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
-            data: self.data,
+            request: self.request,
             asynchronous: true,
             target_type: PhantomData,
         }
     }
 }
 
-#[derive(Clone, Serialize)]
-pub struct ClassJson {
-    class: char,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    version: Option<Box<str>>,
+#[derive(Serialize)]
+struct RequestJson {
+    request: &'static str,
+    version: &'static str,
 }
 
-impl ClassJson {
-    pub(super) fn new<C>(class: C) -> Self
-    where
-        C: Into<char>,
-    {
-        ClassJson {
-            class: class.into(),
-            version: None,
-        }
-    }
-}
-
-impl FeedbackJson for ClassJson {
-    fn set_version<V>(&mut self, value: V) -> &mut Self
-    where
-        V: Into<Box<str>>,
-    {
-        self.version = Some(value.into());
-
-        self
-    }
-}
-
-#[derive(Clone, Serialize)]
-pub struct RequestJson {
-    request: Box<str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    version: Option<Box<str>>,
-}
-
-impl RequestJson {
-    pub(super) fn new<R>(request: R) -> Self
-    where
-        R: Into<Box<str>>,
-    {
-        RequestJson {
-            request: request.into(),
-            version: None,
-        }
-    }
-}
-
-impl FeedbackJson for RequestJson {
-    fn set_version<V>(&mut self, value: V) -> &mut Self
-    where
-        V: Into<Box<str>>,
-    {
-        self.version = Some(value.into());
-
-        self
-    }
-}
-
-pub trait FeedbackJson {
-    fn set_version<V>(&mut self, value: V) -> &mut Self
-    where
-        V: Into<Box<str>>;
-}
-
-fn set_subsystem<T, U>(
-    mut builder: JobFeedbackBuilder<T, U>,
-    value: Box<str>,
-) -> JobFeedbackBuilder<T, U>
+fn set_subsystem<T>(mut builder: FeedbackBuilder<T>, value: Box<str>) -> FeedbackBuilder<T>
 where
     T: TryFromResponse,
-    U: Clone + FeedbackJson + Serialize,
 {
     builder.subsystem = format!("-{}/", value).into();
 
     builder
 }
 
-fn build_data<T, U>(
+fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobFeedbackBuilder<T, U>,
+    builder: &FeedbackBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
-    U: Clone + FeedbackJson + Serialize,
 {
-    let mut data = builder.data.clone();
-    data.set_version(if builder.asynchronous { "1.0" } else { "2.0" });
-
-    request_builder.json(&data)
+    request_builder.json(&RequestJson {
+        request: builder.request,
+        version: if builder.asynchronous { "1.0" } else { "2.0" },
+    })
 }
 
 #[cfg(test)]
@@ -193,43 +126,9 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
+        let identifier = Identifier::NameId("TESTJOB2".into(), "JOB00084".into());
 
         let job_feedback = zosmf.jobs().cancel(identifier).get_request().unwrap();
-
-        assert_eq!(
-            format!("{:?}", manual_request),
-            format!("{:?}", job_feedback)
-        );
-
-        assert_eq!(manual_request.json(), job_feedback.json())
-    }
-
-    #[test]
-    fn change_class_example_1() {
-        let zosmf = get_zosmf();
-
-        let raw_json = r#"
-        {
-            "class": "A",
-            "version": "2.0"
-        }
-        "#;
-        let json: serde_json::Value = serde_json::from_str(raw_json).unwrap();
-        let manual_request = zosmf
-            .core
-            .client
-            .put("https://test.com/zosmf/restjobs/jobs/TESTJOBW/JOB00023")
-            .json(&json)
-            .build()
-            .unwrap();
-
-        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
-        let job_feedback = zosmf
-            .jobs()
-            .change_class(identifier, 'A')
-            .get_request()
-            .unwrap();
 
         assert_eq!(
             format!("{:?}", manual_request),
@@ -258,7 +157,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf.jobs().hold(identifier).get_request().unwrap();
 
         assert_eq!(
@@ -288,7 +187,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf.jobs().release(identifier).get_request().unwrap();
 
         assert_eq!(

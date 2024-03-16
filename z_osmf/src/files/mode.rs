@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileChangeOwnerBuilder<T>
+pub struct ChangeModeBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -18,11 +18,9 @@ where
     #[endpoint(path)]
     path: Box<str>,
     #[endpoint(builder_fn = build_body)]
-    owner: Box<str>,
+    mode: Box<str>,
     #[endpoint(optional, skip_builder)]
-    group: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
-    links: Option<ChangeOwnerLinks>,
+    links: Option<Links>,
     #[endpoint(optional, skip_builder)]
     recursive: bool,
 
@@ -30,36 +28,32 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum ChangeOwnerLinks {
-    Change,
-    #[default]
+pub enum Links {
     Follow,
+    Suppress,
 }
 
 #[derive(Serialize)]
 struct RequestJson<'a> {
     request: &'static str,
-    owner: &'a str,
+    mode: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    group: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<ChangeOwnerLinks>,
+    links: Option<Links>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileChangeOwnerBuilder<T>,
+    builder: &ChangeModeBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     request_builder.json(&RequestJson {
-        request: "chown",
-        owner: &builder.owner,
-        group: builder.group.as_deref(),
+        request: "chmod",
+        mode: &builder.mode,
         links: builder.links,
         recursive: builder.recursive,
     })
@@ -75,31 +69,26 @@ mod tests {
     fn maximal_request() {
         let zosmf = get_zosmf();
 
-        let json: serde_json::Value = serde_json::from_str(
-            r#"
+        let json = r#"
         {
-            "request": "chown",
-            "owner": "ibmuser",
-            "group": "ibmgrp",
-            "links": "change",
+            "request": "chmod",
+            "mode": "755",
+            "links": "suppress",
             "recursive": true
         }
-        "#,
-        )
-        .unwrap();
+        "#;
         let manual_request = zosmf
             .core
             .client
-            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
-            .json(&json)
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .json(&serde_json::from_str::<serde_json::Value>(json).unwrap())
             .build()
             .unwrap();
 
         let request = zosmf
             .files()
-            .change_owner("/u/jiahj/testDir", "ibmuser")
-            .group("ibmgrp")
-            .links(ChangeOwnerLinks::Change)
+            .change_mode("/u/jiahj/text.txt", "755")
+            .links(Links::Suppress)
             .recursive(true)
             .get_request()
             .unwrap();
@@ -112,27 +101,24 @@ mod tests {
     fn minimal_request() {
         let zosmf = get_zosmf();
 
-        let json: serde_json::Value = serde_json::from_str(
-            r#"
+        let json = r#"
         {
-            "request": "chown",
-            "owner": "ibmuser",
+            "request": "chmod",
+            "mode": "755",
             "recursive": false
         }
-        "#,
-        )
-        .unwrap();
+        "#;
         let manual_request = zosmf
             .core
             .client
-            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/test.txt")
-            .json(&json)
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
+            .json(&serde_json::from_str::<serde_json::Value>(json).unwrap())
             .build()
             .unwrap();
 
         let request = zosmf
             .files()
-            .change_owner("/u/jiahj/test.txt", "ibmuser")
+            .change_mode("/u/jiahj/text.txt", "755")
             .get_request()
             .unwrap();
 

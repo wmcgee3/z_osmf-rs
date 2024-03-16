@@ -8,7 +8,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetDeleteBuilder<T>
+pub struct DeleteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -27,7 +27,7 @@ where
     target_type: PhantomData<T>,
 }
 
-fn set_member<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T>
+fn set_member<T>(mut builder: DeleteBuilder<T>, value: Box<str>) -> DeleteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -36,7 +36,7 @@ where
     builder
 }
 
-fn set_volume<T>(mut builder: DatasetDeleteBuilder<T>, value: Box<str>) -> DatasetDeleteBuilder<T>
+fn set_volume<T>(mut builder: DeleteBuilder<T>, value: Box<str>) -> DeleteBuilder<T>
 where
     T: TryFromResponse,
 {

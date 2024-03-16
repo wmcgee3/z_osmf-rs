@@ -1,5 +1,4 @@
 pub use crate::utils::RecordRange;
-use crate::ClientCore;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -9,60 +8,68 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::jobs::Identifier;
+use crate::ClientCore;
 
-use super::JobIdentifier;
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum DataType {
+    Binary,
+    Record,
+    Text,
+}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct JobFileRead<T> {
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct Read<T> {
     data: T,
 }
 
-impl JobFileRead<Box<str>> {
+impl Read<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for JobFileRead<Box<str>> {
+impl TryFromResponse for Read<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobFileRead {
+        Ok(Read {
             data: value.text().await?.into(),
         })
     }
 }
 
-impl JobFileRead<Bytes> {
+impl Read<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for JobFileRead<Bytes> {
+impl TryFromResponse for Read<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobFileRead {
+        Ok(Read {
             data: value.bytes().await?,
         })
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum JobFileID {
-    JCL,
-    ID(i32),
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+pub enum FileId {
+    Jcl,
+    Id(i32),
 }
 
-impl std::fmt::Display for JobFileID {
+impl std::fmt::Display for FileId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            JobFileID::JCL => write!(f, "JCL"),
-            JobFileID::ID(id) => write!(f, "{}", id),
+            FileId::Jcl => write!(f, "JCL"),
+            FileId::Id(id) => write!(f, "{}", id),
         }
     }
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files/{id}/records")]
-pub struct JobFileReadBuilder<T>
+pub struct ReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -71,9 +78,9 @@ where
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: Identifier,
     #[endpoint(path)]
-    id: JobFileID,
+    id: FileId,
     #[endpoint(optional, header = "X-IBM-Record-Range")]
     record_range: Option<RecordRange>,
     #[endpoint(optional, skip_setter, query = "mode")]
@@ -93,12 +100,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> JobFileReadBuilder<JobFileRead<U>>
+impl<U> ReadBuilder<Read<U>>
 where
-    JobFileRead<U>: TryFromResponse,
+    Read<U>: TryFromResponse,
 {
-    pub fn binary(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
-        JobFileReadBuilder {
+    pub fn binary(self) -> ReadBuilder<Read<Bytes>> {
+        ReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -114,8 +121,8 @@ where
         }
     }
 
-    pub fn record(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
-        JobFileReadBuilder {
+    pub fn record(self) -> ReadBuilder<Read<Bytes>> {
+        ReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -131,8 +138,8 @@ where
         }
     }
 
-    pub fn text(self) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
-        JobFileReadBuilder {
+    pub fn text(self) -> ReadBuilder<Read<Box<str>>> {
+        ReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -149,17 +156,9 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
-#[serde(rename_all = "lowercase")]
-enum DataType {
-    Binary,
-    Record,
-    Text,
-}
-
 fn build_search_case_sensitive<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobFileReadBuilder<T>,
+    builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -170,7 +169,7 @@ where
     }
 }
 
-fn set_subsystem<T>(mut builder: JobFileReadBuilder<T>, value: Box<str>) -> JobFileReadBuilder<T>
+fn set_subsystem<T>(mut builder: ReadBuilder<T>, value: Box<str>) -> ReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -188,7 +187,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn example_1() {
+    fn job_files_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOB1/JOB00023/files")
+            .build()
+            .unwrap();
+
+        let identifier = Identifier::NameId("TESTJOB1".into(), "JOB00023".into());
+        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
+    }
+
+    #[test]
+    fn read_1() {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
@@ -198,8 +214,8 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
-        let file_id = JobFileID::ID(1);
+        let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let file_id = FileId::Id(1);
         let job_file = zosmf
             .jobs()
             .read_file(identifier, file_id)
@@ -210,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn example_2() {
+    fn read_2() {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
@@ -221,8 +237,8 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
-        let file_id = JobFileID::ID(8);
+        let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let file_id = FileId::Id(8);
         let job_file = zosmf
             .jobs()
             .read_file(identifier, file_id)
@@ -234,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn example_3() {
+    fn read_3() {
         let zosmf = get_zosmf();
 
         let manual_request = zosmf
@@ -244,8 +260,8 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00060".into());
-        let file_id = JobFileID::JCL;
+        let identifier = Identifier::NameId("TESTJOBJ".into(), "JOB00060".into());
+        let file_id = FileId::Jcl;
 
         let job_file = zosmf
             .jobs()

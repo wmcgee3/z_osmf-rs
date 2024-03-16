@@ -11,29 +11,29 @@ use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-use super::FileDataType;
+use super::DataType;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileRead<T> {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct Read<T> {
     #[getter(skip)]
     data: T,
     etag: Option<Box<str>>,
     transaction_id: Box<str>,
 }
 
-impl FileRead<Box<str>> {
+impl Read<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for FileRead<Box<str>> {
+impl TryFromResponse for Read<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = value.text().await?.into();
 
-        Ok(FileRead {
+        Ok(Read {
             data,
             etag,
             transaction_id,
@@ -41,19 +41,19 @@ impl TryFromResponse for FileRead<Box<str>> {
     }
 }
 
-impl FileRead<Bytes> {
+impl Read<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for FileRead<Bytes> {
+impl TryFromResponse for Read<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
 
-        Ok(FileRead {
+        Ok(Read {
             data,
             etag,
             transaction_id,
@@ -61,13 +61,13 @@ impl TryFromResponse for FileRead<Bytes> {
     }
 }
 
-impl FileRead<Option<Box<str>>> {
+impl Read<Option<Box<str>>> {
     pub fn data(&self) -> Option<&str> {
         self.data.as_deref()
     }
 }
 
-impl TryFromResponse for FileRead<Option<Box<str>>> {
+impl TryFromResponse for Read<Option<Box<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
@@ -77,7 +77,7 @@ impl TryFromResponse for FileRead<Option<Box<str>>> {
             Some(value.text().await?.into())
         };
 
-        Ok(FileRead {
+        Ok(Read {
             data,
             etag,
             transaction_id,
@@ -85,13 +85,13 @@ impl TryFromResponse for FileRead<Option<Box<str>>> {
     }
 }
 
-impl FileRead<Option<Bytes>> {
+impl Read<Option<Bytes>> {
     pub fn data(&self) -> Option<&Bytes> {
         self.data.as_ref()
     }
 }
 
-impl TryFromResponse for FileRead<Option<Bytes>> {
+impl TryFromResponse for Read<Option<Bytes>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, transaction_id) = get_headers(&value)?;
 
@@ -101,7 +101,7 @@ impl TryFromResponse for FileRead<Option<Bytes>> {
             Some(value.bytes().await?)
         };
 
-        Ok(FileRead {
+        Ok(Read {
             data,
             etag,
             transaction_id,
@@ -111,7 +111,7 @@ impl TryFromResponse for FileRead<Option<Bytes>> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileReadBuilder<T>
+pub struct ReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -128,7 +128,7 @@ where
     #[endpoint(optional, query = "maxreturnsize")]
     search_max_return: Option<i32>,
     #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
-    data_type: Option<FileDataType>,
+    data_type: Option<DataType>,
     #[endpoint(optional, skip_builder)]
     encoding: Option<Box<str>>,
     #[endpoint(optional, header = "If-None-Match", skip_setter)]
@@ -138,46 +138,46 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> FileReadBuilder<FileRead<U>>
+impl<U> ReadBuilder<Read<U>>
 where
-    FileRead<U>: TryFromResponse,
-    FileRead<Option<U>>: TryFromResponse,
+    Read<U>: TryFromResponse,
+    Read<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> FileReadBuilder<FileRead<Bytes>> {
-        FileReadBuilder {
+    pub fn binary(self) -> ReadBuilder<Read<Bytes>> {
+        ReadBuilder {
             core: self.core,
             path: self.path,
             search: self.search,
             regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(FileDataType::Binary),
+            data_type: Some(DataType::Binary),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
-        FileReadBuilder {
+    pub fn text(self) -> ReadBuilder<Read<Box<str>>> {
+        ReadBuilder {
             core: self.core,
             path: self.path,
             search: self.search,
             regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(FileDataType::Text),
+            data_type: Some(DataType::Text),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> FileReadBuilder<FileRead<Option<U>>>
+    pub fn if_none_match<E>(self, etag: E) -> ReadBuilder<Read<Option<U>>>
     where
         E: Into<Box<str>>,
     {
-        FileReadBuilder {
+        ReadBuilder {
             core: self.core,
             path: self.path,
             search: self.search,
@@ -192,34 +192,34 @@ where
     }
 }
 
-impl<U> FileReadBuilder<FileRead<Option<U>>>
+impl<U> ReadBuilder<Read<Option<U>>>
 where
-    FileRead<Option<U>>: TryFromResponse,
+    Read<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> FileReadBuilder<FileRead<Option<Bytes>>> {
-        FileReadBuilder {
+    pub fn binary(self) -> ReadBuilder<Read<Option<Bytes>>> {
+        ReadBuilder {
             core: self.core,
             path: self.path,
             search: self.search,
             regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(FileDataType::Binary),
+            data_type: Some(DataType::Binary),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileRead<Option<Box<str>>>> {
-        FileReadBuilder {
+    pub fn text(self) -> ReadBuilder<Read<Option<Box<str>>>> {
+        ReadBuilder {
             core: self.core,
             path: self.path,
             search: self.search,
             regex_search: self.regex_search,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            data_type: Some(FileDataType::Text),
+            data_type: Some(DataType::Text),
             encoding: self.encoding,
             etag: self.etag,
             target_type: PhantomData,
@@ -229,12 +229,12 @@ where
 
 fn build_data_type<T>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &FileReadBuilder<T>,
+    dataset_read_builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let FileReadBuilder {
+    let ReadBuilder {
         data_type,
         encoding,
         ..
@@ -256,7 +256,7 @@ where
 
 fn build_search_case_sensitive<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileReadBuilder<T>,
+    builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

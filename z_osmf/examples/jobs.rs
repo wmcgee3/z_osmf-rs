@@ -3,7 +3,8 @@ mod _setup;
 
 use anyhow::Context;
 use rand::seq::IteratorRandom;
-use z_osmf::jobs::JobIdentifier;
+use z_osmf::jobs::files::FileId;
+use z_osmf::jobs::Identifier;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,8 +14,7 @@ async fn main() -> anyhow::Result<()> {
     let username = std::env::var("ZOSMF_USERNAME")?;
 
     let my_jobs = jobs_client.list().owner(username).build().await?;
-    let job_identifiers: Vec<JobIdentifier> =
-        my_jobs.items().iter().map(|j| j.identifier()).collect();
+    let job_identifiers: Vec<Identifier> = my_jobs.items().iter().map(|j| j.identifier()).collect();
     println!(
         "Job Identifiers:\n{}\n",
         job_identifiers
@@ -35,10 +35,7 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let jcl_read = jobs_client
-        .read_file(
-            random_job_identifier.clone(),
-            z_osmf::jobs::file_read::JobFileID::JCL,
-        )
+        .read_file(random_job_identifier.clone(), FileId::Jcl)
         .build()
         .await?;
     println!("Random job JCL:\n{}\n", jcl_read.data());

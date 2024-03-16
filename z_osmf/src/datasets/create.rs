@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
-pub struct DatasetCreateBuilder<T>
+pub struct CreateBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -93,12 +93,12 @@ struct RequestJson<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetCreateBuilder<T>,
+    builder: &CreateBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let DatasetCreateBuilder {
+    let CreateBuilder {
         volume,
         device_type,
         organization,

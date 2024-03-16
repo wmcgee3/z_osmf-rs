@@ -14,8 +14,8 @@ use crate::utils::{
 };
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetList<T> {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct Datasets<T> {
     items: Box<[T]>,
     #[getter(copy)]
     json_version: i32,
@@ -28,7 +28,7 @@ pub struct DatasetList<T> {
     transaction_id: Box<str>,
 }
 
-impl<T> TryFromResponse for DatasetList<T>
+impl<T> TryFromResponse for Datasets<T>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -43,7 +43,7 @@ where
             total_rows,
         } = value.json().await?;
 
-        Ok(DatasetList {
+        Ok(Datasets {
             items,
             json_version,
             more_rows,
@@ -54,7 +54,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct DatasetBase {
     #[serde(rename = "dsname")]
     name: Box<str>,
@@ -63,11 +63,7 @@ pub struct DatasetBase {
     #[serde(rename = "catnm")]
     catalog: Option<Box<str>>,
     #[getter(copy)]
-    #[serde(
-        default,
-        deserialize_with = "de_optional_date",
-        rename = "cdate"
-    )]
+    #[serde(default, deserialize_with = "de_optional_date", rename = "cdate")]
     creation_date: Option<NaiveDate>,
     #[serde(rename = "dev")]
     device_type: Option<Box<str>>,
@@ -76,11 +72,7 @@ pub struct DatasetBase {
     #[serde(rename = "dsorg")]
     organization: Option<Box<str>>,
     #[getter(copy)]
-    #[serde(
-        default,
-        deserialize_with = "de_optional_date",
-        rename = "edate"
-    )]
+    #[serde(default, deserialize_with = "de_optional_date", rename = "edate")]
     expiration_date: Option<NaiveDate>,
     #[serde(rename = "extx")]
     extents_used: Option<Box<str>>,
@@ -110,11 +102,7 @@ pub struct DatasetBase {
     )]
     space_overflow: Option<bool>,
     #[getter(copy)]
-    #[serde(
-        default,
-        deserialize_with = "de_optional_date",
-        rename = "rdate"
-    )]
+    #[serde(default, deserialize_with = "de_optional_date", rename = "rdate")]
     last_referenced_date: Option<NaiveDate>,
     #[serde(rename = "recfm")]
     record_format: Option<Box<str>>,
@@ -130,13 +118,13 @@ pub struct DatasetBase {
     volumes: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct DatasetName {
     #[serde(rename = "dsname")]
     name: Box<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct DatasetVolume {
     #[serde(rename = "dsname")]
     name: Box<str>,
@@ -144,12 +132,12 @@ pub struct DatasetVolume {
     volume: Volume,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum Volume {
     Alias,
     Migrated,
-    Volume(String),
     Vsam,
+    Volume(String),
 }
 
 impl<'de> Deserialize<'de> for Volume {
@@ -184,7 +172,7 @@ impl Serialize for Volume {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetListBuilder<T>
+pub struct DatasetsBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -207,12 +195,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetListBuilder<T>
+impl<T> DatasetsBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetBase>> {
-        DatasetListBuilder {
+    pub fn attributes_base(self) -> DatasetsBuilder<Datasets<DatasetBase>> {
+        DatasetsBuilder {
             core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
@@ -224,8 +212,8 @@ where
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetName>> {
-        DatasetListBuilder {
+    pub fn attributes_dsname(self) -> DatasetsBuilder<Datasets<DatasetName>> {
+        DatasetsBuilder {
             core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
@@ -237,8 +225,8 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetVolume>> {
-        DatasetListBuilder {
+    pub fn attributes_vol(self) -> DatasetsBuilder<Datasets<DatasetVolume>> {
+        DatasetsBuilder {
             core: self.core,
             name_pattern: self.name_pattern,
             volume: self.volume,
@@ -287,7 +275,7 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: RequestBuilder,
-    list_builder: &DatasetListBuilder<T>,
+    list_builder: &DatasetsBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,

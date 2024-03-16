@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{name}{member}")]
-pub struct DatasetRecallBuilder<T>
+pub struct RecallBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -34,7 +34,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetRecallBuilder<T>,
+    builder: &RecallBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -45,7 +45,7 @@ where
     })
 }
 
-fn set_member<T>(mut builder: DatasetRecallBuilder<T>, value: Box<str>) -> DatasetRecallBuilder<T>
+fn set_member<T>(mut builder: RecallBuilder<T>, value: Box<str>) -> RecallBuilder<T>
 where
     T: TryFromResponse,
 {

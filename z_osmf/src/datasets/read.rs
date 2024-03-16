@@ -1,5 +1,4 @@
 pub use crate::utils::RecordRange;
-use crate::ClientCore;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -12,11 +11,12 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
 use super::{get_session_ref, DatasetDataType, Enqueue, MigratedRecall};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetRead<T> {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct Read<T> {
     #[getter(skip)]
     data: T,
     etag: Option<Box<str>>,
@@ -24,19 +24,19 @@ pub struct DatasetRead<T> {
     transaction_id: Box<str>,
 }
 
-impl DatasetRead<Box<str>> {
+impl Read<Box<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for DatasetRead<Box<str>> {
+impl TryFromResponse for Read<Box<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.text().await?.into();
 
-        Ok(DatasetRead {
+        Ok(Read {
             data,
             etag,
             session_ref,
@@ -45,19 +45,19 @@ impl TryFromResponse for DatasetRead<Box<str>> {
     }
 }
 
-impl DatasetRead<Bytes> {
+impl Read<Bytes> {
     pub fn data(&self) -> &Bytes {
         &self.data
     }
 }
 
-impl TryFromResponse for DatasetRead<Bytes> {
+impl TryFromResponse for Read<Bytes> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
 
-        Ok(DatasetRead {
+        Ok(Read {
             data,
             etag,
             session_ref,
@@ -66,13 +66,13 @@ impl TryFromResponse for DatasetRead<Bytes> {
     }
 }
 
-impl DatasetRead<Option<Box<str>>> {
+impl Read<Option<Box<str>>> {
     pub fn data(&self) -> Option<&str> {
         self.data.as_deref()
     }
 }
 
-impl TryFromResponse for DatasetRead<Option<Box<str>>> {
+impl TryFromResponse for Read<Option<Box<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
@@ -82,7 +82,7 @@ impl TryFromResponse for DatasetRead<Option<Box<str>>> {
             Some(value.text().await?.into())
         };
 
-        Ok(DatasetRead {
+        Ok(Read {
             data,
             etag,
             session_ref,
@@ -91,13 +91,13 @@ impl TryFromResponse for DatasetRead<Option<Box<str>>> {
     }
 }
 
-impl DatasetRead<Option<Bytes>> {
+impl Read<Option<Bytes>> {
     pub fn data(&self) -> Option<&Bytes> {
         self.data.as_ref()
     }
 }
 
-impl TryFromResponse for DatasetRead<Option<Bytes>> {
+impl TryFromResponse for Read<Option<Bytes>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
@@ -107,7 +107,7 @@ impl TryFromResponse for DatasetRead<Option<Bytes>> {
             Some(value.bytes().await?)
         };
 
-        Ok(DatasetRead {
+        Ok(Read {
             data,
             etag,
             session_ref,
@@ -118,7 +118,7 @@ impl TryFromResponse for DatasetRead<Option<Bytes>> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetReadBuilder<T>
+pub struct ReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -165,13 +165,13 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> DatasetReadBuilder<DatasetRead<U>>
+impl<U> ReadBuilder<Read<U>>
 where
-    DatasetRead<U>: TryFromResponse,
-    DatasetRead<Option<U>>: TryFromResponse,
+    Read<U>: TryFromResponse,
+    Read<Option<U>>: TryFromResponse,
 {
-    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
-        DatasetReadBuilder {
+    pub fn binary(self) -> ReadBuilder<Read<Bytes>> {
+        ReadBuilder {
             core: self.core,
             search: self.search,
             regex_search: self.regex_search,
@@ -195,8 +195,8 @@ where
         }
     }
 
-    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Bytes>> {
-        DatasetReadBuilder {
+    pub fn record(self) -> ReadBuilder<Read<Bytes>> {
+        ReadBuilder {
             core: self.core,
             search: self.search,
             regex_search: self.regex_search,
@@ -220,8 +220,8 @@ where
         }
     }
 
-    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
-        DatasetReadBuilder {
+    pub fn text(self) -> ReadBuilder<Read<Box<str>>> {
+        ReadBuilder {
             core: self.core,
             search: self.search,
             regex_search: self.regex_search,
@@ -245,11 +245,11 @@ where
         }
     }
 
-    pub fn if_none_match<E>(self, etag: E) -> DatasetReadBuilder<DatasetRead<Option<U>>>
+    pub fn if_none_match<E>(self, etag: E) -> ReadBuilder<Read<Option<U>>>
     where
         E: Into<Box<str>>,
     {
-        DatasetReadBuilder {
+        ReadBuilder {
             core: self.core,
             dataset_name: self.dataset_name,
             volume: self.volume,
@@ -274,12 +274,12 @@ where
     }
 }
 
-impl<V> DatasetReadBuilder<DatasetRead<Option<V>>>
+impl<V> ReadBuilder<Read<Option<V>>>
 where
-    DatasetRead<Option<V>>: TryFromResponse,
+    Read<Option<V>>: TryFromResponse,
 {
-    pub fn binary(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
-        DatasetReadBuilder {
+    pub fn binary(self) -> ReadBuilder<Read<Option<Bytes>>> {
+        ReadBuilder {
             core: self.core,
             search: self.search,
             regex_search: self.regex_search,
@@ -303,8 +303,8 @@ where
         }
     }
 
-    pub fn record(self) -> DatasetReadBuilder<DatasetRead<Option<Bytes>>> {
-        DatasetReadBuilder {
+    pub fn record(self) -> ReadBuilder<Read<Option<Bytes>>> {
+        ReadBuilder {
             core: self.core,
             search: self.search,
             regex_search: self.regex_search,
@@ -328,8 +328,8 @@ where
         }
     }
 
-    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
-        DatasetReadBuilder {
+    pub fn text(self) -> ReadBuilder<Read<Option<Box<str>>>> {
+        ReadBuilder {
             core: self.core,
             search: self.search,
             regex_search: self.regex_search,
@@ -356,12 +356,12 @@ where
 
 fn build_data_type<T>(
     request_builder: reqwest::RequestBuilder,
-    dataset_read_builder: &DatasetReadBuilder<T>,
+    dataset_read_builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let DatasetReadBuilder {
+    let ReadBuilder {
         data_type,
         encoding,
         ..
@@ -383,7 +383,7 @@ where
 
 fn build_release_enq<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetReadBuilder<T>,
+    builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -396,7 +396,7 @@ where
 
 fn build_return_etag<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetReadBuilder<T>,
+    builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -409,7 +409,7 @@ where
 
 fn build_search_case_sensitive<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetReadBuilder<T>,
+    builder: &ReadBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -430,10 +430,7 @@ fn get_headers(response: &reqwest::Response) -> Result<H, Error> {
     ))
 }
 
-fn set_member<T>(
-    mut dataset_read_builder: DatasetReadBuilder<T>,
-    value: Box<str>,
-) -> DatasetReadBuilder<T>
+fn set_member<T>(mut dataset_read_builder: ReadBuilder<T>, value: Box<str>) -> ReadBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -442,10 +439,7 @@ where
     dataset_read_builder
 }
 
-fn set_volume<T>(
-    mut dataset_read_builder: DatasetReadBuilder<T>,
-    value: Box<str>,
-) -> DatasetReadBuilder<T>
+fn set_volume<T>(mut dataset_read_builder: ReadBuilder<T>, value: Box<str>) -> ReadBuilder<T>
 where
     T: TryFromResponse,
 {

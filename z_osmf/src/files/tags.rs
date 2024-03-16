@@ -1,3 +1,9 @@
+pub use self::remove::RemoveBuilder;
+pub use self::set::SetBuilder;
+
+mod remove;
+mod set;
+
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -10,25 +16,38 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
-use super::FileTagType;
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Links {
+    Change,
+    Suppress,
+}
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct FileListTag {
-    tags: Box<[FileTag]>,
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TagType {
+    Binary,
+    Mixed,
+    Text,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct Tags {
+    tags: Box<[Tag]>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for FileListTag {
+impl TryFromResponse for Tags {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
         let transaction_id = get_transaction_id(&value)?;
 
-        let ResponseJson { stdout } = value.json().await?;
+        let TagsResponseJson { stdout } = value.json().await?;
         let tags = stdout
             .iter()
-            .map(|line| FileTag::from_str(line))
-            .collect::<Result<Box<[FileTag]>, Error>>()?;
+            .map(|line| Tag::from_str(line))
+            .collect::<Result<Box<[Tag]>, Error>>()?;
 
-        Ok(FileListTag {
+        Ok(Tags {
             tags,
             transaction_id,
         })
@@ -37,7 +56,7 @@ impl TryFromResponse for FileListTag {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileListTagBuilder<T>
+pub struct TagsBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -45,32 +64,32 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_body)]
+    #[endpoint(optional, builder_fn = build_tags_body)]
     recursive: bool,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, PartialEq, Serialize)]
-pub struct FileTag {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct Tag {
     #[getter(copy)]
-    tag_type: Option<FileTagType>,
+    tag_type: Option<TagType>,
     code_set: Option<Box<str>>,
     #[getter(copy)]
     text_flag: bool,
     path: Box<str>,
 }
 
-impl std::str::FromStr for FileTag {
+impl std::str::FromStr for Tag {
     type Err = crate::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let tag_type = match &s[0..1] {
             "-" => None,
-            "b" => Some(FileTagType::Binary),
-            "m" => Some(FileTagType::Mixed),
-            "t" => Some(FileTagType::Text),
+            "b" => Some(TagType::Binary),
+            "m" => Some(TagType::Mixed),
+            "t" => Some(TagType::Text),
             _ => return Err(Error::Custom("invalid file tag string".into())),
         };
         let code_set = match s[2..14].trim_end() {
@@ -79,7 +98,7 @@ impl std::str::FromStr for FileTag {
         };
         let text_flag = s[14..18].trim_end() == "T=on";
 
-        Ok(FileTag {
+        Ok(Tag {
             tag_type,
             code_set,
             text_flag,
@@ -89,25 +108,25 @@ impl std::str::FromStr for FileTag {
 }
 
 #[derive(Serialize)]
-struct RequestJson {
+struct TagsRequestJson {
     request: &'static str,
     action: &'static str,
     recursive: bool,
 }
 
 #[derive(Deserialize)]
-struct ResponseJson {
+struct TagsResponseJson {
     stdout: Box<[Box<str>]>,
 }
 
-fn build_body<T>(
+fn build_tags_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileListTagBuilder<T>,
+    builder: &TagsBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    request_builder.json(&RequestJson {
+    request_builder.json(&TagsRequestJson {
         request: "chtag",
         action: "list",
         recursive: builder.recursive,
@@ -125,9 +144,9 @@ mod tests {
     #[test]
     fn file_tag_from_str() {
         assert_eq!(
-            FileTag::from_str("b untagged    T=off /tmp/file").unwrap(),
-            FileTag {
-                tag_type: Some(FileTagType::Binary),
+            Tag::from_str("b untagged    T=off /tmp/file").unwrap(),
+            Tag {
+                tag_type: Some(TagType::Binary),
                 code_set: None,
                 text_flag: false,
                 path: "/tmp/file".into(),
@@ -135,9 +154,9 @@ mod tests {
         );
 
         assert_eq!(
-            FileTag::from_str("m ISO8859-1   T=off /tmp/file").unwrap(),
-            FileTag {
-                tag_type: Some(FileTagType::Mixed),
+            Tag::from_str("m ISO8859-1   T=off /tmp/file").unwrap(),
+            Tag {
+                tag_type: Some(TagType::Mixed),
                 code_set: Some("ISO8859-1".into()),
                 text_flag: false,
                 path: "/tmp/file".into(),
@@ -145,9 +164,9 @@ mod tests {
         );
 
         assert_eq!(
-            FileTag::from_str("t IBM-1047    T=on  /tmp/file").unwrap(),
-            FileTag {
-                tag_type: Some(FileTagType::Text),
+            Tag::from_str("t IBM-1047    T=on  /tmp/file").unwrap(),
+            Tag {
+                tag_type: Some(TagType::Text),
                 code_set: Some("IBM-1047".into()),
                 text_flag: true,
                 path: "/tmp/file".into(),
@@ -155,8 +174,8 @@ mod tests {
         );
 
         assert_eq!(
-            FileTag::from_str("- untagged    T=off /tmp/file").unwrap(),
-            FileTag {
+            Tag::from_str("- untagged    T=off /tmp/file").unwrap(),
+            Tag {
                 tag_type: None,
                 code_set: None,
                 text_flag: false,
@@ -164,7 +183,7 @@ mod tests {
             }
         );
 
-        assert!(FileTag::from_str("some nonsense").is_err());
+        assert!(Tag::from_str("some nonsense").is_err());
     }
 
     #[test]

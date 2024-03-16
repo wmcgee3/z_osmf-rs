@@ -9,28 +9,23 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum JclSource {
-    Jcl(JclData),
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+pub enum Jcl {
+    Binary(Bytes),
     Dataset(String),
     File(String),
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum JclData {
-    Binary(Bytes),
     Record(Bytes),
     Text(String),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum JobEvent {
     Active,
     Complete,
     Ready,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum RecordFormat {
     Fixed,
     Variable,
@@ -49,7 +44,7 @@ impl From<RecordFormat> for reqwest::header::HeaderValue {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct JobSubmitBuilder<T>
+pub struct SubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -68,7 +63,7 @@ where
     #[endpoint(optional, builder_fn = build_symbols)]
     symbols: Option<HashMap<Box<str>, Box<str>>>,
     #[endpoint(builder_fn = build_jcl_source)]
-    jcl_source: JclSource,
+    jcl_source: Jcl,
     #[endpoint(optional, header = "X-IBM-Notification-URL")]
     notification_url: Option<Box<str>>,
     #[endpoint(optional, builder_fn = build_notification_events)]
@@ -80,7 +75,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobSubmitBuilder<T>
+impl<T> SubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -106,40 +101,38 @@ struct Source<'a> {
 
 fn build_jcl_source<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobSubmitBuilder<T>,
+    builder: &SubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     match &builder.jcl_source {
-        JclSource::Jcl(jcl_data) => match jcl_data {
-            JclData::Binary(binary) => request_builder
-                .header("Content-Type", "application/octet-stream")
-                .header("X-IBM-Intrdr-Mode", "BINARY")
-                .body(binary.clone()),
-            JclData::Record(record) => request_builder
-                .header("Content-Type", "application/octet-stream")
-                .header("X-IBM-Intrdr-Mode", "RECORD")
-                .body(record.clone()),
-            JclData::Text(text) => request_builder
-                .header("Content-Type", "text/plain")
-                .header("X-IBM-Intrdr-Mode", "TEXT")
-                .body(text.to_string()),
-        },
-        JclSource::Dataset(dataset) => request_builder
+        Jcl::Binary(binary) => request_builder
+            .header("Content-Type", "application/octet-stream")
+            .header("X-IBM-Intrdr-Mode", "BINARY")
+            .body(binary.clone()),
+        Jcl::Dataset(dataset) => request_builder
             .header("Content-Type", "application/json")
             .json(&Source {
                 file: &format!("//'{}'", dataset),
             }),
-        JclSource::File(file) => request_builder
+        Jcl::File(file) => request_builder
             .header("Content-Type", "application/json")
             .json(&Source { file }),
+        Jcl::Record(record) => request_builder
+            .header("Content-Type", "application/octet-stream")
+            .header("X-IBM-Intrdr-Mode", "RECORD")
+            .body(record.clone()),
+        Jcl::Text(text) => request_builder
+            .header("Content-Type", "text/plain")
+            .header("X-IBM-Intrdr-Mode", "TEXT")
+            .body(text.to_string()),
     }
 }
 
 fn build_notification_events<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &JobSubmitBuilder<T>,
+    builder: &SubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -167,7 +160,7 @@ where
 
 fn build_symbols<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &JobSubmitBuilder<T>,
+    builder: &SubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -182,7 +175,7 @@ where
     request_builder
 }
 
-fn set_subsystem<T>(mut builder: JobSubmitBuilder<T>, value: Box<str>) -> JobSubmitBuilder<T>
+fn set_subsystem<T>(mut builder: SubmitBuilder<T>, value: Box<str>) -> SubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -220,7 +213,7 @@ mod tests {
 
         let job_data = zosmf
             .jobs()
-            .submit(JclSource::Jcl(JclData::Text(jcl.into())))
+            .submit(Jcl::Text(jcl.into()))
             .message_class('A')
             .record_format(RecordFormat::Fixed)
             .record_length(80)

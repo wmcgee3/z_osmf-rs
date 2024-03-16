@@ -5,6 +5,7 @@
 pub use bytes::Bytes;
 
 pub mod error;
+pub mod info;
 
 #[cfg(feature = "datasets")]
 pub mod datasets;
@@ -21,10 +22,12 @@ mod utils;
 use std::sync::{Arc, RwLock};
 
 use reqwest::header::HeaderValue;
+use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
 use self::convert::TryFromResponse;
 use self::error::CheckStatus;
+use self::info::{Info, InfoBuilder};
 use self::utils::get_transaction_id;
 
 #[cfg(feature = "datasets")]
@@ -86,6 +89,19 @@ impl ZOsmf {
         });
 
         ZOsmf { core }
+    }
+
+    /// Retrieve information about z/OSMF.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let info = zosmf.info().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn info(&self) -> Result<Info, Error> {
+        InfoBuilder::new(self.core.clone()).build().await
     }
 
     /// Authenticate with z/OSMF.
@@ -218,7 +234,7 @@ impl ZOsmf {
     }
 }
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct TransactionId {
     transaction_id: Box<str>,
 }

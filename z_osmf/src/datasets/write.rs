@@ -12,18 +12,18 @@ use crate::ClientCore;
 
 use super::{Enqueue, MigratedRecall};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct DatasetWrite {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct Write {
     etag: Box<str>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for DatasetWrite {
+impl TryFromResponse for Write {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let etag = get_etag(&value)?.ok_or(Error::Etag)?;
         let transaction_id = get_transaction_id(&value)?;
 
-        Ok(DatasetWrite {
+        Ok(Write {
             etag,
             transaction_id,
         })
@@ -32,7 +32,7 @@ impl TryFromResponse for DatasetWrite {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
-pub struct DatasetWriteBuilder<T>
+pub struct WriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -67,7 +67,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetWriteBuilder<T>
+impl<T> WriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -75,7 +75,7 @@ where
     where
         B: Into<Bytes>,
     {
-        DatasetWriteBuilder {
+        WriteBuilder {
             data: Some(Data::Binary(data.into())),
             ..self
         }
@@ -85,7 +85,7 @@ where
     where
         B: Into<Bytes>,
     {
-        DatasetWriteBuilder {
+        WriteBuilder {
             data: Some(Data::Record(data.into())),
             ..self
         }
@@ -95,7 +95,7 @@ where
     where
         S: ToString,
     {
-        DatasetWriteBuilder {
+        WriteBuilder {
             data: Some(Data::Text(data.to_string())),
             ..self
         }
@@ -111,12 +111,12 @@ enum Data {
 
 fn build_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetWriteBuilder<T>,
+    builder: &WriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let DatasetWriteBuilder {
+    let WriteBuilder {
         data,
         encoding,
         crlf_newlines,
@@ -148,7 +148,7 @@ where
 
 fn build_release_enq<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DatasetWriteBuilder<T>,
+    builder: &WriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -159,7 +159,7 @@ where
     }
 }
 
-fn set_member<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
+fn set_member<T>(mut builder: WriteBuilder<T>, value: Box<str>) -> WriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -168,7 +168,7 @@ where
     builder
 }
 
-fn set_volume<T>(mut builder: DatasetWriteBuilder<T>, value: Box<str>) -> DatasetWriteBuilder<T>
+fn set_volume<T>(mut builder: WriteBuilder<T>, value: Box<str>) -> WriteBuilder<T>
 where
     T: TryFromResponse,
 {

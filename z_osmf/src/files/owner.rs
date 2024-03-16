@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileChangeModeBuilder<T>
+pub struct ChangeOwnerBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -18,9 +18,11 @@ where
     #[endpoint(path)]
     path: Box<str>,
     #[endpoint(builder_fn = build_body)]
-    mode: Box<str>,
+    owner: Box<str>,
     #[endpoint(optional, skip_builder)]
-    links: Option<FileModeLinks>,
+    group: Option<Box<str>>,
+    #[endpoint(optional, skip_builder)]
+    links: Option<Links>,
     #[endpoint(optional, skip_builder)]
     recursive: bool,
 
@@ -28,33 +30,35 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileModeLinks {
-    #[default]
+pub enum Links {
+    Change,
     Follow,
-    Suppress,
 }
 
 #[derive(Serialize)]
 struct RequestJson<'a> {
     request: &'static str,
-    mode: &'a str,
+    owner: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<FileModeLinks>,
+    group: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    links: Option<Links>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FileChangeModeBuilder<T>,
+    builder: &ChangeOwnerBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
     request_builder.json(&RequestJson {
-        request: "chmod",
-        mode: &builder.mode,
+        request: "chown",
+        owner: &builder.owner,
+        group: builder.group.as_deref(),
         links: builder.links,
         recursive: builder.recursive,
     })
@@ -70,26 +74,31 @@ mod tests {
     fn maximal_request() {
         let zosmf = get_zosmf();
 
-        let json = r#"
+        let json: serde_json::Value = serde_json::from_str(
+            r#"
         {
-            "request": "chmod",
-            "mode": "755",
-            "links": "suppress",
+            "request": "chown",
+            "owner": "ibmuser",
+            "group": "ibmgrp",
+            "links": "change",
             "recursive": true
         }
-        "#;
+        "#,
+        )
+        .unwrap();
         let manual_request = zosmf
             .core
             .client
-            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
-            .json(&serde_json::from_str::<serde_json::Value>(json).unwrap())
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testDir")
+            .json(&json)
             .build()
             .unwrap();
 
         let request = zosmf
             .files()
-            .change_mode("/u/jiahj/text.txt", "755")
-            .links(FileModeLinks::Suppress)
+            .change_owner("/u/jiahj/testDir", "ibmuser")
+            .group("ibmgrp")
+            .links(Links::Change)
             .recursive(true)
             .get_request()
             .unwrap();
@@ -102,24 +111,27 @@ mod tests {
     fn minimal_request() {
         let zosmf = get_zosmf();
 
-        let json = r#"
+        let json: serde_json::Value = serde_json::from_str(
+            r#"
         {
-            "request": "chmod",
-            "mode": "755",
+            "request": "chown",
+            "owner": "ibmuser",
             "recursive": false
         }
-        "#;
+        "#,
+        )
+        .unwrap();
         let manual_request = zosmf
             .core
             .client
-            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/text.txt")
-            .json(&serde_json::from_str::<serde_json::Value>(json).unwrap())
+            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/test.txt")
+            .json(&json)
             .build()
             .unwrap();
 
         let request = zosmf
             .files()
-            .change_mode("/u/jiahj/text.txt", "755")
+            .change_owner("/u/jiahj/test.txt", "ibmuser")
             .get_request()
             .unwrap();
 

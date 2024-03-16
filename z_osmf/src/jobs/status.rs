@@ -6,11 +6,11 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{JobData, JobDataExec, JobDataExecStep, JobDataStep, JobIdentifier};
+use super::{Identifier, Job, JobExec, JobExecStep, JobStep};
 
-#[derive(Endpoint)]
+#[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
-pub struct JobStatusBuilder<T>
+pub struct StatusBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -19,7 +19,7 @@ where
     #[endpoint(optional, path, setter_fn = set_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: Identifier,
     #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
     exec_data: bool,
     #[endpoint(optional, skip_setter, builder_fn = build_step_data)]
@@ -31,9 +31,9 @@ where
     target_type: PhantomData<T>,
 }
 
-impl JobStatusBuilder<JobData> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobDataExec> {
-        JobStatusBuilder {
+impl StatusBuilder<Job> {
+    pub fn exec_data(self) -> StatusBuilder<JobExec> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -44,8 +44,8 @@ impl JobStatusBuilder<JobData> {
         }
     }
 
-    pub fn step_data(self) -> JobStatusBuilder<JobDataStep> {
-        JobStatusBuilder {
+    pub fn step_data(self) -> StatusBuilder<JobStep> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -57,9 +57,9 @@ impl JobStatusBuilder<JobData> {
     }
 }
 
-impl JobStatusBuilder<JobDataExec> {
-    pub fn step_data(self) -> JobStatusBuilder<JobDataExecStep> {
-        JobStatusBuilder {
+impl StatusBuilder<JobExec> {
+    pub fn step_data(self) -> StatusBuilder<JobExecStep> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -71,9 +71,9 @@ impl JobStatusBuilder<JobDataExec> {
     }
 }
 
-impl JobStatusBuilder<JobDataStep> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobDataExecStep> {
-        JobStatusBuilder {
+impl StatusBuilder<JobStep> {
+    pub fn exec_data(self) -> StatusBuilder<JobExecStep> {
+        StatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -87,7 +87,7 @@ impl JobStatusBuilder<JobDataStep> {
 
 fn build_exec_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobStatusBuilder<T>,
+    builder: &StatusBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -100,7 +100,7 @@ where
 
 fn build_step_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobStatusBuilder<T>,
+    builder: &StatusBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -111,7 +111,7 @@ where
     }
 }
 
-fn set_subsystem<T>(mut builder: JobStatusBuilder<T>, value: Box<str>) -> JobStatusBuilder<T>
+fn set_subsystem<T>(mut builder: StatusBuilder<T>, value: Box<str>) -> StatusBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -138,7 +138,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
+        let identifier = Identifier::NameId("BLSJPRMI".into(), "STC00052".into());
         let job_status = zosmf
             .jobs()
             .status(identifier)

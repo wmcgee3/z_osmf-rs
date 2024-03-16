@@ -1,3 +1,7 @@
+pub use self::read::{FileId, Read, ReadBuilder, RecordRange};
+
+mod read;
+
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -7,22 +11,22 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::JobIdentifier;
+use super::Identifier;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
-pub struct JobFileList {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+pub struct JobFiles {
     items: Box<[JobFile]>,
 }
 
-impl TryFromResponse for JobFileList {
+impl TryFromResponse for JobFiles {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobFileList {
+        Ok(JobFiles {
             items: value.json().await?,
         })
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobFile {
     #[serde(rename = "jobname")]
@@ -54,50 +58,29 @@ pub struct JobFile {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files")]
-pub struct JobFileListBuilder<T>
+pub struct JobFilesBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_subsystem)]
+    #[endpoint(optional, path, setter_fn = set_job_files_subsystem)]
     subsystem: Box<str>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: Identifier,
 
     #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
-fn set_subsystem<T>(mut builder: JobFileListBuilder<T>, value: Box<str>) -> JobFileListBuilder<T>
+fn set_job_files_subsystem<T>(
+    mut builder: JobFilesBuilder<T>,
+    value: Box<str>,
+) -> JobFilesBuilder<T>
 where
     T: TryFromResponse,
 {
     builder.subsystem = format!("-{}/", value).into();
 
     builder
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::tests::*;
-
-    use super::*;
-
-    #[test]
-    fn example_1() {
-        let zosmf = get_zosmf();
-
-        let manual_request = zosmf
-            .core
-            .client
-            .get("https://test.com/zosmf/restjobs/jobs/TESTJOB1/JOB00023/files")
-            .build()
-            .unwrap();
-
-        let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
-        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
-
-        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
-    }
 }

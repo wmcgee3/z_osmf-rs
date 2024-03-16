@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum RecordRange {
     StartCount(u32, NonZeroU32),
     StartEnd(Option<u32>, u32),
