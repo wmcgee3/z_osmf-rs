@@ -100,7 +100,7 @@ impl ZOsmf {
     /// # }
     /// ```
     pub async fn info(&self) -> Result<Info, Error> {
-        Ok(InfoBuilder::new(self.core.clone()).build().await?)
+        InfoBuilder::new(self.core.clone()).build().await
     }
 
     /// Authenticate with z/OSMF.
