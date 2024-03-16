@@ -1,3 +1,9 @@
+pub use self::remove::RemoveBuilder;
+pub use self::set::SetBuilder;
+
+mod remove;
+mod set;
+
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -101,48 +107,6 @@ impl std::str::FromStr for Tag {
     }
 }
 
-#[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct RemoveBuilder<T>
-where
-    T: TryFromResponse,
-{
-    core: Arc<ClientCore>,
-
-    #[endpoint(path)]
-    path: Box<str>,
-    #[endpoint(optional, builder_fn = build_remove_body)]
-    links: Option<Links>,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
-
-    #[endpoint(optional, skip_setter, skip_builder)]
-    target_type: PhantomData<T>,
-}
-
-#[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct SetBuilder<T>
-where
-    T: TryFromResponse,
-{
-    core: Arc<ClientCore>,
-
-    #[endpoint(path)]
-    path: Box<str>,
-    #[endpoint(optional, builder_fn = build_set_body)]
-    tag_type: Option<TagType>,
-    #[endpoint(optional, skip_builder)]
-    code_set: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
-    links: Option<Links>,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
-
-    #[endpoint(optional, skip_setter, skip_builder)]
-    target_type: PhantomData<T>,
-}
-
 #[derive(Serialize)]
 struct TagsRequestJson {
     request: &'static str,
@@ -165,59 +129,6 @@ where
     request_builder.json(&TagsRequestJson {
         request: "chtag",
         action: "list",
-        recursive: builder.recursive,
-    })
-}
-
-#[derive(Serialize)]
-struct RemoveRequestJson {
-    request: &'static str,
-    action: &'static str,
-    links: Option<Links>,
-    recursive: bool,
-}
-
-fn build_remove_body<T>(
-    request_builder: reqwest::RequestBuilder,
-    builder: &RemoveBuilder<T>,
-) -> reqwest::RequestBuilder
-where
-    T: TryFromResponse,
-{
-    request_builder.json(&RemoveRequestJson {
-        request: "chtag",
-        action: "remove",
-        links: builder.links,
-        recursive: builder.recursive,
-    })
-}
-
-#[derive(Debug, Serialize)]
-struct SetRequestJson<'a> {
-    request: &'static str,
-    action: &'static str,
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    tag_type: Option<TagType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    codeset: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<Links>,
-    recursive: bool,
-}
-
-fn build_set_body<T>(
-    request_builder: reqwest::RequestBuilder,
-    builder: &SetBuilder<T>,
-) -> reqwest::RequestBuilder
-where
-    T: TryFromResponse,
-{
-    request_builder.json(&SetRequestJson {
-        request: "chtag",
-        action: "set",
-        tag_type: builder.tag_type,
-        codeset: builder.code_set.as_deref(),
-        links: builder.links,
         recursive: builder.recursive,
     })
 }
@@ -301,79 +212,6 @@ mod tests {
             .files()
             .list_tag("/u/jiahj/testDir")
             .recursive(true)
-            .get_request()
-            .unwrap();
-
-        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
-        assert_eq!(manual_request.json(), request.json());
-    }
-
-    #[test]
-    fn maximal_remove() {
-        let zosmf = get_zosmf();
-
-        let json: Value = from_str(
-            r#"
-            {
-                "request": "chtag",
-                "action": "remove",
-                "links": "suppress",
-                "recursive": true
-            }
-            "#,
-        )
-        .unwrap();
-        let manual_request = zosmf
-            .core
-            .client
-            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
-            .json(&json)
-            .build()
-            .unwrap();
-
-        let request = zosmf
-            .files()
-            .remove_tag("/u/jiahj/testFile.txt")
-            .links(Links::Suppress)
-            .recursive(true)
-            .get_request()
-            .unwrap();
-
-        assert_eq!(format!("{:?}", manual_request), format!("{:?}", request));
-        assert_eq!(manual_request.json(), request.json());
-    }
-
-    #[test]
-    fn maximal_set() {
-        let zosmf = get_zosmf();
-
-        let json: Value = from_str(
-            r#"
-            {
-                "request": "chtag",
-                "action": "set",
-                "recursive": false,
-                "type": "mixed",
-                "codeset": "IBM-1047",
-                "links": "suppress"
-            }
-            "#,
-        )
-        .unwrap();
-        let manual_request = zosmf
-            .core
-            .client
-            .put("https://test.com/zosmf/restfiles/fs/u/jiahj/testFile.txt")
-            .json(&json)
-            .build()
-            .unwrap();
-
-        let request = zosmf
-            .files()
-            .set_tag("/u/jiahj/testFile.txt")
-            .tag_type(TagType::Mixed)
-            .code_set("IBM-1047")
-            .links(Links::Suppress)
             .get_request()
             .unwrap();
 

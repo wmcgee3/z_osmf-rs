@@ -23,16 +23,14 @@ use self::copy::CopyBuilder;
 use self::copy_dataset::CopyDatasetBuilder;
 use self::create::CreateBuilder;
 use self::delete::DeleteBuilder;
-use self::extra_attributes::{
-    GetExtraAttributes, ResetExtraAttributesBuilder, SetExtraAttributesBuilder,
-};
+use self::extra_attributes::{ExtraAttributes, ExtraAttributesBuilder};
 use self::link::{LinkBuilder, LinkType};
 use self::list::{Files, FilesBuilder};
 use self::mode::ChangeModeBuilder;
 use self::owner::ChangeOwnerBuilder;
 use self::read::{Read, ReadBuilder};
 use self::rename::RenameBuilder;
-use self::tags::{RemoveBuilder, SetBuilder, Tags, TagsBuilder};
+use self::tags::{Tags, TagsBuilder};
 use self::unlink::UnlinkBuilder;
 use self::write::{Write, WriteBuilder};
 
@@ -263,8 +261,10 @@ impl FilesClient {
     pub async fn get_extra_attributes(
         &self,
         path: &str,
-    ) -> Result<GetExtraAttributes, crate::error::Error> {
-        GetExtraAttributes::new(&self.core, path).await
+    ) -> Result<ExtraAttributes, crate::error::Error> {
+        ExtraAttributesBuilder::new(self.core.clone(), path)
+            .build()
+            .await
     }
 
     /// # Examples
@@ -405,8 +405,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn remove_tag(&self, path: &str) -> RemoveBuilder<TransactionId> {
-        RemoveBuilder::new(self.core.clone(), path)
+    pub fn remove_tag(&self, path: &str) -> tags::RemoveBuilder<TransactionId> {
+        tags::RemoveBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -454,8 +454,11 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn reset_extra_attributes(&self, path: &str) -> ResetExtraAttributesBuilder<TransactionId> {
-        ResetExtraAttributesBuilder::new(self.core.clone(), path)
+    pub fn reset_extra_attributes(
+        &self,
+        path: &str,
+    ) -> extra_attributes::ResetBuilder<TransactionId> {
+        extra_attributes::ResetBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -473,8 +476,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_extra_attributes(&self, path: &str) -> SetExtraAttributesBuilder<TransactionId> {
-        SetExtraAttributesBuilder::new(self.core.clone(), path)
+    pub fn set_extra_attributes(&self, path: &str) -> extra_attributes::SetBuilder<TransactionId> {
+        extra_attributes::SetBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples
@@ -509,8 +512,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_tag(&self, path: &str) -> SetBuilder<TransactionId> {
-        SetBuilder::new(self.core.clone(), path)
+    pub fn set_tag(&self, path: &str) -> tags::SetBuilder<TransactionId> {
+        tags::SetBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples

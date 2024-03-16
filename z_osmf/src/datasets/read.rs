@@ -1,5 +1,4 @@
 pub use crate::utils::RecordRange;
-use crate::ClientCore;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -12,6 +11,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
+use crate::ClientCore;
 
 use super::{get_session_ref, DatasetDataType, Enqueue, MigratedRecall};
 

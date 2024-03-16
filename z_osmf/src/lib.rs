@@ -3,7 +3,6 @@
 #![forbid(unsafe_code)]
 
 pub use bytes::Bytes;
-use serde::{Deserialize, Serialize};
 
 pub mod error;
 pub mod info;
@@ -23,6 +22,7 @@ mod utils;
 use std::sync::{Arc, RwLock};
 
 use reqwest::header::HeaderValue;
+use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
 use self::convert::TryFromResponse;

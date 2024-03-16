@@ -17,7 +17,7 @@ use crate::ClientCore;
 
 use self::class::ClassBuilder;
 use self::feedback::{Feedback, FeedbackBuilder};
-use self::files::{Id, JobFiles, JobFilesBuilder, Read, ReadBuilder};
+use self::files::{FileId, JobFiles, JobFilesBuilder, Read, ReadBuilder};
 use self::list::{Jobs, JobsBuilder};
 use self::purge::PurgeBuilder;
 use self::status::StatusBuilder;
@@ -208,7 +208,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read_file(&self, identifier: Identifier, id: Id) -> ReadBuilder<Read<Box<str>>> {
+    pub fn read_file(&self, identifier: Identifier, id: FileId) -> ReadBuilder<Read<Box<str>>> {
         ReadBuilder::new(self.core.clone(), identifier, id)
     }
 
