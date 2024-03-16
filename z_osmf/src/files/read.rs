@@ -13,7 +13,7 @@ use crate::ClientCore;
 
 use super::DataType;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Read<T> {
     #[getter(skip)]
     data: T,

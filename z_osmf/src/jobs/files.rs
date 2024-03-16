@@ -12,7 +12,7 @@ use crate::ClientCore;
 
 use super::Identifier;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct JobFiles {
     items: Box<[JobFile]>,
 }
@@ -25,7 +25,7 @@ impl TryFromResponse for JobFiles {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobFile {
     #[serde(rename = "jobname")]
@@ -72,7 +72,7 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct Read<T> {
     data: T,
 }

@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Migrate {
     etag: Option<Box<str>>,
     transaction_id: Box<str>,

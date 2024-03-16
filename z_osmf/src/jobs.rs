@@ -279,6 +279,7 @@ impl JobsClient {
     }
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct AsynchronousResponse;
 
 impl TryFromResponse for AsynchronousResponse {
@@ -287,7 +288,7 @@ impl TryFromResponse for AsynchronousResponse {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Job {
     #[serde(rename = "jobid")]
@@ -324,7 +325,7 @@ impl TryFromResponse for Job {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExec {
     #[serde(flatten)]
@@ -353,7 +354,7 @@ impl TryFromResponse for JobExec {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobExecStep {
     #[serde(flatten)]
@@ -375,7 +376,7 @@ impl TryFromResponse for JobExecStep {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobStep {
     #[serde(flatten)]
@@ -432,7 +433,7 @@ pub enum JobType {
     TsoUser,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Step {
     #[getter(copy)]

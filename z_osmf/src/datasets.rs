@@ -397,11 +397,11 @@ impl DatasetsClient {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum DatasetDataType {
     Binary,
     Record,
-    #[default]
     Text,
 }
 
@@ -420,6 +420,7 @@ impl std::fmt::Display for DatasetDataType {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum MigratedRecall {
     Error,
     NoWait,
@@ -440,7 +441,9 @@ impl From<MigratedRecall> for HeaderValue {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum Enqueue {
+    #[serde(rename = "EXCLU")]
     Exclusive,
+    #[serde(rename = "SHRW")]
     SharedReadWrite,
 }
 

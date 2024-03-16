@@ -10,7 +10,7 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Files {
     items: Box<[File]>,
     #[getter(copy)]
@@ -43,7 +43,7 @@ impl TryFromResponse for Files {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct File {
     name: Box<str>,
     mode: Box<str>,
@@ -62,7 +62,7 @@ pub struct File {
     target: Option<Box<str>>,
 }
 
-#[derive(Endpoint)]
+#[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/fs")]
 pub struct FilesBuilder<T>
 where
@@ -156,6 +156,7 @@ where
     }
 }
 
+// TODO: impl serde?
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum Size {
     Bytes(u32),

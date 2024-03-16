@@ -549,13 +549,10 @@ impl FilesClient {
     }
 }
 
-#[derive(
-    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
-)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DataType {
     Binary,
-    #[default]
     Text,
 }
 
@@ -572,13 +569,10 @@ impl std::fmt::Display for DataType {
     }
 }
 
-#[derive(
-    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
-)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TagType {
     Binary,
-    #[default]
     Mixed,
     Text,
 }

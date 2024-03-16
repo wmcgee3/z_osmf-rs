@@ -12,7 +12,7 @@ use crate::ClientCore;
 
 use super::MigratedRecall;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Members<T> {
     items: Box<[T]>,
     #[getter(copy)]
@@ -48,7 +48,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct MemberBase {
     #[serde(rename = "member")]
     name: Box<str>,
@@ -103,13 +103,13 @@ pub struct MemberBase {
     ssi: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct MemberName {
     #[serde(rename = "member")]
     name: Box<str>,
 }
 
-#[derive(Endpoint)]
+#[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
 pub struct MembersBuilder<T>
 where

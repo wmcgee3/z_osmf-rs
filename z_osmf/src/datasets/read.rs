@@ -15,7 +15,7 @@ use crate::utils::{get_etag, get_transaction_id};
 
 use super::{get_session_ref, DatasetDataType, Enqueue, MigratedRecall};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Read<T> {
     #[getter(skip)]
     data: T,

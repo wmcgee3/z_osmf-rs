@@ -10,7 +10,7 @@ use crate::ClientCore;
 
 use super::JobExec;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Jobs<T> {
     items: Box<[T]>,
 }

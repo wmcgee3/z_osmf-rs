@@ -6,7 +6,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Endpoint)]
+#[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restfiles/fs{path}")]
 pub struct DeleteBuilder<T>
 where

@@ -7,7 +7,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Info {
     zosmf_saf_realm: Box<str>,
     zosmf_port: Box<str>,
@@ -24,7 +24,7 @@ impl TryFromResponse for Info {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Plugin {
     #[serde(rename = "pluginVersion")]
     version: Box<str>,

@@ -10,28 +10,22 @@ use crate::error::Error;
 use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(
-    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
-)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Links {
-    #[default]
     Change,
     Suppress,
 }
 
-#[derive(
-    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize,
-)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TagType {
     Binary,
-    #[default]
     Mixed,
     Text,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Tags {
     tags: Box<[Tag]>,
     transaction_id: Box<str>,
@@ -71,7 +65,7 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Tag {
     #[getter(copy)]
     tag_type: Option<TagType>,

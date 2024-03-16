@@ -10,7 +10,7 @@ use crate::ClientCore;
 
 use super::{AsynchronousResponse, Identifier};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Feedback {
     #[serde(rename = "jobid")]

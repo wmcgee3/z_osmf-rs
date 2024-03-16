@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub use bytes::Bytes;
+use serde::{Deserialize, Serialize};
 
 pub mod error;
 pub mod info;
@@ -233,7 +234,7 @@ impl ZOsmf {
     }
 }
 
-#[derive(Clone, Debug, Getters)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct TransactionId {
     transaction_id: Box<str>,
 }

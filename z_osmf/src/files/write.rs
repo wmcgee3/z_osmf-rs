@@ -10,7 +10,7 @@ use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Write {
     etag: Box<str>,
     transaction_id: Box<str>,

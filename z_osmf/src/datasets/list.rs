@@ -14,7 +14,7 @@ use crate::utils::{
 };
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Datasets<T> {
     items: Box<[T]>,
     #[getter(copy)]
@@ -54,7 +54,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct DatasetBase {
     #[serde(rename = "dsname")]
     name: Box<str>,
@@ -118,13 +118,13 @@ pub struct DatasetBase {
     volumes: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct DatasetName {
     #[serde(rename = "dsname")]
     name: Box<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct DatasetVolume {
     #[serde(rename = "dsname")]
     name: Box<str>,

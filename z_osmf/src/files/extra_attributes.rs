@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::utils::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct GetExtraAttributes {
     name: Box<str>,
     apf_authorized: bool,

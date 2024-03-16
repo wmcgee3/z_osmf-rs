@@ -8,7 +8,7 @@ use crate::ClientCore;
 
 use super::{Identifier, Job, JobExec, JobExecStep, JobStep};
 
-#[derive(Endpoint)]
+#[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
 pub struct StatusBuilder<T>
 where

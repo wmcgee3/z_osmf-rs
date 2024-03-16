@@ -12,7 +12,7 @@ use crate::ClientCore;
 
 use super::{Enqueue, MigratedRecall};
 
-#[derive(Clone, Debug, Deserialize, Getters, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Write {
     etag: Box<str>,
     transaction_id: Box<str>,

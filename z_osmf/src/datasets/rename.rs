@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 use super::Enqueue;
 
-#[derive(Endpoint)]
+#[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{to_dataset}{to_member}")]
 pub struct RenameBuilder<T>
 where
