@@ -161,14 +161,14 @@ impl JobsClient {
     ///
     /// Read file 1 for job TESTJOBJ with ID JOB00023:
     /// ```
-    /// # use z_osmf::jobs::files::Id;
+    /// # use z_osmf::jobs::files::FileId;
     /// # use z_osmf::jobs::Identifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = Identifier::NameId("TESTJOBJ".to_string(), "JOB00023".to_string());
     ///
     /// let job_file = zosmf
     ///     .jobs()
-    ///     .read_file(identifier, Id::Id(1))
+    ///     .read_file(identifier, FileId::Id(1))
     ///     .build()
     ///     .await?;
     /// # Ok(())
@@ -178,14 +178,14 @@ impl JobsClient {
     /// Read a range of records (the first 250) of file 8 for job TESTJOBJ with ID JOB00023:
     /// ```
     /// # use std::str::FromStr;
-    /// # use z_osmf::jobs::files::{Id, RecordRange};
+    /// # use z_osmf::jobs::files::{FileId, RecordRange};
     /// # use z_osmf::jobs::Identifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = Identifier::NameId("TESTJOBJ".to_string(), "JOB00023".to_string());
     ///
     /// let job_file = zosmf
     ///     .jobs()
-    ///     .read_file(identifier, Id::Id(8))
+    ///     .read_file(identifier, FileId::Id(8))
     ///     .record_range(RecordRange::from_str("0-249")?)
     ///     .build()
     ///     .await?;
@@ -195,14 +195,14 @@ impl JobsClient {
     ///
     /// Read the JCL for job TESTJOBJ with ID JOB00060:
     /// ```
-    /// # use z_osmf::jobs::files::Id;
+    /// # use z_osmf::jobs::files::FileId;
     /// # use z_osmf::jobs::Identifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let identifier = Identifier::NameId("TESTJOBJ".to_string(), "JOB00060".to_string());
     ///
     /// let job_file = zosmf
     ///     .jobs()
-    ///     .read_file(identifier, Id::Jcl)
+    ///     .read_file(identifier, FileId::Jcl)
     ///     .build()
     ///     .await?;
     /// # Ok(())
