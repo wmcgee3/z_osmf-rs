@@ -27,6 +27,23 @@ impl VariablesClient {
         VariablesClient { core }
     }
 
+    /// #Examples
+    ///
+    /// Create system variables:
+    /// ```
+    /// # use z_osmf::variables::create::NewVariable;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let new_variables = [
+    ///     NewVariable::new("var1", "value1", "description of the variable"),
+    ///     NewVariable::new("var2", "value2", "description of the variable"),
+    /// ];
+    ///
+    /// zosmf.variables()
+    ///     .create("TESTPLEX", "TESTNODE", new_variables)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn create<T, U, V>(
         &self,
         sysplex: T,
@@ -48,6 +65,22 @@ impl VariablesClient {
         .await
     }
 
+    /// #Examples
+    ///
+    /// Delete system variables:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let variable_names = [
+    ///     "var1".to_string(),
+    ///     "var2".to_string(),
+    /// ];
+    ///
+    /// zosmf.variables()
+    ///     .delete("TESTPLEX", "TESTNODE", variable_names)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn delete<T, U, V>(
         &self,
         sysplex: T,
@@ -69,6 +102,19 @@ impl VariablesClient {
         .await
     }
 
+    /// #Examples
+    ///
+    /// Export system variables to a CSV file and overwrite the file if it already exists:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// zosmf.variables()
+    ///     .export("TESTPLEX", "TESTNODE", "/u/testuser/backup-variables.csv")
+    ///     .overwrite(true)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn export<T, U, V>(&self, sysplex: T, system: U, path: V) -> ExportBuilder<()>
     where
         T: ToString,
@@ -83,6 +129,17 @@ impl VariablesClient {
         )
     }
 
+    /// #Examples
+    ///
+    /// Import system variables from a CSV file:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// zosmf.variables()
+    ///     .import("TESTPLEX", "TESTNODE", "/u/testuser/variables.csv")
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn import<T, U, V>(&self, sysplex: T, system: U, path: V) -> Result<(), Error>
     where
         T: ToString,
@@ -99,10 +156,46 @@ impl VariablesClient {
         .await
     }
 
+    /// #Examples
+    ///
+    /// List all system variables on the local system:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let variables = zosmf.variables().list().build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// List all system variables on a named system:
+    /// ```
+    /// # use z_osmf::variables::list::SystemId;
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let system_id = SystemId::Named {
+    ///     sysplex: "TESTPLEX".to_string(),
+    ///     system: "TESTNODE".to_string(),
+    /// };
+    ///
+    /// let variables = zosmf.variables()
+    ///     .list()
+    ///     .system_id(system_id)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn list(&self) -> VariablesBuilder<Variables> {
         VariablesBuilder::new(self.core.clone())
     }
 
+    /// #Examples
+    ///
+    /// List all system symbols on the local system:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let symbols = zosmf.variables().symbols().build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn symbols(&self) -> SymbolsBuilder<Symbols> {
         SymbolsBuilder::new(self.core.clone())
     }

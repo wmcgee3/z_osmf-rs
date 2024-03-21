@@ -16,7 +16,7 @@ use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::{ClientCore, TransactionId};
+use crate::ClientCore;
 
 use self::copy::CopyBuilder;
 use self::copy_file::CopyFileBuilder;
@@ -68,7 +68,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> CopyBuilder<TransactionId> {
+    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> CopyBuilder<String> {
         CopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
@@ -98,7 +98,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> CopyFileBuilder<TransactionId> {
+    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> CopyFileBuilder<String> {
         CopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
@@ -172,7 +172,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> CreateBuilder<TransactionId> {
+    pub fn create(&self, dataset_name: &str) -> CreateBuilder<String> {
         CreateBuilder::new(self.core.clone(), dataset_name)
     }
 
@@ -229,7 +229,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DeleteBuilder<TransactionId> {
+    pub fn delete(&self, dataset_name: &str) -> DeleteBuilder<String> {
         DeleteBuilder::new(self.core.clone(), dataset_name)
     }
 
@@ -354,7 +354,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn recall(&self, name: &str) -> RecallBuilder<TransactionId> {
+    pub fn recall(&self, name: &str) -> RecallBuilder<String> {
         RecallBuilder::new(self.core.clone(), name)
     }
 
@@ -371,7 +371,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> RenameBuilder<TransactionId> {
+    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> RenameBuilder<String> {
         RenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 

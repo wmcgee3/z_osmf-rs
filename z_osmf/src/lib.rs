@@ -24,13 +24,9 @@ mod utils;
 use std::sync::{Arc, RwLock};
 
 use reqwest::header::HeaderValue;
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::Getters;
 
-use self::convert::TryFromResponse;
 use self::error::CheckStatus;
 use self::info::{Info, InfoBuilder};
-use self::utils::get_transaction_id;
 
 #[cfg(feature = "datasets")]
 use self::datasets::DatasetsClient;
@@ -240,19 +236,6 @@ impl ZOsmf {
     #[cfg(feature = "variables")]
     pub fn variables(&self) -> VariablesClient {
         VariablesClient::new(self.core.clone())
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct TransactionId {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for TransactionId {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(TransactionId { transaction_id })
     }
 }
 

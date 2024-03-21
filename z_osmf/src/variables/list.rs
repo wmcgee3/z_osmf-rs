@@ -11,7 +11,7 @@ use crate::ClientCore;
 pub enum SystemId {
     #[default]
     Local,
-    Other {
+    Named {
         sysplex: String,
         system: String,
     },
@@ -21,7 +21,7 @@ impl std::fmt::Display for SystemId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SystemId::Local => write!(f, "local"),
-            SystemId::Other { sysplex, system } => write!(f, "{}.{}", sysplex, system),
+            SystemId::Named { sysplex, system } => write!(f, "{}.{}", sysplex, system),
         }
     }
 }
