@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::{AsynchronousResponse, Identifier};
+use super::Identifier;
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -60,7 +60,7 @@ impl<T> FeedbackBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> FeedbackBuilder<AsynchronousResponse> {
+    pub fn asynchronous(self) -> FeedbackBuilder<()> {
         FeedbackBuilder {
             core: self.core,
             subsystem: self.subsystem,

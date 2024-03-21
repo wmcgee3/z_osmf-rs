@@ -13,6 +13,8 @@ pub mod datasets;
 pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
+#[cfg(feature = "variables")]
+pub mod variables;
 
 pub use self::error::Error;
 
@@ -36,6 +38,8 @@ use self::datasets::DatasetsClient;
 use self::files::FilesClient;
 #[cfg(feature = "jobs")]
 use self::jobs::JobsClient;
+#[cfg(feature = "variables")]
+use self::variables::VariablesClient;
 
 /// # ZOsmf
 ///
@@ -231,6 +235,11 @@ impl ZOsmf {
     #[cfg(feature = "jobs")]
     pub fn jobs(&self) -> JobsClient {
         JobsClient::new(&self.core)
+    }
+
+    #[cfg(feature = "variables")]
+    pub fn variables(&self) -> VariablesClient {
+        VariablesClient::new(self.core.clone())
     }
 }
 

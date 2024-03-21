@@ -21,3 +21,9 @@ where
         T::try_from_response(self).await
     }
 }
+
+impl TryFromResponse for () {
+    async fn try_from_response(_: reqwest::Response) -> Result<Self, Error> {
+        Ok(())
+    }
+}

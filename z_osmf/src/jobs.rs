@@ -279,15 +279,6 @@ impl JobsClient {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-pub struct AsynchronousResponse;
-
-impl TryFromResponse for AsynchronousResponse {
-    async fn try_from_response(_: reqwest::Response) -> Result<Self, Error> {
-        Ok(AsynchronousResponse {})
-    }
-}
-
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Job {
