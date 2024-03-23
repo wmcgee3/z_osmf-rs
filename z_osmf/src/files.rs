@@ -174,11 +174,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_dataset(
-        &self,
-        from_dataset: &str,
-        to_path: &str,
-    ) -> CopyDatasetBuilder<String> {
+    pub fn copy_dataset(&self, from_dataset: &str, to_path: &str) -> CopyDatasetBuilder<String> {
         CopyDatasetBuilder::new(self.core.clone(), from_dataset, to_path)
     }
 
@@ -454,10 +450,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn reset_extra_attributes(
-        &self,
-        path: &str,
-    ) -> extra_attributes::ResetBuilder<String> {
+    pub fn reset_extra_attributes(&self, path: &str) -> extra_attributes::ResetBuilder<String> {
         extra_attributes::ResetBuilder::new(self.core.clone(), path)
     }
 
