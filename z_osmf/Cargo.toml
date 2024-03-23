@@ -1,6 +1,6 @@
 [package]
 name = "z_osmf"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2021"
 authors = ["Billy McGee <william.j.mcgee3@gmail.com>"]
 description = "The Rust z/OSMF Client"
@@ -18,15 +18,19 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = ["datasets", "files", "jobs"]
 
+full = ["datasets", "files", "jobs", "variables"]
+
 datasets = []
 files = []
 jobs = ["dep:serde_json"]
+
+variables = []
 
 
 [dependencies]
 bytes = { version = "1.5", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-reqwest = { version = "0.11", default-features = false, features = ["json"] }
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 thiserror = "1.0"
@@ -38,7 +42,8 @@ z_osmf_macros = { version = "0.9", path = "../z_osmf_macros" }
 [dev-dependencies]
 anyhow = "1.0"
 dotenvy = "0.15"
-http = "0.2"
+http = "1.1"
 rand = "0.8"
-reqwest = { version = "0.11", features = ["rustls-tls"] }
+reqwest = { version = "0.12", features = ["rustls-tls"] }
 tokio = { version = "1.32", features = ["macros", "rt-multi-thread"] }
+z_osmf = { version = "0", path = ".", features = ["full"] }

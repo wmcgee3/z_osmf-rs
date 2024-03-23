@@ -13,6 +13,8 @@ pub mod datasets;
 pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
+#[cfg(feature = "variables")]
+pub mod variables;
 
 pub use self::error::Error;
 
@@ -22,13 +24,9 @@ mod utils;
 use std::sync::{Arc, RwLock};
 
 use reqwest::header::HeaderValue;
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::Getters;
 
-use self::convert::TryFromResponse;
 use self::error::CheckStatus;
 use self::info::{Info, InfoBuilder};
-use self::utils::get_transaction_id;
 
 #[cfg(feature = "datasets")]
 use self::datasets::DatasetsClient;
@@ -36,6 +34,8 @@ use self::datasets::DatasetsClient;
 use self::files::FilesClient;
 #[cfg(feature = "jobs")]
 use self::jobs::JobsClient;
+#[cfg(feature = "variables")]
+use self::variables::VariablesClient;
 
 /// # ZOsmf
 ///
@@ -232,18 +232,10 @@ impl ZOsmf {
     pub fn jobs(&self) -> JobsClient {
         JobsClient::new(&self.core)
     }
-}
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct TransactionId {
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for TransactionId {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(TransactionId { transaction_id })
+    #[cfg(feature = "variables")]
+    pub fn variables(&self) -> VariablesClient {
+        VariablesClient::new(self.core.clone())
     }
 }
 

@@ -6,7 +6,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{AsynchronousResponse, Identifier};
+use super::Identifier;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
@@ -31,7 +31,7 @@ impl<T> PurgeBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> PurgeBuilder<AsynchronousResponse> {
+    pub fn asynchronous(self) -> PurgeBuilder<()> {
         PurgeBuilder {
             core: self.core,
             subsystem: self.subsystem,

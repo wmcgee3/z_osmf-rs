@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{ClientCore, TransactionId};
+use crate::ClientCore;
 
 use self::copy::CopyBuilder;
 use self::copy_dataset::CopyDatasetBuilder;
@@ -71,7 +71,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_mode(&self, path: &str, mode: &str) -> ChangeModeBuilder<TransactionId> {
+    pub fn change_mode(&self, path: &str, mode: &str) -> ChangeModeBuilder<String> {
         ChangeModeBuilder::new(self.core.clone(), path, mode)
     }
 
@@ -114,7 +114,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_owner(&self, path: &str, owner: &str) -> ChangeOwnerBuilder<TransactionId> {
+    pub fn change_owner(&self, path: &str, owner: &str) -> ChangeOwnerBuilder<String> {
         ChangeOwnerBuilder::new(self.core.clone(), path, owner)
     }
 
@@ -144,7 +144,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_path: &str, to_path: &str) -> CopyBuilder<TransactionId> {
+    pub fn copy(&self, from_path: &str, to_path: &str) -> CopyBuilder<String> {
         CopyBuilder::new(self.core.clone(), from_path, to_path)
     }
 
@@ -174,11 +174,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_dataset(
-        &self,
-        from_dataset: &str,
-        to_path: &str,
-    ) -> CopyDatasetBuilder<TransactionId> {
+    pub fn copy_dataset(&self, from_dataset: &str, to_path: &str) -> CopyDatasetBuilder<String> {
         CopyDatasetBuilder::new(self.core.clone(), from_dataset, to_path)
     }
 
@@ -213,7 +209,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, path: &str) -> CreateBuilder<TransactionId> {
+    pub fn create(&self, path: &str) -> CreateBuilder<String> {
         CreateBuilder::new(self.core.clone(), path)
     }
 
@@ -242,7 +238,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, path: &str) -> DeleteBuilder<TransactionId> {
+    pub fn delete(&self, path: &str) -> DeleteBuilder<String> {
         DeleteBuilder::new(self.core.clone(), path)
     }
 
@@ -286,7 +282,7 @@ impl FilesClient {
         link_type: LinkType,
         source_path: &str,
         target_path: &str,
-    ) -> LinkBuilder<TransactionId> {
+    ) -> LinkBuilder<String> {
         LinkBuilder::new(self.core.clone(), source_path, target_path, link_type)
     }
 
@@ -405,7 +401,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn remove_tag(&self, path: &str) -> tags::RemoveBuilder<TransactionId> {
+    pub fn remove_tag(&self, path: &str) -> tags::RemoveBuilder<String> {
         tags::RemoveBuilder::new(self.core.clone(), path)
     }
 
@@ -435,7 +431,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(&self, from_path: &str, to_path: &str) -> RenameBuilder<TransactionId> {
+    pub fn rename(&self, from_path: &str, to_path: &str) -> RenameBuilder<String> {
         RenameBuilder::new(self.core.clone(), from_path, to_path)
     }
 
@@ -454,10 +450,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn reset_extra_attributes(
-        &self,
-        path: &str,
-    ) -> extra_attributes::ResetBuilder<TransactionId> {
+    pub fn reset_extra_attributes(&self, path: &str) -> extra_attributes::ResetBuilder<String> {
         extra_attributes::ResetBuilder::new(self.core.clone(), path)
     }
 
@@ -476,7 +469,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_extra_attributes(&self, path: &str) -> extra_attributes::SetBuilder<TransactionId> {
+    pub fn set_extra_attributes(&self, path: &str) -> extra_attributes::SetBuilder<String> {
         extra_attributes::SetBuilder::new(self.core.clone(), path)
     }
 
@@ -512,7 +505,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_tag(&self, path: &str) -> tags::SetBuilder<TransactionId> {
+    pub fn set_tag(&self, path: &str) -> tags::SetBuilder<String> {
         tags::SetBuilder::new(self.core.clone(), path)
     }
 
@@ -528,7 +521,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn unlink(&self, path: &str) -> Result<TransactionId, crate::error::Error> {
+    pub async fn unlink(&self, path: &str) -> Result<String, crate::error::Error> {
         UnlinkBuilder::new(self.core.clone(), path).build().await
     }
 

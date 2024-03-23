@@ -5,7 +5,7 @@ use serde::Serialize;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::jobs::{AsynchronousResponse, Identifier};
+use crate::jobs::Identifier;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
@@ -33,7 +33,7 @@ impl<T> ClassBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> ClassBuilder<AsynchronousResponse> {
+    pub fn asynchronous(self) -> ClassBuilder<()> {
         ClassBuilder {
             core: self.core,
             class: self.class,
