@@ -16,10 +16,9 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_recursive)]
-    recursive: bool,
+    #[endpoint(builder_fn = build_recursive)]
+    recursive: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -31,8 +30,8 @@ where
     T: TryFromResponse,
 {
     match builder.recursive {
-        true => request_builder.header("X-IBM-Option", "recursive"),
-        false => request_builder,
+        Some(true) => request_builder.header("X-IBM-Option", "recursive"),
+        _ => request_builder,
     }
 }
 

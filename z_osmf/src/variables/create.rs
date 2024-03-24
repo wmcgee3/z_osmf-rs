@@ -91,7 +91,6 @@ where
     #[endpoint(builder_fn = build_body)]
     new_variables: Box<[NewVariable]>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 

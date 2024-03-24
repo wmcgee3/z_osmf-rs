@@ -19,12 +19,11 @@ where
     from_dataset: Box<str>,
     #[endpoint(path)]
     to_path: Box<str>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     from_member: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     dataset_type: Option<DatasetType>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 

@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::JobExec;
+use super::{get_subsystem, JobExec};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Jobs<T> {
@@ -34,24 +34,23 @@ where
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_subsystem)]
-    subsystem: Box<str>,
-    #[endpoint(optional, query = "owner")]
+    #[endpoint(path, builder_fn = build_subsystem)]
+    subsystem: Option<Box<str>>,
+    #[endpoint(query = "owner")]
     owner: Option<Box<str>>,
-    #[endpoint(optional, query = "prefix")]
+    #[endpoint(query = "prefix")]
     prefix: Option<Box<str>>,
-    #[endpoint(optional, query = "jobid")]
+    #[endpoint(query = "jobid")]
     job_id: Option<Box<str>>,
-    #[endpoint(optional, query = "max-jobs")]
+    #[endpoint(query = "max-jobs")]
     max_jobs: Option<i32>,
-    #[endpoint(optional, query = "user-correlator")]
+    #[endpoint(query = "user-correlator")]
     user_correlator: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = build_exec_data)]
-    exec_data: bool,
-    #[endpoint(optional, builder_fn = build_active_only)]
-    active_only: bool,
+    #[endpoint(skip_setter, builder_fn = build_exec_data)]
+    exec_data: Option<bool>,
+    #[endpoint(builder_fn = build_active_only)]
+    active_only: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -68,7 +67,7 @@ where
             job_id: self.job_id,
             max_jobs: self.max_jobs,
             user_correlator: self.user_correlator,
-            exec_data: true,
+            exec_data: Some(true),
             active_only: self.active_only,
             target_type: PhantomData,
         }
@@ -83,8 +82,8 @@ where
     T: TryFromResponse,
 {
     match builder.active_only {
-        true => request_builder.query(&[("status", "active")]),
-        false => request_builder,
+        Some(true) => request_builder.query(&[("status", "active")]),
+        _ => request_builder,
     }
 }
 
@@ -96,18 +95,16 @@ where
     T: TryFromResponse,
 {
     match builder.exec_data {
-        true => request_builder.query(&[("exec-data", "Y")]),
-        false => request_builder,
+        Some(true) => request_builder.query(&[("exec-data", "Y")]),
+        _ => request_builder,
     }
 }
 
-fn set_subsystem<T>(mut builder: JobsBuilder<T>, value: Box<str>) -> JobsBuilder<T>
+fn build_subsystem<T>(builder: &JobsBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.subsystem = format!("/-{}", value).into();
-
-    builder
+    get_subsystem(&builder.subsystem)
 }
 
 #[cfg(test)]
@@ -136,6 +133,27 @@ mod tests {
             .owner("IBMUSER")
             .prefix("TESTJOB*")
             .exec_data()
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_list))
+    }
+
+    #[test]
+    fn subsystem() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/-somesys")
+            .build()
+            .unwrap();
+
+        let job_list = zosmf
+            .jobs()
+            .list()
+            .subsystem("somesys")
             .get_request()
             .unwrap();
 

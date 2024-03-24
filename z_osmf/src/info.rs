@@ -42,6 +42,5 @@ where
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }

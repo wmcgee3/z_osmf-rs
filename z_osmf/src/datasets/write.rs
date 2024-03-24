@@ -10,7 +10,7 @@ use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-use super::{Enqueue, MigratedRecall};
+use super::{get_member, get_volume, Enqueue, MigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Write {
@@ -31,7 +31,7 @@ impl TryFromResponse for Write {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
+#[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{dataset_name}{member}")]
 pub struct WriteBuilder<T>
 where
     T: TryFromResponse,
@@ -40,30 +40,29 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_volume)]
-    volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_member)]
-    member: Box<str>,
-    #[endpoint(optional, header = "If-Match")]
+    #[endpoint(path, builder_fn = build_volume)]
+    volume: Option<Box<str>>,
+    #[endpoint(path, builder_fn = build_member)]
+    member: Option<Box<str>>,
+    #[endpoint(header = "If-Match")]
     if_match: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = build_data)]
+    #[endpoint(skip_setter, builder_fn = build_data)]
     data: Option<Data>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
-    crlf_newlines: bool,
-    #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
+    #[endpoint(skip_builder)]
+    crlf_newlines: Option<bool>,
+    #[endpoint(header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
-    #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
+    #[endpoint(header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<Enqueue>,
-    #[endpoint(optional, header = "X-IBM-Session-Ref")]
+    #[endpoint(header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_release_enq)]
-    release_enq: bool,
-    #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
+    #[endpoint(builder_fn = build_release_enq)]
+    release_enq: Option<bool>,
+    #[endpoint(header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -131,19 +130,26 @@ where
             .header("X-IBM-Data-Type", "record")
             .body(record.clone()),
         Some(Data::Text(text)) => match (encoding, crlf_newlines) {
-            (Some(encoding), true) => request_builder.header(
+            (Some(encoding), Some(true)) => request_builder.header(
                 "X-IBM-Data-Type",
                 format!("text;fileEncoding={};crlf=true", encoding),
             ),
-            (Some(encoding), false) => {
+            (Some(encoding), _) => {
                 request_builder.header("X-IBM-Data-Type", format!("text;fileEncoding={}", encoding))
             }
-            (None, true) => request_builder.header("X-IBM-Data-Type", "text;crlf=true"),
-            (_, _) => request_builder,
+            (None, Some(true)) => request_builder.header("X-IBM-Data-Type", "text;crlf=true"),
+            _ => request_builder,
         }
         .body(text.clone()),
         None => request_builder,
     }
+}
+
+fn build_member<T>(builder: &WriteBuilder<T>) -> String
+where
+    T: TryFromResponse,
+{
+    get_member(&builder.member)
 }
 
 fn build_release_enq<T>(
@@ -154,27 +160,16 @@ where
     T: TryFromResponse,
 {
     match builder.release_enq {
-        true => request_builder.header("X-IBM-Release-ENQ", "true"),
-        false => request_builder,
+        Some(true) => request_builder.header("X-IBM-Release-ENQ", "true"),
+        _ => request_builder,
     }
 }
 
-fn set_member<T>(mut builder: WriteBuilder<T>, value: Box<str>) -> WriteBuilder<T>
+fn build_volume<T>(builder: &WriteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.member = format!("({})", value).into();
-
-    builder
-}
-
-fn set_volume<T>(mut builder: WriteBuilder<T>, value: Box<str>) -> WriteBuilder<T>
-where
-    T: TryFromResponse,
-{
-    builder.volume = format!("-({})/", value).into();
-
-    builder
+    get_volume(&builder.volume)
 }
 
 #[cfg(test)]

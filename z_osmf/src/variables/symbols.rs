@@ -42,10 +42,9 @@ where
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, skip_setter, builder_fn = build_names)]
-    names: Vec<String>,
+    #[endpoint(skip_setter, builder_fn = build_names)]
+    names: Option<Vec<String>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -58,7 +57,10 @@ where
         V: ToString,
     {
         let mut new = self;
-        new.names.push(value.to_string());
+        match new.names {
+            Some(ref mut names) => names.push(value.to_string()),
+            None => new.names = Some(vec![value.to_string()]),
+        }
 
         new
     }
@@ -68,7 +70,10 @@ where
         V: ToString,
     {
         let mut new = self;
-        new.names.extend(value.iter().map(|v| v.to_string()));
+        match new.names {
+            Some(ref mut names) => names.extend(value.iter().map(|v| v.to_string())),
+            None => new.names = Some(value.iter().map(|v| v.to_string()).collect()),
+        }
 
         new
     }

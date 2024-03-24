@@ -64,10 +64,9 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_tags_body)]
-    recursive: bool,
+    #[endpoint(builder_fn = build_tags_body)]
+    recursive: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -129,7 +128,7 @@ where
     request_builder.json(&TagsRequestJson {
         request: "chtag",
         action: "list",
-        recursive: builder.recursive,
+        recursive: builder.recursive == Some(true),
     })
 }
 

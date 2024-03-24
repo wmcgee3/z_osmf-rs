@@ -8,6 +8,8 @@ use crate::convert::TryFromResponse;
 use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
+use super::get_member;
+
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Migrate {
     etag: Option<Box<str>>,
@@ -36,12 +38,11 @@ where
 
     #[endpoint(path)]
     name: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_member)]
-    member: Box<str>,
-    #[endpoint(optional, builder_fn = build_body )]
-    wait: bool,
+    #[endpoint(path, builder_fn = build_member)]
+    member: Option<Box<str>>,
+    #[endpoint(builder_fn = build_body )]
+    wait: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -60,15 +61,13 @@ where
 {
     request_builder.json(&RequestJson {
         request: "hmigrate",
-        wait: builder.wait,
+        wait: builder.wait == Some(true),
     })
 }
 
-fn set_member<T>(mut builder: MigrateBuilder<T>, value: Box<str>) -> MigrateBuilder<T>
+fn build_member<T>(builder: &MigrateBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.member = format!("({})", value).into();
-
-    builder
+    get_member(&builder.member)
 }

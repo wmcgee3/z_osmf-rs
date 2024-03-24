@@ -13,7 +13,7 @@ use crate::error::Error;
 use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-use super::{get_session_ref, DatasetDataType, Enqueue, MigratedRecall};
+use super::{get_member, get_session_ref, get_volume, DatasetDataType, Enqueue, MigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct Read<T> {
@@ -117,7 +117,7 @@ impl TryFromResponse for Read<Option<Bytes>> {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
+#[endpoint(method = get, path = "/zosmf/restfiles/ds{volume}/{dataset_name}{member}")]
 pub struct ReadBuilder<T>
 where
     T: TryFromResponse,
@@ -126,42 +126,41 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_volume)]
-    volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_member)]
-    member: Box<str>,
-    #[endpoint(optional, query = "search")]
+    #[endpoint(path, builder_fn = build_volume)]
+    volume: Option<Box<str>>,
+    #[endpoint(path, builder_fn = build_member)]
+    member: Option<Box<str>>,
+    #[endpoint(query = "search")]
     search: Option<Box<str>>,
-    #[endpoint(optional, query = "research")]
+    #[endpoint(query = "research")]
     regex_search: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
-    search_is_regex: bool,
-    #[endpoint(optional, builder_fn = build_search_case_sensitive)]
-    search_case_sensitive: bool,
-    #[endpoint(optional, query = "maxreturnsize")]
+    #[endpoint(skip_builder)]
+    search_is_regex: Option<bool>,
+    #[endpoint(builder_fn = build_search_case_sensitive)]
+    search_case_sensitive: Option<bool>,
+    #[endpoint(query = "maxreturnsize")]
     search_max_return: Option<i32>,
-    #[endpoint(optional, header = "If-None-Match", skip_setter)]
+    #[endpoint(header = "If-None-Match", skip_setter)]
     if_none_match: Option<Box<str>>,
-    #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
+    #[endpoint(skip_setter, builder_fn = build_data_type)]
     data_type: Option<DatasetDataType>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_return_etag)]
-    return_etag: bool,
-    #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
+    #[endpoint(builder_fn = build_return_etag)]
+    return_etag: Option<bool>,
+    #[endpoint(header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
-    #[endpoint(optional, header = "X-IBM-Record-Range")]
+    #[endpoint(header = "X-IBM-Record-Range")]
     record_range: Option<RecordRange>,
-    #[endpoint(optional, header = "X-IBM-Obtain-ENQ")]
+    #[endpoint(header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<Enqueue>,
-    #[endpoint(optional, header = "X-IBM-Session-Ref")]
+    #[endpoint(header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_release_enq)]
-    release_enq: bool,
-    #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
+    #[endpoint(builder_fn = build_release_enq)]
+    release_enq: Option<bool>,
+    #[endpoint(header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -247,7 +246,7 @@ where
 
     pub fn if_none_match<E>(self, etag: E) -> ReadBuilder<Read<Option<U>>>
     where
-        E: Into<Box<str>>,
+        E: std::fmt::Display,
     {
         ReadBuilder {
             core: self.core,
@@ -259,7 +258,7 @@ where
             search_is_regex: self.search_is_regex,
             search_case_sensitive: self.search_case_sensitive,
             search_max_return: self.search_max_return,
-            if_none_match: Some(etag.into()),
+            if_none_match: Some(etag.to_string().into()),
             data_type: self.data_type,
             encoding: self.encoding,
             return_etag: self.return_etag,
@@ -389,8 +388,8 @@ where
     T: TryFromResponse,
 {
     match builder.release_enq {
-        true => request_builder.header("X-IBM-Release-ENQ", "true"),
-        false => request_builder,
+        Some(true) => request_builder.header("X-IBM-Release-ENQ", "true"),
+        _ => request_builder,
     }
 }
 
@@ -402,8 +401,8 @@ where
     T: TryFromResponse,
 {
     match builder.return_etag {
-        true => request_builder.header("X-IBM-Return-Etag", "true"),
-        false => request_builder,
+        Some(true) => request_builder.header("X-IBM-Return-Etag", "true"),
+        _ => request_builder,
     }
 }
 
@@ -415,8 +414,8 @@ where
     T: TryFromResponse,
 {
     match builder.search_case_sensitive {
-        true => request_builder.query(&[("insensitive", "false")]),
-        false => request_builder,
+        Some(true) => request_builder.query(&[("insensitive", "false")]),
+        _ => request_builder,
     }
 }
 
@@ -430,22 +429,18 @@ fn get_headers(response: &reqwest::Response) -> Result<H, Error> {
     ))
 }
 
-fn set_member<T>(mut dataset_read_builder: ReadBuilder<T>, value: Box<str>) -> ReadBuilder<T>
+fn build_member<T>(builder: &ReadBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    dataset_read_builder.member = format!("({})", value).into();
-
-    dataset_read_builder
+    get_member(&builder.member)
 }
 
-fn set_volume<T>(mut dataset_read_builder: ReadBuilder<T>, value: Box<str>) -> ReadBuilder<T>
+fn build_volume<T>(builder: &ReadBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    dataset_read_builder.volume = format!("-({})/", value).into();
-
-    dataset_read_builder
+    get_volume(&builder.volume)
 }
 
 #[cfg(test)]

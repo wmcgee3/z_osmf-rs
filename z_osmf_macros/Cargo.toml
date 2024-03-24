@@ -1,6 +1,6 @@
 [package]
 name = "z_osmf_macros"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 authors = ["Billy McGee <william.j.mcgee3@gmail.com>"]
 description = "Macros used by z_osmf"

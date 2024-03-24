@@ -3,7 +3,49 @@ use darling::{FromDeriveInput, FromField};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
-use crate::utils::extract_optional_type;
+use crate::utils::{extract_optional_type, is_option, is_phantom_data};
+
+impl From<Endpoint> for proc_macro::TokenStream {
+    fn from(value: Endpoint) -> Self {
+        let Endpoint {
+            ref ident,
+            ref generics,
+            ..
+        } = &value;
+
+        let new_fn = value.new_fn();
+        let get_response_fn = value.get_response_fn();
+
+        let setter_fns = value
+            .data
+            .as_ref()
+            .take_struct()
+            .unwrap()
+            .fields
+            .iter()
+            .map(|f| f.setter())
+            .collect::<Vec<_>>();
+
+        let (impl_, ty, where_clause) = generics.split_for_impl();
+
+        quote! {
+            impl #impl_ #ident #ty #where_clause {
+                #new_fn
+
+                #( #setter_fns )*
+
+                #get_response_fn
+
+                pub async fn build(self) -> Result<T, crate::error::Error> {
+                    use crate::convert::TryIntoTarget;
+
+                    self.get_response().await?.try_into_target().await
+                }
+            }
+        }
+        .into()
+    }
+}
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(endpoint), supports(struct_named))]
@@ -17,14 +59,14 @@ pub(crate) struct Endpoint {
 }
 
 impl Endpoint {
-    pub(crate) fn new_fn(&self) -> TokenStream {
+    fn new_fn(&self) -> TokenStream {
         let (optional_fields, required_fields): (Vec<&EndpointField>, Vec<&EndpointField>) = self
             .data
             .as_ref()
             .take_struct()
             .unwrap()
             .iter()
-            .partition(|f| f.optional);
+            .partition(|f| is_option(&f.ty) || is_phantom_data(&f.ty));
 
         let (args, required_assignments): (Vec<_>, Vec<_>) = required_fields
             .iter()
@@ -41,9 +83,9 @@ impl Endpoint {
         let optional_assignments = optional_fields
             .iter()
             .map(|f| {
-                let EndpointField { ident, ty, .. } = &f;
+                let EndpointField { ident, .. } = &f;
 
-                quote! { #ident: <#ty>::default() }
+                quote! { #ident: Default::default() }
             })
             .collect::<Vec<_>>();
 
@@ -57,162 +99,29 @@ impl Endpoint {
         }
     }
 
-    pub(crate) fn setter_fns(&self) -> Vec<TokenStream> {
-        self.data
-            .as_ref()
-            .take_struct()
-            .unwrap()
-            .fields
-            .iter()
-            .filter(|f| f.optional && !f.skip_setter)
-            .map(|f| {
-                let EndpointField {
-                    ident,
-                    ty,
-                    setter_fn,
-                    ..
-                } = f;
-
-                if let Some(setter_fn) = setter_fn {
-                    quote! {
-                        pub fn #ident(mut self, value: impl Into<#ty>) -> Self {
-                            #setter_fn(self, value.into())
-                        }
-                    }
-                } else if let Some(optional_ty) = extract_optional_type(ty) {
-                    quote! {
-                        pub fn #ident(mut self, value: impl Into<#optional_ty>) -> Self {
-                            self.#ident = Some(value.into());
-
-                            self
-                        }
-                    }
-                } else {
-                    quote! {
-                        pub fn #ident(mut self, value: impl Into<#ty>) -> Self {
-                            self.#ident = value.into();
-
-                            self
-                        }
-                    }
-                }
-            })
-            .collect()
-    }
-
-    pub(crate) fn get_response_fn(&self) -> TokenStream {
+    fn get_response_fn(&self) -> TokenStream {
         let Endpoint {
             data, method, path, ..
         } = &self;
 
         let fields = data.as_ref().take_struct().unwrap();
 
-        let path_idents = fields
-            .iter()
-            .filter(|f| f.path)
-            .map(|f| &f.ident)
-            .collect::<Vec<_>>();
-
-        let (optional_fields, required_fields): (Vec<&EndpointField>, Vec<&EndpointField>) =
-            fields.iter().partition(|f| f.optional);
-
-        let mut optional_builders = optional_fields
-            .iter()
-            .map(|f| {
-                let EndpointField {
-                    ident,
-                    query,
-                    header,
-                    builder_fn,
-                    ty,
-                    ..
-                } = f;
-
-                if let Some(builder_fn) = builder_fn {
-                    quote! {
-                        request_builder = #builder_fn(request_builder, &self);
-                    }
-                } else if let Some(header) = header {
-                    if ty.to_token_stream().to_string() == "Option < Box < str > >" {
-                        quote! {
-                            if let Some(value) = &self.#ident {
-                                request_builder = request_builder.header(#header, value.as_ref());
-                            }
-                        }
-                    } else {
-                        quote! {
-                            if let Some(value) = &self.#ident {
-                                request_builder = request_builder.header(#header, value.clone());
-                            }
-                        }
-                    }
-                } else if let Some(query) = query {
-                    quote! {
-                        if let Some(value) = &self.#ident {
-                            request_builder = request_builder.query(&[(#query, &value)]);
-                        }
-                    }
-                } else {
-                    quote! {}
-                }
-            })
-            .collect::<Vec<_>>();
-
-        let required_builders = required_fields
-            .iter()
-            .map(|f| {
-                let EndpointField {
-                    ident,
-                    query,
-                    header,
-                    ..
-                } = f;
-
-                if query.is_some() {
-                    quote! {
-                        .query(&[(#query, &self.#ident)])
-                    }
-                } else if header.is_some() {
-                    quote! {
-                        .header(#header, &self.#ident)
-                    }
-                } else {
-                    quote! {}
-                }
-            })
-            .collect::<Vec<_>>();
-
-        let required_builder_fns: Vec<_> = required_fields
-            .iter()
-            .flat_map(|f| f.builder_fn.as_ref())
-            .map(|builder_fn| {
-                quote! {
-                    request_builder = #builder_fn(request_builder, &self);
-                }
-            })
-            .collect();
-
-        optional_builders.extend(required_builder_fns);
+        let path_builders: Vec<_> = fields.iter().map(|f| f.path_builder()).collect();
+        let request_builders: Vec<_> = fields.iter().map(|f| f.request_builder()).collect();
 
         quote! {
             fn get_request(&self) -> Result<reqwest::Request, crate::error::Error> {
                 let path = {
-                    let Self {
-                        #( #path_idents, )*
-                        ..
-                    } = &self;
+                    #( #path_builders )*
 
                     format!(#path)
                 };
 
-                let mut request_builder = self
-                    .core
+                let mut request_builder = self.core
                     .client
-                    .#method(format!("{}{}", self.core.base_url, path))
+                    .#method(format!("{}{}", self.core.base_url, path));
 
-                #( #required_builders )* ;
-
-                #( #optional_builders )*
+                #( #request_builders )*
 
                 if let Ok(lock) = &self.core.cookie.read() {
                     match lock.as_ref() {
@@ -245,8 +154,6 @@ struct EndpointField {
     ident: Option<syn::Ident>,
     ty: syn::Type,
 
-    #[darling(default)]
-    optional: bool,
     query: Option<String>,
     #[darling(default)]
     path: bool,
@@ -257,4 +164,194 @@ struct EndpointField {
     #[darling(default)]
     skip_builder: bool,
     builder_fn: Option<syn::ExprPath>,
+}
+
+impl EndpointField {
+    fn path_builder(&self) -> Option<TokenStream> {
+        match self {
+            EndpointField {
+                skip_builder: true, ..
+            }
+            | EndpointField { path: false, .. } => None,
+            EndpointField {
+                ident: Some(ident),
+                builder_fn: Some(builder_fn),
+                ..
+            } => Some(quote! {
+                let #ident = #builder_fn(self);
+            }),
+            EndpointField {
+                ident: Some(ident), ..
+            } => Some(quote! {
+                let #ident = &self.#ident;
+            }),
+            _ => None,
+        }
+    }
+
+    fn request_builder(&self) -> Option<TokenStream> {
+        match self {
+            EndpointField {
+                skip_builder: true, ..
+            }
+            | EndpointField { path: true, .. } => None,
+            EndpointField {
+                builder_fn: Some(builder_fn),
+                ..
+            } => Some(quote! {
+                request_builder = #builder_fn(request_builder, self);
+            }),
+            EndpointField {
+                header: Some(header),
+                ident: Some(ident),
+                ty,
+                ..
+            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
+                if let Some(value) = &self.#ident {
+                    request_builder = request_builder.header(#header, value.as_ref());
+                }
+            }),
+            EndpointField {
+                header: Some(header),
+                ident: Some(ident),
+                ty,
+                ..
+            } if is_option(ty) => Some(quote! {
+                if let Some(value) = &self.#ident {
+                    request_builder = request_builder.header(#header, *value);
+                }
+            }),
+            EndpointField {
+                header: Some(header),
+                ident: Some(ident),
+                ..
+            } => Some(quote! {
+                request_builder = request_builder.header(#header, &self.#ident);
+            }),
+            EndpointField {
+                query: Some(query),
+                ident: Some(ident),
+                ty,
+                ..
+            } if is_option(ty) => Some(quote! {
+                if let Some(value) = &self.#ident {
+                    request_builder = request_builder.query(&[(#query, &value)]);
+                }
+            }),
+            EndpointField {
+                query: Some(query),
+                ident: Some(ident),
+                ..
+            } => Some(quote! {
+                request_builder = request_builder.query(&[(#query, &self.#ident)]);
+            }),
+            _ => None,
+        }
+    }
+
+    fn setter(&self) -> Option<TokenStream> {
+        match self {
+            EndpointField { ty, .. } if !is_option(ty) => None,
+            EndpointField {
+                skip_setter: true, ..
+            } => None,
+            EndpointField {
+                setter_fn: Some(setter_fn),
+                ident: Some(ident),
+                ty,
+                ..
+            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
+                pub fn #ident(self, value: impl ToString) -> Self {
+                    #setter_fn(self, Some(value.to_string().into()))
+                }
+            }),
+            EndpointField {
+                setter_fn: Some(setter_fn),
+                ident: Some(ident),
+                ty,
+                ..
+            } if ty.to_token_stream().to_string() == "Box < str >" => Some(quote! {
+                pub fn #ident(self, value: impl ToString) -> Self {
+                    #setter_fn(self, value.to_string().into())
+                }
+            }),
+            EndpointField {
+                setter_fn: Some(setter_fn),
+                ident: Some(ident),
+                ty,
+                ..
+            } if is_option(ty) => {
+                let ty = extract_optional_type(ty).unwrap();
+
+                Some(quote! {
+                    pub fn #ident(self, value: impl Into<#ty>) -> Self {
+                        #setter_fn(self, Some(value.into()))
+                    }
+                })
+            }
+            EndpointField {
+                setter_fn: Some(setter_fn),
+                ident: Some(ident),
+                ty,
+                ..
+            } => Some(quote! {
+                pub fn #ident(self, value: impl Into<#ty>) -> Self {
+                    #setter_fn(self, value.into())
+                }
+            }),
+            EndpointField {
+                ident: Some(ident),
+                ty,
+                ..
+            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
+                pub fn #ident(self, value: impl ToString) -> Self {
+                    let mut new = self;
+                    new.#ident = Some(value.to_string().into());
+
+                    new
+                }
+            }),
+            EndpointField {
+                ident: Some(ident),
+                ty,
+                ..
+            } if ty.to_token_stream().to_string() == "Box < str >" => Some(quote! {
+                pub fn #ident(self, value: impl ToString) -> Self {
+                    let mut new = self;
+                    new.#ident = value.to_string().into();
+
+                    new
+                }
+            }),
+            EndpointField {
+                ident: Some(ident),
+                ty,
+                ..
+            } if is_option(ty) => {
+                let ty = extract_optional_type(ty).unwrap();
+
+                Some(quote! {
+                    pub fn #ident(self, value: impl Into<#ty>) -> Self {
+                        let mut new = self;
+                        new.#ident = Some(value.into());
+
+                        new
+                    }
+                })
+            }
+            EndpointField {
+                ident: Some(ident),
+                ty,
+                ..
+            } => Some(quote! {
+                pub fn #ident(self, value: impl Into<#ty>) -> Self {
+                    let mut new = self;
+                    new.#ident = value.into();
+
+                    new
+                }
+            }),
+            _ => None,
+        }
+    }
 }

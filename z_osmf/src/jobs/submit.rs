@@ -9,6 +9,8 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
+use super::get_subsystem;
+
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
 pub enum Jcl {
     Binary(Bytes),
@@ -50,28 +52,27 @@ where
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_subsystem)]
-    subsystem: Box<str>,
-    #[endpoint(optional, header = "X-IBM-Intrdr-Class", skip_setter)]
+    #[endpoint(path, builder_fn = build_subsystem)]
+    subsystem: Option<Box<str>>,
+    #[endpoint(header = "X-IBM-Intrdr-Class", skip_setter)]
     message_class: Option<Box<str>>,
-    #[endpoint(optional, header = "X-IBM-Intrdr-Recfm")]
+    #[endpoint(header = "X-IBM-Intrdr-Recfm")]
     record_format: Option<RecordFormat>,
-    #[endpoint(optional, header = "X-IBM-Intrdr-Lrecl")]
+    #[endpoint(header = "X-IBM-Intrdr-Lrecl")]
     record_length: Option<i32>,
-    #[endpoint(optional, header = "X-IBM-User-Correlator")]
+    #[endpoint(header = "X-IBM-User-Correlator")]
     user_correlator: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_symbols)]
+    #[endpoint(builder_fn = build_symbols)]
     symbols: Option<HashMap<Box<str>, Box<str>>>,
     #[endpoint(builder_fn = build_jcl_source)]
     jcl_source: Jcl,
-    #[endpoint(optional, header = "X-IBM-Notification-URL")]
+    #[endpoint(header = "X-IBM-Notification-URL")]
     notification_url: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_notification_events)]
+    #[endpoint(builder_fn = build_notification_events)]
     notification_events: Option<Box<[JobEvent]>>,
-    #[endpoint(optional, header = "X-IBM-Intrdr-File-Encoding")]
+    #[endpoint(header = "X-IBM-Intrdr-File-Encoding")]
     encoding: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -158,6 +159,13 @@ where
     request_builder
 }
 
+fn build_subsystem<T>(builder: &SubmitBuilder<T>) -> String
+where
+    T: TryFromResponse,
+{
+    get_subsystem(&builder.subsystem)
+}
+
 fn build_symbols<T>(
     mut request_builder: reqwest::RequestBuilder,
     builder: &SubmitBuilder<T>,
@@ -173,15 +181,6 @@ where
     }
 
     request_builder
-}
-
-fn set_subsystem<T>(mut builder: SubmitBuilder<T>, value: Box<str>) -> SubmitBuilder<T>
-where
-    T: TryFromResponse,
-{
-    builder.subsystem = format!("/-{}", value).into();
-
-    builder
 }
 
 #[cfg(test)]

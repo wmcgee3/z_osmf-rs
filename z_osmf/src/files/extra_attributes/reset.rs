@@ -18,16 +18,15 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_body)]
-    apf_authorized: bool,
-    #[endpoint(optional, skip_builder)]
-    shared_library: bool,
-    #[endpoint(optional, skip_builder)]
-    program_controlled: bool,
-    #[endpoint(optional, skip_builder)]
-    shared_address_space: bool,
+    #[endpoint(builder_fn = build_body)]
+    apf_authorized: Option<bool>,
+    #[endpoint(skip_builder)]
+    shared_library: Option<bool>,
+    #[endpoint(skip_builder)]
+    program_controlled: Option<bool>,
+    #[endpoint(skip_builder)]
+    shared_address_space: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -40,16 +39,16 @@ where
 {
     let mut reset = Vec::new();
 
-    if builder.apf_authorized {
+    if builder.apf_authorized == Some(true) {
         reset.push('a');
     }
-    if builder.shared_library {
+    if builder.shared_library == Some(true) {
         reset.push('l');
     }
-    if builder.program_controlled {
+    if builder.program_controlled == Some(true) {
         reset.push('p');
     }
-    if builder.shared_address_space {
+    if builder.shared_address_space == Some(true) {
         reset.push('s');
     }
     let reset = Some(reset.into_iter().collect::<String>().into());

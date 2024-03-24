@@ -19,16 +19,15 @@ where
     from_path: Box<str>,
     #[endpoint(path)]
     to_path: Box<str>,
-    #[endpoint(optional, skip_builder)]
-    overwrite: bool,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
+    overwrite: Option<bool>,
+    #[endpoint(skip_builder)]
+    recursive: Option<bool>,
+    #[endpoint(skip_builder)]
     links: Option<Links>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     preserve: Option<Preserve>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -72,8 +71,8 @@ where
     request_builder.json(&RequestJson {
         request: "copy",
         from: &builder.from_path,
-        overwrite: builder.overwrite,
-        recursive: builder.recursive,
+        overwrite: builder.overwrite == Some(true),
+        recursive: builder.recursive == Some(true),
         links: builder.links,
         preserve: builder.preserve,
     })

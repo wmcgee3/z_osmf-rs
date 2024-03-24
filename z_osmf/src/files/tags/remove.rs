@@ -19,12 +19,11 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_body)]
+    #[endpoint(builder_fn = build_body)]
     links: Option<Links>,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
+    #[endpoint(skip_builder)]
+    recursive: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -47,7 +46,7 @@ where
         request: "chtag",
         action: "remove",
         links: builder.links,
-        recursive: builder.recursive,
+        recursive: builder.recursive == Some(true),
     })
 }
 

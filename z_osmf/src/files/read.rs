@@ -119,22 +119,21 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, query = "search")]
+    #[endpoint(query = "search")]
     search: Option<Box<str>>,
-    #[endpoint(optional, query = "research")]
+    #[endpoint(query = "research")]
     regex_search: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_search_case_sensitive)]
-    search_case_sensitive: bool,
-    #[endpoint(optional, query = "maxreturnsize")]
+    #[endpoint(builder_fn = build_search_case_sensitive)]
+    search_case_sensitive: Option<bool>,
+    #[endpoint(query = "maxreturnsize")]
     search_max_return: Option<i32>,
-    #[endpoint(optional, skip_setter, builder_fn = build_data_type)]
+    #[endpoint(skip_setter, builder_fn = build_data_type)]
     data_type: Option<DataType>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, header = "If-None-Match", skip_setter)]
+    #[endpoint(header = "If-None-Match", skip_setter)]
     etag: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -175,7 +174,7 @@ where
 
     pub fn if_none_match<E>(self, etag: E) -> ReadBuilder<Read<Option<U>>>
     where
-        E: Into<Box<str>>,
+        E: std::fmt::Display,
     {
         ReadBuilder {
             core: self.core,
@@ -186,7 +185,7 @@ where
             search_max_return: self.search_max_return,
             data_type: self.data_type,
             encoding: self.encoding,
-            etag: Some(etag.into()),
+            etag: Some(etag.to_string().into()),
             target_type: PhantomData,
         }
     }
@@ -262,8 +261,8 @@ where
     T: TryFromResponse,
 {
     match builder.search_case_sensitive {
-        true => request_builder.query(&[("insensitive", "false")]),
-        false => request_builder,
+        Some(true) => request_builder.query(&[("insensitive", "false")]),
+        _ => request_builder,
     }
 }
 

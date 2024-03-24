@@ -7,6 +7,8 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
+use super::get_member;
+
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{name}{member}")]
 pub struct RecallBuilder<T>
@@ -17,12 +19,11 @@ where
 
     #[endpoint(path)]
     name: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_member)]
-    member: Box<str>,
-    #[endpoint(optional, builder_fn = build_body)]
-    wait: bool,
+    #[endpoint(path, builder_fn = build_member)]
+    member: Option<Box<str>>,
+    #[endpoint(builder_fn = build_body)]
+    wait: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -41,15 +42,13 @@ where
 {
     request_builder.json(&RequestJson {
         request: "hrecall",
-        wait: builder.wait,
+        wait: builder.wait == Some(true),
     })
 }
 
-fn set_member<T>(mut builder: RecallBuilder<T>, value: Box<str>) -> RecallBuilder<T>
+fn build_member<T>(builder: &RecallBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.member = format!("({})", value).into();
-
-    builder
+    get_member(&builder.member)
 }

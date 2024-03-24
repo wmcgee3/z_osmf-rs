@@ -18,40 +18,39 @@ where
     #[endpoint(path)]
     dataset_name: Box<str>,
 
-    #[endpoint(optional, builder_fn = build_body)]
+    #[endpoint(builder_fn = build_body)]
     volume: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     device_type: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     organization: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     space_allocation_unit: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     primary_space: Option<i32>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     secondary_space: Option<i32>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     directory_blocks: Option<i32>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     average_block_size: Option<i32>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     record_format: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     block_size: Option<i32>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     record_length: Option<i32>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     storage_class: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     management_class: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     data_class: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     dataset_type: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     model_dataset: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 

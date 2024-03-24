@@ -19,16 +19,15 @@ where
 
     #[endpoint(path)]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_body)]
+    #[endpoint(builder_fn = build_body)]
     tag_type: Option<TagType>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     code_set: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     links: Option<Links>,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
+    #[endpoint(skip_builder)]
+    recursive: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -58,7 +57,7 @@ where
         tag_type: builder.tag_type,
         codeset: builder.code_set.as_deref(),
         links: builder.links,
-        recursive: builder.recursive,
+        recursive: builder.recursive == Some(true),
     })
 }
 

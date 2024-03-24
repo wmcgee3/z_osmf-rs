@@ -6,8 +6,10 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
+use super::{get_member, get_volume};
+
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = delete, path = "/zosmf/restfiles/ds/{volume}{dataset_name}{member}")]
+#[endpoint(method = delete, path = "/zosmf/restfiles/ds{volume}/{dataset_name}{member}")]
 pub struct DeleteBuilder<T>
 where
     T: TryFromResponse,
@@ -16,33 +18,28 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_volume)]
-    volume: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_member)]
-    member: Box<str>,
-    #[endpoint(optional, header = "X-IBM-Dsname-Encoding")]
+    #[endpoint(path, builder_fn = build_volume)]
+    volume: Option<Box<str>>,
+    #[endpoint(path, builder_fn = build_member)]
+    member: Option<Box<str>>,
+    #[endpoint(header = "X-IBM-Dsname-Encoding")]
     dsname_encoding: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
-fn set_member<T>(mut builder: DeleteBuilder<T>, value: Box<str>) -> DeleteBuilder<T>
+fn build_member<T>(builder: &DeleteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.member = format!("({})", value).into();
-
-    builder
+    get_member(&builder.member)
 }
 
-fn set_volume<T>(mut builder: DeleteBuilder<T>, value: Box<str>) -> DeleteBuilder<T>
+fn build_volume<T>(builder: &DeleteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.volume = format!("-({})/", value).into();
-
-    builder
+    get_volume(&builder.volume)
 }
 
 #[cfg(test)]

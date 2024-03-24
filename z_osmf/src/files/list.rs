@@ -72,32 +72,31 @@ where
 
     #[endpoint(query = "path")]
     path: Box<str>,
-    #[endpoint(optional, builder_fn = build_lstat)]
-    lstat: bool,
-    #[endpoint(optional, query = "group")]
+    #[endpoint(builder_fn = build_lstat)]
+    lstat: Option<bool>,
+    #[endpoint(query = "group")]
     group: Option<Box<str>>,
-    #[endpoint(optional, query = "mtime")]
+    #[endpoint(query = "mtime")]
     modified_days: Option<Filter<u32>>,
-    #[endpoint(optional, query = "name")]
+    #[endpoint(query = "name")]
     name: Option<Box<str>>,
-    #[endpoint(optional, query = "size")]
+    #[endpoint(query = "size")]
     size: Option<Filter<Size>>,
-    #[endpoint(optional, query = "perm")]
+    #[endpoint(query = "perm")]
     permissions: Option<Box<str>>,
-    #[endpoint(optional, query = "type")]
+    #[endpoint(query = "type")]
     file_type: Option<FileType>,
-    #[endpoint(optional, query = "user")]
+    #[endpoint(query = "user")]
     user: Option<Box<str>>,
-    #[endpoint(optional, query = "depth")]
+    #[endpoint(query = "depth")]
     depth: Option<i32>,
-    #[endpoint(optional, query = "limit")]
+    #[endpoint(query = "limit")]
     limit: Option<i32>,
-    #[endpoint(optional, query = "filesys")]
+    #[endpoint(query = "filesys")]
     file_system: Option<FileSystem>,
-    #[endpoint(optional, query = "symlinks")]
+    #[endpoint(query = "symlinks")]
     symlinks: Option<SymLinks>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -239,8 +238,8 @@ where
     T: TryFromResponse,
 {
     match builder.lstat {
-        true => request_builder.header("X-IBM-Lstat", "true"),
-        false => request_builder,
+        Some(true) => request_builder.header("X-IBM-Lstat", "true"),
+        _ => request_builder,
     }
 }
 

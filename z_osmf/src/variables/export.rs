@@ -21,10 +21,8 @@ where
     system: Box<str>,
     #[endpoint(builder_fn = build_body)]
     path: Box<str>,
-    #[endpoint(optional)]
     overwrite: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 

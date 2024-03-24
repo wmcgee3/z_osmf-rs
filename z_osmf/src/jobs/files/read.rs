@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::jobs::Identifier;
+use crate::jobs::{get_subsystem, Identifier};
 use crate::ClientCore;
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -68,35 +68,34 @@ impl std::fmt::Display for FileId {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files/{id}/records")]
+#[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files/{id}/records")]
 pub struct ReadBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_subsystem)]
-    subsystem: Box<str>,
+    #[endpoint(path, builder_fn = build_subsystem)]
+    subsystem: Option<Box<str>>,
     #[endpoint(path)]
     identifier: Identifier,
     #[endpoint(path)]
     id: FileId,
-    #[endpoint(optional, header = "X-IBM-Record-Range")]
+    #[endpoint(header = "X-IBM-Record-Range")]
     record_range: Option<RecordRange>,
-    #[endpoint(optional, skip_setter, query = "mode")]
+    #[endpoint(skip_setter, query = "mode")]
     data_type: Option<DataType>,
-    #[endpoint(optional, query = "fileEncoding")]
+    #[endpoint(query = "fileEncoding")]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, query = "search")]
+    #[endpoint(query = "search")]
     search: Option<Box<str>>,
-    #[endpoint(optional, query = "research")]
+    #[endpoint(query = "research")]
     search_regex: Option<Box<str>>,
-    #[endpoint(optional, builder_fn = build_search_case_sensitive)]
-    search_case_sensitive: bool,
-    #[endpoint(optional, query = "maxreturnsize")]
+    #[endpoint(builder_fn = build_search_case_sensitive)]
+    search_case_sensitive: Option<bool>,
+    #[endpoint(query = "maxreturnsize")]
     search_max_return: Option<i32>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -164,18 +163,16 @@ where
     T: TryFromResponse,
 {
     match builder.search_case_sensitive {
-        true => request_builder.query(&["insensitive", "false"]),
-        false => request_builder,
+        Some(true) => request_builder.query(&["insensitive", "false"]),
+        _ => request_builder,
     }
 }
 
-fn set_subsystem<T>(mut builder: ReadBuilder<T>, value: Box<str>) -> ReadBuilder<T>
+fn build_subsystem<T>(builder: &ReadBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.subsystem = format!("-{}/", value).into();
-
-    builder
+    get_subsystem(&builder.subsystem)
 }
 
 #[cfg(test)]

@@ -26,12 +26,11 @@ where
     #[endpoint(path)]
     path: Box<str>,
 
-    #[endpoint(optional, builder_fn = build_body)]
+    #[endpoint(builder_fn = build_body)]
     file_type: Option<FileType>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     mode: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
