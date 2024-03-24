@@ -19,10 +19,9 @@ where
     from_path: Box<str>,
     #[endpoint(path)]
     to_path: Box<str>,
-    #[endpoint(optional, skip_builder)]
-    overwrite: bool,
+    #[endpoint(skip_builder)]
+    overwrite: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -43,7 +42,7 @@ where
     request_builder.json(&RequestJson {
         request: "move",
         from: &builder.from_path,
-        overwrite: builder.overwrite,
+        overwrite: builder.overwrite == Some(true),
     })
 }
 

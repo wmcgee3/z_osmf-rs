@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::Identifier;
+use super::{get_subsystem, Identifier};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -36,23 +36,22 @@ impl TryFromResponse for Feedback {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
+#[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
 pub struct FeedbackBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_subsystem)]
-    subsystem: Box<str>,
+    #[endpoint(path, builder_fn = build_subsystem)]
+    subsystem: Option<Box<str>>,
     #[endpoint(path)]
     identifier: Identifier,
     #[endpoint(builder_fn = build_body)]
     request: &'static str,
-    #[endpoint(optional, skip_setter, skip_builder)]
-    asynchronous: bool,
+    #[endpoint(skip_setter, skip_builder)]
+    asynchronous: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -66,7 +65,7 @@ where
             subsystem: self.subsystem,
             identifier: self.identifier,
             request: self.request,
-            asynchronous: true,
+            asynchronous: Some(true),
             target_type: PhantomData,
         }
     }
@@ -78,15 +77,6 @@ struct RequestJson {
     version: &'static str,
 }
 
-fn set_subsystem<T>(mut builder: FeedbackBuilder<T>, value: Box<str>) -> FeedbackBuilder<T>
-where
-    T: TryFromResponse,
-{
-    builder.subsystem = format!("-{}/", value).into();
-
-    builder
-}
-
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &FeedbackBuilder<T>,
@@ -96,8 +86,19 @@ where
 {
     request_builder.json(&RequestJson {
         request: builder.request,
-        version: if builder.asynchronous { "1.0" } else { "2.0" },
+        version: if builder.asynchronous == Some(true) {
+            "1.0"
+        } else {
+            "2.0"
+        },
     })
+}
+
+fn build_subsystem<T>(builder: &FeedbackBuilder<T>) -> String
+where
+    T: TryFromResponse,
+{
+    get_subsystem(&builder.subsystem)
 }
 
 #[cfg(test)]

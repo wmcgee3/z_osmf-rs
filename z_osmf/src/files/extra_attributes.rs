@@ -63,7 +63,7 @@ where
     #[endpoint(path)]
     path: Box<str>,
 
-    #[endpoint(optional, skip_setter, builder_fn = build_body)]
+    #[endpoint(builder_fn = build_body)]
     target_type: PhantomData<T>,
 }
 

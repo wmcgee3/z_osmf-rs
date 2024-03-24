@@ -119,20 +119,19 @@ where
 
     #[endpoint(path)]
     dataset_name: Box<str>,
-    #[endpoint(optional, query = "start")]
+    #[endpoint(query = "start")]
     start: Option<Box<str>>,
-    #[endpoint(optional, query = "pattern")]
+    #[endpoint(query = "pattern")]
     pattern: Option<Box<str>>,
-    #[endpoint(optional, header = "X-IBM-Max-Items")]
+    #[endpoint(header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
-    #[endpoint(optional, skip_setter, builder_fn = build_attributes)]
+    #[endpoint(skip_setter, builder_fn = build_attributes)]
     attributes: Option<Attrs>,
-    #[endpoint(optional, skip_builder)]
-    include_total: bool,
-    #[endpoint(optional, header = "X-IBM-Migrated-Recall")]
+    #[endpoint(skip_builder)]
+    include_total: Option<bool>,
+    #[endpoint(header = "X-IBM-Migrated-Recall")]
     migrated_recall: Option<MigratedRecall>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -216,12 +215,16 @@ where
     let key = "X-IBM-Attributes";
 
     match (attributes, include_total) {
-        (None, false) => request_builder,
-        (None, true) => request_builder.header(key, "member,total"),
+        (None, Some(true)) => request_builder.header(key, "member,total"),
         (Some(attr), total) => request_builder.header(
             key,
-            format!("{}{}", attr, if *total { ",total" } else { "" }),
+            format!(
+                "{}{}",
+                attr,
+                if *total == Some(true) { ",total" } else { "" }
+            ),
         ),
+        _ => request_builder,
     }
 }
 

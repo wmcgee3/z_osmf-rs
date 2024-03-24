@@ -6,24 +6,23 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::Identifier;
+use super::{get_subsystem, Identifier};
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = delete, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}")]
+#[endpoint(method = delete, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
 pub struct PurgeBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_subsystem)]
-    subsystem: Box<str>,
+    #[endpoint(path, builder_fn = build_subsystem)]
+    subsystem: Option<Box<str>>,
     #[endpoint(path)]
     identifier: Identifier,
-    #[endpoint(optional, skip_setter, builder_fn = build_asynchronous)]
-    asynchronous: bool,
+    #[endpoint(skip_setter, builder_fn = build_asynchronous)]
+    asynchronous: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -36,7 +35,7 @@ where
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
-            asynchronous: true,
+            asynchronous: Some(true),
             target_type: PhantomData,
         }
     }
@@ -51,17 +50,19 @@ where
 {
     request_builder.header(
         "X-IBM-Job-Modify-Version",
-        if builder.asynchronous { "1.0" } else { "2.0" },
+        if builder.asynchronous == Some(true) {
+            "1.0"
+        } else {
+            "2.0"
+        },
     )
 }
 
-fn set_subsystem<T>(mut builder: PurgeBuilder<T>, value: Box<str>) -> PurgeBuilder<T>
+fn build_subsystem<T>(builder: &PurgeBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.subsystem = format!("-{}/", value).into();
-
-    builder
+    get_subsystem(&builder.subsystem)
 }
 
 #[cfg(test)]

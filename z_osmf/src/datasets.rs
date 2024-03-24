@@ -458,13 +458,27 @@ impl From<Enqueue> for HeaderValue {
     }
 }
 
-pub(crate) fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
+fn get_member(value: &Option<Box<str>>) -> String {
+    value
+        .as_ref()
+        .map(|v| format!("({})", v))
+        .unwrap_or("".to_string())
+}
+
+fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
         .map(|v| v.to_str())
         .transpose()?
         .map(|v| v.into()))
+}
+
+fn get_volume(value: &Option<Box<str>>) -> String {
+    value
+        .as_ref()
+        .map(|v| format!("/-({})", v))
+        .unwrap_or("".to_string())
 }
 
 #[cfg(test)]

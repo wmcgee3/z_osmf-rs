@@ -22,7 +22,6 @@ where
     #[endpoint(builder_fn = build_body)]
     path: Box<str>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 

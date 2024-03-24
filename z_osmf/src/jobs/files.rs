@@ -11,7 +11,7 @@ use z_osmf_macros::{Endpoint, Getters};
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::Identifier;
+use super::{get_subsystem, Identifier};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
 pub struct JobFiles {
@@ -57,30 +57,24 @@ pub struct JobFile {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restjobs/jobs/{subsystem}{identifier}/files")]
+#[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files")]
 pub struct JobFilesBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path, setter_fn = set_job_files_subsystem)]
-    subsystem: Box<str>,
+    #[endpoint(path, builder_fn = build_subsystem)]
+    subsystem: Option<Box<str>>,
     #[endpoint(path)]
     identifier: Identifier,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
-fn set_job_files_subsystem<T>(
-    mut builder: JobFilesBuilder<T>,
-    value: Box<str>,
-) -> JobFilesBuilder<T>
+fn build_subsystem<T>(builder: &JobFilesBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.subsystem = format!("-{}/", value).into();
-
-    builder
+    get_subsystem(&builder.subsystem)
 }

@@ -21,7 +21,6 @@ where
     #[endpoint(builder_fn = build_body)]
     variable_names: Box<[String]>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 

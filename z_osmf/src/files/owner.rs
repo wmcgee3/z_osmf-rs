@@ -19,14 +19,13 @@ where
     path: Box<str>,
     #[endpoint(builder_fn = build_body)]
     owner: Box<str>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     group: Option<Box<str>>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     links: Option<Links>,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
+    #[endpoint(skip_builder)]
+    recursive: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -60,7 +59,7 @@ where
         owner: &builder.owner,
         group: builder.group.as_deref(),
         links: builder.links,
-        recursive: builder.recursive,
+        recursive: builder.recursive == Some(true),
     })
 }
 

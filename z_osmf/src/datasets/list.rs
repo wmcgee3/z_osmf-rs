@@ -180,18 +180,17 @@ where
 
     #[endpoint(query = "dslevel")]
     name_pattern: Box<str>,
-    #[endpoint(optional, query = "volser")]
+    #[endpoint(query = "volser")]
     volume: Option<Box<str>>,
-    #[endpoint(optional, query = "start")]
+    #[endpoint(query = "start")]
     start: Option<Box<str>>,
-    #[endpoint(optional, header = "X-IBM-Max-Items")]
+    #[endpoint(header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
-    #[endpoint(optional, skip_setter, builder_fn = build_attributes)]
+    #[endpoint(skip_setter, builder_fn = build_attributes)]
     attributes: Option<Attrs>,
-    #[endpoint(optional, skip_builder)]
-    include_total: bool,
+    #[endpoint(skip_builder)]
+    include_total: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -281,16 +280,20 @@ where
     T: TryFromResponse,
 {
     match (list_builder.attributes, list_builder.include_total) {
-        (None, false) => request_builder,
-        (None, true) => request_builder.header("X-IBM-Attributes", "dsname,total"),
+        (None, Some(true)) => request_builder.header("X-IBM-Attributes", "dsname,total"),
         (Some(attributes), include_total) => request_builder.header(
             "X-IBM-Attributes",
             format!(
                 "{}{}",
                 attributes,
-                if include_total { ",total" } else { "" }
+                if include_total == Some(true) {
+                    ",total"
+                } else {
+                    ""
+                }
             ),
         ),
+        _ => request_builder,
     }
 }
 

@@ -21,12 +21,11 @@ where
     target_path: Box<str>,
     #[endpoint(skip_builder)]
     link_type: LinkType,
-    #[endpoint(optional, skip_builder)]
-    recursive: bool,
-    #[endpoint(optional, skip_builder)]
-    force: bool,
+    #[endpoint(skip_builder)]
+    recursive: Option<bool>,
+    #[endpoint(skip_builder)]
+    force: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -58,8 +57,8 @@ where
         request: "link",
         from: &builder.source_path,
         link_type: builder.link_type,
-        recursive: builder.recursive,
-        force: builder.force,
+        recursive: builder.recursive == Some(true),
+        force: builder.force == Some(true),
     })
 }
 

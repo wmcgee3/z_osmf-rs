@@ -453,6 +453,13 @@ pub struct Step {
     abend_reason_code: Option<Box<str>>,
 }
 
+fn get_subsystem(value: &Option<Box<str>>) -> String {
+    value
+        .as_ref()
+        .map(|v| format!("/-{}", v))
+        .unwrap_or("".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

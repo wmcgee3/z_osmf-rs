@@ -7,8 +7,10 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
+use super::{get_member, get_volume};
+
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds/{volume}{to_dataset}{to_member}")]
+#[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{to_dataset}{to_member}")]
 pub struct CopyBuilder<T>
 where
     T: TryFromResponse,
@@ -17,22 +19,21 @@ where
 
     #[endpoint(builder_fn = build_body)]
     from_dataset: Box<str>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     from_member: Option<Box<str>>,
-    #[endpoint(optional, path, setter_fn = set_volume)]
-    volume: Box<str>,
+    #[endpoint(path, builder_fn = build_volume)]
+    volume: Option<Box<str>>,
     #[endpoint(path)]
     to_dataset: Box<str>,
-    #[endpoint(optional, path, setter_fn = set_to_member)]
-    to_member: Box<str>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(path, builder_fn = build_to_member)]
+    to_member: Option<Box<str>>,
+    #[endpoint(skip_builder)]
     alias: Option<bool>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     enqueue: Option<Enqueue>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     replace: Option<bool>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -84,20 +85,16 @@ where
     })
 }
 
-fn set_to_member<T>(mut builder: CopyBuilder<T>, value: Box<str>) -> CopyBuilder<T>
+fn build_to_member<T>(builder: &CopyBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.to_member = format!("({})", value).into();
-
-    builder
+    get_member(&builder.to_member)
 }
 
-fn set_volume<T>(mut builder: CopyBuilder<T>, value: Box<str>) -> CopyBuilder<T>
+fn build_volume<T>(builder: &CopyBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
-    builder.volume = format!("-({})/", value).into();
-
-    builder
+    get_volume(&builder.volume)
 }

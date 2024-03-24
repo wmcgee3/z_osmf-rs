@@ -62,12 +62,11 @@ where
 {
     core: Arc<ClientCore>,
 
-    #[endpoint(optional, path)]
-    system_id: SystemId,
-    #[endpoint(optional, skip_setter, builder_fn = build_names)]
-    names: Vec<String>,
+    #[endpoint(path, builder_fn = build_system_id)]
+    system_id: Option<SystemId>,
+    #[endpoint(skip_setter, builder_fn = build_names)]
+    names: Option<Vec<String>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -80,7 +79,10 @@ where
         V: ToString,
     {
         let mut new = self;
-        new.names.push(value.to_string());
+        match new.names {
+            Some(ref mut names) => names.push(value.to_string()),
+            None => new.names = Some(vec![value.to_string()]),
+        }
 
         new
     }
@@ -90,7 +92,10 @@ where
         V: ToString,
     {
         let mut new = self;
-        new.names.extend(value.iter().map(|v| v.to_string()));
+        match new.names {
+            Some(ref mut names) => names.extend(value.iter().map(|v| v.to_string())),
+            None => new.names = Some(value.iter().map(|v| v.to_string()).collect()),
+        }
 
         new
     }
@@ -116,4 +121,11 @@ where
         .collect();
 
     request_builder.query(&query)
+}
+
+fn build_system_id<T>(builder: &VariablesBuilder<T>) -> &SystemId
+where
+    T: TryFromResponse,
+{
+    builder.system_id.as_ref().unwrap_or(&SystemId::Local)
 }

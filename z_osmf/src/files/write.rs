@@ -39,16 +39,15 @@ where
     #[endpoint(path)]
     path: Box<str>,
 
-    #[endpoint(optional, skip_builder)]
-    crlf_newlines: bool,
-    #[endpoint(optional, skip_setter, builder_fn = build_data)]
+    #[endpoint(skip_builder)]
+    crlf_newlines: Option<bool>,
+    #[endpoint(skip_setter, builder_fn = build_data)]
     data: Option<Data>,
-    #[endpoint(optional, skip_builder)]
+    #[endpoint(skip_builder)]
     encoding: Option<Box<str>>,
-    #[endpoint(optional, header = "If-Match")]
+    #[endpoint(header = "If-Match")]
     if_match: Option<Box<str>>,
 
-    #[endpoint(optional, skip_setter, skip_builder)]
     target_type: PhantomData<T>,
 }
 
@@ -64,9 +63,9 @@ impl WriteBuilder<Write> {
 
     pub fn text<B>(mut self, data: B) -> Self
     where
-        B: Into<Box<str>>,
+        B: std::fmt::Display,
     {
-        self.data = Some(Data::Text(data.into()));
+        self.data = Some(Data::Text(data.to_string().into()));
 
         self
     }
@@ -91,14 +90,14 @@ where
             .body(binary.clone())
             .header("X-IBM-Data-Type", "binary"),
         Some(Data::Text(text)) => match (encoding, crlf_newlines) {
-            (Some(encoding), true) => request_builder.header(
+            (Some(encoding), Some(true)) => request_builder.header(
                 "X-IBM-Data-Type",
                 format!("text;fileEncoding={};crlf=true", encoding),
             ),
-            (Some(encoding), false) => {
+            (Some(encoding), _) => {
                 request_builder.header("X-IBM-Data-Type", format!("text;fileEncoding={}", encoding))
             }
-            (None, true) => request_builder.header("X-IBM-Data-Type", "text;crlf=true"),
+            (None, Some(true)) => request_builder.header("X-IBM-Data-Type", "text;crlf=true"),
             _ => request_builder,
         }
         .body(text.to_string()),
