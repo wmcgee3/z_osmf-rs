@@ -337,9 +337,9 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read<N>(&self, dataset_name: N) -> ReadBuilder<Read<Box<str>>>
+    pub fn read<N>(&self, dataset_name: &N) -> ReadBuilder<Read<Box<str>>>
     where
-        N: ToString,
+        N: ToString + ?Sized,
     {
         ReadBuilder::new(self.core.clone(), dataset_name.to_string())
     }
