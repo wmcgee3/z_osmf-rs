@@ -85,7 +85,7 @@ struct ResponseJson {
     symbols: Box<[Symbol]>,
 }
 
-fn build_names<'a, T>(
+fn build_names<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &SymbolsBuilder<T>,
 ) -> reqwest::RequestBuilder

@@ -37,8 +37,8 @@ pub struct DatasetsClient {
 
 /// # Datasets
 impl DatasetsClient {
-    pub(crate) fn new(core: &Arc<ClientCore>) -> Self {
-        DatasetsClient { core: core.clone() }
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+        DatasetsClient { core }
     }
 
     /// #Examples

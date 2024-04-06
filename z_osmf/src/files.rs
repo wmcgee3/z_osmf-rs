@@ -41,8 +41,8 @@ pub struct FilesClient {
 
 /// # Files
 impl FilesClient {
-    pub(crate) fn new(core: &Arc<ClientCore>) -> Self {
-        FilesClient { core: core.clone() }
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+        FilesClient { core }
     }
 
     /// # Examples

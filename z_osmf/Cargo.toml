@@ -1,6 +1,6 @@
 [package]
 name = "z_osmf"
-version = "0.12.0"
+version = "0.12.1"
 edition = "2021"
 authors = ["Billy McGee <william.j.mcgee3@gmail.com>"]
 description = "The Rust z/OSMF Client"

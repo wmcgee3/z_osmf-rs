@@ -27,7 +27,7 @@ impl VariablesClient {
         VariablesClient { core }
     }
 
-    /// #Examples
+    /// # Examples
     ///
     /// Create system variables:
     /// ```
@@ -44,28 +44,21 @@ impl VariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn create<T, U, V>(
+    pub async fn create<T>(
         &self,
-        sysplex: T,
-        system: U,
-        new_variables: V,
+        sysplex: &str,
+        system: &str,
+        new_variables: T,
     ) -> Result<(), Error>
     where
-        T: ToString,
-        U: ToString,
-        V: Into<Box<[NewVariable]>>,
+        T: Into<Box<[NewVariable]>>,
     {
-        CreateBuilder::new(
-            self.core.clone(),
-            sysplex.to_string(),
-            system.to_string(),
-            new_variables,
-        )
-        .build()
-        .await
+        CreateBuilder::new(self.core.clone(), sysplex, system, new_variables)
+            .build()
+            .await
     }
 
-    /// #Examples
+    /// # Examples
     ///
     /// Delete system variables:
     /// ```
@@ -81,28 +74,21 @@ impl VariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn delete<T, U, V>(
+    pub async fn delete<T>(
         &self,
-        sysplex: T,
-        system: U,
-        variable_names: V,
+        sysplex: &str,
+        system: &str,
+        variable_names: T,
     ) -> Result<(), Error>
     where
-        T: ToString,
-        U: ToString,
-        V: Into<Box<[String]>>,
+        T: Into<Box<[String]>>,
     {
-        DeleteBuilder::new(
-            self.core.clone(),
-            sysplex.to_string(),
-            system.to_string(),
-            variable_names,
-        )
-        .build()
-        .await
+        DeleteBuilder::new(self.core.clone(), sysplex, system, variable_names)
+            .build()
+            .await
     }
 
-    /// #Examples
+    /// # Examples
     ///
     /// Export system variables to a CSV file and overwrite the file if it already exists:
     /// ```
@@ -115,21 +101,11 @@ impl VariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn export<T, U, V>(&self, sysplex: T, system: U, path: V) -> ExportBuilder<()>
-    where
-        T: ToString,
-        U: ToString,
-        V: ToString,
-    {
-        ExportBuilder::new(
-            self.core.clone(),
-            sysplex.to_string(),
-            system.to_string(),
-            path.to_string(),
-        )
+    pub fn export(&self, sysplex: &str, system: &str, path: &str) -> ExportBuilder<()> {
+        ExportBuilder::new(self.core.clone(), sysplex, system, path)
     }
 
-    /// #Examples
+    /// # Examples
     ///
     /// Import system variables from a CSV file:
     /// ```
@@ -140,23 +116,13 @@ impl VariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn import<T, U, V>(&self, sysplex: T, system: U, path: V) -> Result<(), Error>
-    where
-        T: ToString,
-        U: ToString,
-        V: ToString,
-    {
-        ImportBuilder::new(
-            self.core.clone(),
-            sysplex.to_string(),
-            system.to_string(),
-            path.to_string(),
-        )
-        .build()
-        .await
+    pub async fn import(&self, sysplex: &str, system: &str, path: &str) -> Result<(), Error> {
+        ImportBuilder::new(self.core.clone(), sysplex, system, path)
+            .build()
+            .await
     }
 
-    /// #Examples
+    /// # Examples
     ///
     /// List all system variables on the local system:
     /// ```
@@ -187,7 +153,7 @@ impl VariablesClient {
         VariablesBuilder::new(self.core.clone())
     }
 
-    /// #Examples
+    /// # Examples
     ///
     /// List all system symbols on the local system:
     /// ```
