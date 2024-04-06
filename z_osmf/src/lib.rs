@@ -202,7 +202,7 @@ impl ZOsmf {
     /// ```
     #[cfg(feature = "datasets")]
     pub fn datasets(&self) -> DatasetsClient {
-        DatasetsClient::new(&self.core)
+        DatasetsClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with files.
@@ -216,7 +216,7 @@ impl ZOsmf {
     /// ```
     #[cfg(feature = "files")]
     pub fn files(&self) -> FilesClient {
-        FilesClient::new(&self.core)
+        FilesClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with jobs.
@@ -230,7 +230,7 @@ impl ZOsmf {
     /// ```
     #[cfg(feature = "jobs")]
     pub fn jobs(&self) -> JobsClient {
-        JobsClient::new(&self.core)
+        JobsClient::new(self.core.clone())
     }
 
     #[cfg(feature = "variables")]

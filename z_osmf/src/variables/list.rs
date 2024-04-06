@@ -70,7 +70,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<'a, T> VariablesBuilder<T>
+impl<T> VariablesBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -107,7 +107,7 @@ struct ResponseJson {
     variables: Box<[Variable]>,
 }
 
-fn build_names<'a, T>(
+fn build_names<T>(
     request_builder: reqwest::RequestBuilder,
     builder: &VariablesBuilder<T>,
 ) -> reqwest::RequestBuilder
