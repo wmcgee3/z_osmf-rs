@@ -151,7 +151,14 @@ where
             events.sort_unstable();
             events.dedup();
 
-            let header_value = serde_json::to_string(&NotificationOptions { events }).unwrap();
+            let header_value = format!(
+                r#"{{"events": [{}]}}"#,
+                events
+                    .iter()
+                    .map(|e| format!(r#""{}""#, e))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
             request_builder = request_builder.header("X-IBM-Notification-Options", header_value);
         }
     }
@@ -216,6 +223,43 @@ mod tests {
             .message_class('A')
             .record_format(RecordFormat::Fixed)
             .record_length(80)
+            .get_request()
+            .unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_data));
+
+        assert_eq!(
+            manual_request.body().unwrap().as_bytes(),
+            job_data.body().unwrap().as_bytes()
+        )
+    }
+
+    #[test]
+    fn notification_events() {
+        let zosmf = get_zosmf();
+
+        let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
+        // EXEC PGM=IEFBR14
+        "#;
+
+        let manual_request = zosmf
+            .core
+            .client
+            .put("https://test.com/zosmf/restjobs/jobs")
+            .header("Content-Type", "text/plain")
+            .header("X-IBM-Intrdr-Mode", "TEXT")
+            .header(
+                "X-IBM-Notification-Options",
+                r#"{"events": ["active", "ready"]}"#,
+            )
+            .body(jcl.to_string())
+            .build()
+            .unwrap();
+
+        let job_data = zosmf
+            .jobs()
+            .submit(Jcl::Text(jcl.into()))
+            .notification_events([JobEvent::Active, JobEvent::Ready])
             .get_request()
             .unwrap();
 

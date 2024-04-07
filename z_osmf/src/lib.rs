@@ -15,6 +15,8 @@ pub mod files;
 pub mod jobs;
 #[cfg(feature = "variables")]
 pub mod variables;
+#[cfg(feature = "workflows")]
+pub mod workflows;
 
 pub use self::error::Error;
 
@@ -36,6 +38,8 @@ use self::files::FilesClient;
 use self::jobs::JobsClient;
 #[cfg(feature = "variables")]
 use self::variables::VariablesClient;
+#[cfg(feature = "workflows")]
+use self::workflows::WorkflowsClient;
 
 /// # ZOsmf
 ///
@@ -236,6 +240,11 @@ impl ZOsmf {
     #[cfg(feature = "variables")]
     pub fn variables(&self) -> VariablesClient {
         VariablesClient::new(self.core.clone())
+    }
+
+    #[cfg(feature = "workflows")]
+    pub fn workflows(&self) -> WorkflowsClient {
+        WorkflowsClient::new(self.core.clone())
     }
 }
 

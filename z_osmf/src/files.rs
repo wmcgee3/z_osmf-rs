@@ -41,7 +41,7 @@ pub struct FilesClient {
 
 /// # Files
 impl FilesClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(super) fn new(core: Arc<ClientCore>) -> Self {
         FilesClient { core }
     }
 

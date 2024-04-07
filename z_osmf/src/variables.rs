@@ -23,7 +23,7 @@ pub struct VariablesClient {
 }
 
 impl VariablesClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(super) fn new(core: Arc<ClientCore>) -> Self {
         VariablesClient { core }
     }
 

@@ -30,7 +30,7 @@ pub struct JobsClient {
 
 /// # Jobs
 impl JobsClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(super) fn new(core: Arc<ClientCore>) -> Self {
         JobsClient { core }
     }
 
