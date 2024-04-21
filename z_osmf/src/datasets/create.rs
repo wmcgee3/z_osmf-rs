@@ -8,15 +8,15 @@ use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
-pub struct CreateBuilder<T>
+#[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset}")]
+pub struct DatasetCreateBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset_name: Box<str>,
+    dataset: Box<str>,
 
     #[endpoint(builder_fn = build_body)]
     volume: Option<Box<str>>,
@@ -92,12 +92,12 @@ struct RequestJson<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CreateBuilder<T>,
+    builder: &DatasetCreateBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let CreateBuilder {
+    let DatasetCreateBuilder {
         volume,
         device_type,
         organization,

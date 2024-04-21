@@ -8,11 +8,11 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::{get_subsystem, Identifier};
+use super::{get_subsystem, JobIdentifier};
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Feedback {
+pub struct JobFeedback {
     #[serde(rename = "jobid")]
     id: Box<str>,
     #[serde(rename = "jobname")]
@@ -29,7 +29,7 @@ pub struct Feedback {
     message: Option<Box<str>>,
 }
 
-impl TryFromResponse for Feedback {
+impl TryFromResponse for JobFeedback {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -37,7 +37,7 @@ impl TryFromResponse for Feedback {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct FeedbackBuilder<T>
+pub struct JobFeedbackBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -46,7 +46,7 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
     #[endpoint(builder_fn = build_body)]
     request: &'static str,
     #[endpoint(skip_setter, skip_builder)]
@@ -55,12 +55,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> FeedbackBuilder<T>
+impl<T> JobFeedbackBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> FeedbackBuilder<()> {
-        FeedbackBuilder {
+    pub fn asynchronous(self) -> JobFeedbackBuilder<()> {
+        JobFeedbackBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -79,7 +79,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &FeedbackBuilder<T>,
+    builder: &JobFeedbackBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -94,7 +94,7 @@ where
     })
 }
 
-fn build_subsystem<T>(builder: &FeedbackBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobFeedbackBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
@@ -127,7 +127,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOB2".into(), "JOB00084".into());
+        let identifier = JobIdentifier::NameId("TESTJOB2".into(), "JOB00084".into());
 
         let job_feedback = zosmf.jobs().cancel(identifier).get_request().unwrap();
 
@@ -158,7 +158,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf.jobs().hold(identifier).get_request().unwrap();
 
         assert_eq!(
@@ -188,7 +188,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
         let job_feedback = zosmf.jobs().release(identifier).get_request().unwrap();
 
         assert_eq!(

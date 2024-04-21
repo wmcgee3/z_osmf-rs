@@ -7,49 +7,12 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::error::Error;
-use crate::utils::{de_optional_y_n, ser_optional_y_n};
 use crate::ClientCore;
 
-use super::MigratedRecall;
+use super::{de_optional_y_n, ser_optional_y_n, MigratedRecall};
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Members<T> {
-    items: Box<[T]>,
-    #[getter(copy)]
-    json_version: i32,
-    #[getter(copy)]
-    more_rows: Option<bool>,
-    #[getter(copy)]
-    returned_rows: i32,
-    #[getter(copy)]
-    total_rows: Option<i32>,
-}
-
-impl<T> TryFromResponse for Members<T>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let ResponseJson {
-            items,
-            returned_rows,
-            more_rows,
-            total_rows,
-            json_version,
-        } = value.json().await?;
-
-        Ok(Members {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-        })
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct MemberBase {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct MemberAttributesBase {
     #[serde(rename = "member")]
     name: Box<str>,
     #[getter(copy)]
@@ -103,22 +66,58 @@ pub struct MemberBase {
     ssi: Option<Box<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct MemberName {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct MemberAttributesName {
     #[serde(rename = "member")]
     name: Box<str>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct MemberList<T> {
+    items: Box<[T]>,
+    #[getter(copy)]
+    json_version: i32,
+    #[getter(copy)]
+    more_rows: Option<bool>,
+    #[getter(copy)]
+    returned_rows: i32,
+    #[getter(copy)]
+    total_rows: Option<i32>,
+}
+
+impl<T> TryFromResponse for MemberList<T>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        let ResponseJson {
+            items,
+            returned_rows,
+            more_rows,
+            total_rows,
+            json_version,
+        } = value.json().await?;
+
+        Ok(MemberList {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset_name}/member")]
-pub struct MembersBuilder<T>
+#[endpoint(method = get, path = "/zosmf/restfiles/ds/{dataset}/member")]
+pub struct MemberListBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset_name: Box<str>,
+    dataset: Box<str>,
     #[endpoint(query = "start")]
     start: Option<Box<str>>,
     #[endpoint(query = "pattern")]
@@ -135,14 +134,14 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> MembersBuilder<T>
+impl<T> MemberListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> MembersBuilder<Members<MemberBase>> {
-        MembersBuilder {
+    pub fn attributes_base(self) -> MemberListBuilder<MemberList<MemberAttributesBase>> {
+        MemberListBuilder {
             core: self.core,
-            dataset_name: self.dataset_name,
+            dataset: self.dataset,
             start: self.start,
             pattern: self.pattern,
             max_items: self.max_items,
@@ -153,10 +152,10 @@ where
         }
     }
 
-    pub fn attributes_member(self) -> MembersBuilder<Members<MemberName>> {
-        MembersBuilder {
+    pub fn attributes_member(self) -> MemberListBuilder<MemberList<MemberAttributesName>> {
+        MemberListBuilder {
             core: self.core,
-            dataset_name: self.dataset_name,
+            dataset: self.dataset,
             start: self.start,
             pattern: self.pattern,
             max_items: self.max_items,
@@ -202,12 +201,12 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: reqwest::RequestBuilder,
-    member_list_builder: &MembersBuilder<T>,
+    member_list_builder: &MemberListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let MembersBuilder {
+    let MemberListBuilder {
         attributes,
         include_total,
         ..

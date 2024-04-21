@@ -27,58 +27,11 @@ impl NewVariable {
             description: description.to_string(),
         }
     }
-
-    pub fn builder<N, V>(name: N, value: V) -> NewVariableBuilder
-    where
-        N: ToString,
-        V: ToString,
-    {
-        NewVariableBuilder::new(name, value)
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct NewVariableBuilder {
-    name: String,
-    value: String,
-    description: String,
-}
-
-impl NewVariableBuilder {
-    pub fn new<N, V>(name: N, value: V) -> Self
-    where
-        N: ToString,
-        V: ToString,
-    {
-        NewVariableBuilder {
-            name: name.to_string(),
-            value: value.to_string(),
-            description: String::new(),
-        }
-    }
-
-    pub fn description<V>(self, value: V) -> Self
-    where
-        V: ToString,
-    {
-        let mut new = self;
-        new.description = value.to_string();
-
-        new
-    }
-
-    pub fn build(self) -> NewVariable {
-        NewVariable {
-            name: self.name,
-            value: self.value,
-            description: self.description,
-        }
-    }
 }
 
 #[derive(Endpoint)]
 #[endpoint(method = post, path = "/zosmf/variables/rest/1.0/systems/{sysplex}.{system}")]
-pub(super) struct CreateBuilder<T>
+pub(super) struct VariableCreateBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -102,7 +55,7 @@ struct RequestJson<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CreateBuilder<T>,
+    builder: &VariableCreateBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

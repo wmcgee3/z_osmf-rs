@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct UnlinkBuilder<T>
+pub struct FileUnlinkBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -29,7 +29,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    _builder: &UnlinkBuilder<T>,
+    _builder: &FileUnlinkBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

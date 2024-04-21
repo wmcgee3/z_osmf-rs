@@ -7,11 +7,11 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{Links, TagType};
+use super::{FileTagType, FileTagsLinks};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct SetBuilder<T>
+pub struct FileTagsSetBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -20,11 +20,11 @@ where
     #[endpoint(path)]
     path: Box<str>,
     #[endpoint(builder_fn = build_body)]
-    tag_type: Option<TagType>,
+    tag_type: Option<FileTagType>,
     #[endpoint(skip_builder)]
     code_set: Option<Box<str>>,
     #[endpoint(skip_builder)]
-    links: Option<Links>,
+    links: Option<FileTagsLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
@@ -36,17 +36,17 @@ struct RequestJson<'a> {
     request: &'static str,
     action: &'static str,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    tag_type: Option<TagType>,
+    tag_type: Option<FileTagType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     codeset: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<Links>,
+    links: Option<FileTagsLinks>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &SetBuilder<T>,
+    builder: &FileTagsSetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -97,9 +97,9 @@ mod tests {
         let request = zosmf
             .files()
             .set_tag("/u/jiahj/testFile.txt")
-            .tag_type(TagType::Mixed)
+            .tag_type(FileTagType::Mixed)
             .code_set("IBM-1047")
-            .links(Links::Suppress)
+            .links(FileTagsLinks::Suppress)
             .get_request()
             .unwrap();
 

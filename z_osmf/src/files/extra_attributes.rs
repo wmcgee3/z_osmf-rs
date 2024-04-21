@@ -1,8 +1,5 @@
-pub use self::reset::ResetBuilder;
-pub use self::set::SetBuilder;
-
-mod reset;
-mod set;
+pub mod reset;
+pub mod set;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -11,11 +8,11 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::utils::get_transaction_id;
+use crate::restfiles::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct ExtraAttributes {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileExtraAttributeList {
     name: Box<str>,
     apf_authorized: bool,
     program_controlled: bool,
@@ -24,7 +21,7 @@ pub struct ExtraAttributes {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for ExtraAttributes {
+impl TryFromResponse for FileExtraAttributeList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
         let transaction_id = get_transaction_id(&value)?;
 
@@ -36,7 +33,7 @@ impl TryFromResponse for ExtraAttributes {
             let shared_address_space = s.ends_with("YES");
             let shared_library = l.ends_with("YES");
 
-            Ok(ExtraAttributes {
+            Ok(FileExtraAttributeList {
                 name: name.clone(),
                 apf_authorized,
                 program_controlled,
@@ -54,7 +51,7 @@ impl TryFromResponse for ExtraAttributes {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub(crate) struct ExtraAttributesBuilder<T>
+pub(crate) struct FileExtraAttributeListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -69,7 +66,7 @@ where
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    _: &ExtraAttributesBuilder<T>,
+    _: &FileExtraAttributeListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

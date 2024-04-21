@@ -6,11 +6,11 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{get_subsystem, Identifier};
+use super::{get_subsystem, JobIdentifier};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct PurgeBuilder<T>
+pub struct JobPurgeBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -19,19 +19,19 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
     #[endpoint(skip_setter, builder_fn = build_asynchronous)]
     asynchronous: Option<bool>,
 
     target_type: PhantomData<T>,
 }
 
-impl<T> PurgeBuilder<T>
+impl<T> JobPurgeBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> PurgeBuilder<()> {
-        PurgeBuilder {
+    pub fn asynchronous(self) -> JobPurgeBuilder<()> {
+        JobPurgeBuilder {
             core: self.core,
             subsystem: self.subsystem,
             identifier: self.identifier,
@@ -43,7 +43,7 @@ where
 
 fn build_asynchronous<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &PurgeBuilder<T>,
+    builder: &JobPurgeBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -58,7 +58,7 @@ where
     )
 }
 
-fn build_subsystem<T>(builder: &PurgeBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobPurgeBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
@@ -83,7 +83,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00085".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
         let job_feedback = zosmf
             .jobs()
             .cancel_and_purge(identifier)

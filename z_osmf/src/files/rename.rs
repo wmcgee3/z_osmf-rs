@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{to_path}")]
-pub struct RenameBuilder<T>
+pub struct FileRenameBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -34,7 +34,7 @@ struct RequestJson<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &RenameBuilder<T>,
+    builder: &FileRenameBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

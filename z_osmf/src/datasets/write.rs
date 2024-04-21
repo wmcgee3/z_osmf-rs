@@ -2,44 +2,23 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
 use super::{get_member, get_volume, Enqueue, MigratedRecall};
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Write {
-    etag: Box<str>,
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for Write {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let etag = get_etag(&value)?.ok_or(Error::Etag)?;
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(Write {
-            etag,
-            transaction_id,
-        })
-    }
-}
-
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{dataset_name}{member}")]
-pub struct WriteBuilder<T>
+#[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{dataset}{member}")]
+pub struct DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset_name: Box<str>,
+    dataset: Box<str>,
     #[endpoint(path, builder_fn = build_volume)]
     volume: Option<Box<str>>,
     #[endpoint(path, builder_fn = build_member)]
@@ -66,7 +45,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> WriteBuilder<T>
+impl<T> DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -74,7 +53,7 @@ where
     where
         B: Into<Bytes>,
     {
-        WriteBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Binary(data.into())),
             ..self
         }
@@ -84,7 +63,7 @@ where
     where
         B: Into<Bytes>,
     {
-        WriteBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Record(data.into())),
             ..self
         }
@@ -94,7 +73,7 @@ where
     where
         S: ToString,
     {
-        WriteBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Text(data.to_string())),
             ..self
         }
@@ -110,12 +89,12 @@ enum Data {
 
 fn build_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &WriteBuilder<T>,
+    builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let WriteBuilder {
+    let DatasetWriteBuilder {
         data,
         encoding,
         crlf_newlines,
@@ -145,7 +124,7 @@ where
     }
 }
 
-fn build_member<T>(builder: &WriteBuilder<T>) -> String
+fn build_member<T>(builder: &DatasetWriteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
@@ -154,7 +133,7 @@ where
 
 fn build_release_enq<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &WriteBuilder<T>,
+    builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -165,7 +144,7 @@ where
     }
 }
 
-fn build_volume<T>(builder: &WriteBuilder<T>) -> String
+fn build_volume<T>(builder: &DatasetWriteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

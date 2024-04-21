@@ -10,7 +10,7 @@ use super::RequestJson;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct SetBuilder<T>
+pub struct FileExtraAttributesSetBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -32,7 +32,7 @@ where
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &SetBuilder<T>,
+    builder: &FileExtraAttributesSetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

@@ -11,7 +11,7 @@ use crate::ClientCore;
 
 use super::get_subsystem;
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Jcl {
     Binary(Bytes),
     Dataset(String),
@@ -20,14 +20,14 @@ pub enum Jcl {
     Text(String),
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum JobEvent {
     Active,
     Complete,
     Ready,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum RecordFormat {
     Fixed,
     Variable,
@@ -46,7 +46,7 @@ impl From<RecordFormat> for reqwest::header::HeaderValue {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct SubmitBuilder<T>
+pub struct JobSubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -76,7 +76,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> SubmitBuilder<T>
+impl<T> JobSubmitBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -102,7 +102,7 @@ struct Source<'a> {
 
 fn build_jcl_source<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &SubmitBuilder<T>,
+    builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -133,7 +133,7 @@ where
 
 fn build_notification_events<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &SubmitBuilder<T>,
+    builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -166,7 +166,7 @@ where
     request_builder
 }
 
-fn build_subsystem<T>(builder: &SubmitBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobSubmitBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
@@ -175,7 +175,7 @@ where
 
 fn build_symbols<T>(
     mut request_builder: reqwest::RequestBuilder,
-    builder: &SubmitBuilder<T>,
+    builder: &JobSubmitBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

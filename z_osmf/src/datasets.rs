@@ -16,19 +16,20 @@ use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
+use crate::restfiles::Etag;
 use crate::ClientCore;
 
-use self::copy::CopyBuilder;
-use self::copy_file::CopyFileBuilder;
-use self::create::CreateBuilder;
-use self::delete::DeleteBuilder;
-use self::list::{DatasetName, Datasets, DatasetsBuilder};
-use self::members::{MemberName, Members, MembersBuilder};
-use self::migrate::{Migrate, MigrateBuilder};
-use self::read::{Read, ReadBuilder};
-use self::recall::RecallBuilder;
-use self::rename::RenameBuilder;
-use self::write::{Write, WriteBuilder};
+use self::copy::DatasetCopyBuilder;
+use self::copy_file::DatasetCopyFileBuilder;
+use self::create::DatasetCreateBuilder;
+use self::delete::DatasetDeleteBuilder;
+use self::list::{DatasetAttributesDsName, DatasetList, DatasetsBuilder};
+use self::members::{MemberAttributesName, MemberList, MemberListBuilder};
+use self::migrate::DatasetMigrateBuilder;
+use self::read::{DatasetRead, DatasetReadBuilder};
+use self::recall::DatasetRecallBuilder;
+use self::rename::DatasetRenameBuilder;
+use self::write::DatasetWriteBuilder;
 
 #[derive(Clone, Debug)]
 pub struct DatasetsClient {
@@ -68,8 +69,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> CopyBuilder<String> {
-        CopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
+    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<String> {
+        DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// #Examples
@@ -98,8 +99,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> CopyFileBuilder<String> {
-        CopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
+    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> DatasetCopyFileBuilder<String> {
+        DatasetCopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
     /// # Examples
@@ -172,8 +173,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> CreateBuilder<String> {
-        CreateBuilder::new(self.core.clone(), dataset_name)
+    pub fn create(&self, dataset: &str) -> DatasetCreateBuilder<String> {
+        DatasetCreateBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -229,8 +230,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DeleteBuilder<String> {
-        DeleteBuilder::new(self.core.clone(), dataset_name)
+    pub fn delete(&self, dataset: &str) -> DatasetDeleteBuilder<String> {
+        DatasetDeleteBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -260,8 +261,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetsBuilder<Datasets<DatasetName>> {
-        DatasetsBuilder::new(self.core.clone(), name_pattern)
+    pub fn list(&self, level: &str) -> DatasetsBuilder<DatasetList<DatasetAttributesDsName>> {
+        DatasetsBuilder::new(self.core.clone(), level)
     }
 
     /// # Examples
@@ -290,8 +291,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn members(&self, dataset_name: &str) -> MembersBuilder<Members<MemberName>> {
-        MembersBuilder::new(self.core.clone(), dataset_name)
+    pub fn members(&self, dataset: &str) -> MemberListBuilder<MemberList<MemberAttributesName>> {
+        MemberListBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -307,8 +308,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn migrate(&self, name: &str) -> MigrateBuilder<Migrate> {
-        MigrateBuilder::new(self.core.clone(), name)
+    pub fn migrate(&self, dataset: &str) -> DatasetMigrateBuilder<Etag> {
+        DatasetMigrateBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -337,8 +338,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> ReadBuilder<Read<Box<str>>> {
-        ReadBuilder::new(self.core.clone(), dataset_name)
+    pub fn read(&self, dataset: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
+        DatasetReadBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -354,8 +355,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn recall(&self, name: &str) -> RecallBuilder<String> {
-        RecallBuilder::new(self.core.clone(), name)
+    pub fn recall(&self, dataset: &str) -> DatasetRecallBuilder<String> {
+        DatasetRecallBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -371,8 +372,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> RenameBuilder<String> {
-        RenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
+    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> DatasetRenameBuilder<String> {
+        DatasetRenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// # Examples
@@ -392,12 +393,12 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> WriteBuilder<Write> {
-        WriteBuilder::new(self.core.clone(), dataset_name)
+    pub fn write(&self, dataset: &str) -> DatasetWriteBuilder<Etag> {
+        DatasetWriteBuilder::new(self.core.clone(), dataset)
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DatasetDataType {
     Binary,
@@ -419,7 +420,7 @@ impl std::fmt::Display for DatasetDataType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MigratedRecall {
     Error,
@@ -439,23 +440,35 @@ impl From<MigratedRecall> for HeaderValue {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Enqueue {
-    #[serde(rename = "EXCLU")]
-    Exclusive,
-    #[serde(rename = "SHRW")]
-    SharedReadWrite,
+    Exclu,
+    Shrw,
 }
 
 impl From<Enqueue> for HeaderValue {
     fn from(val: Enqueue) -> HeaderValue {
         match val {
-            Enqueue::Exclusive => "EXCLU",
-            Enqueue::SharedReadWrite => "SHRW",
+            Enqueue::Exclu => "EXCLU",
+            Enqueue::Shrw => "SHRW",
         }
         .try_into()
         .unwrap()
     }
+}
+
+fn de_optional_y_n<'de, D>(deserializer: D) -> core::result::Result<Option<bool>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer)?
+        .map(|s| match s.as_str() {
+            "Y" => Ok(true),
+            "N" => Ok(false),
+            _ => Err(serde::de::Error::unknown_variant(&s, &["Y", "N"])),
+        })
+        .transpose()
 }
 
 fn get_member(value: &Option<Box<str>>) -> String {
@@ -479,6 +492,16 @@ fn get_volume(value: &Option<Box<str>>) -> String {
         .as_ref()
         .map(|v| format!("/-({})", v))
         .unwrap_or("".to_string())
+}
+
+fn ser_optional_y_n<S>(v: &Option<bool>, serializer: S) -> core::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match v {
+        Some(value) => serializer.serialize_str(if *value { "Y" } else { "N" }),
+        None => serializer.serialize_none(),
+    }
 }
 
 #[cfg(test)]
@@ -508,10 +531,10 @@ mod tests {
 
     #[test]
     fn display_obtain_enq() {
-        let header_value: HeaderValue = Enqueue::Exclusive.into();
+        let header_value: HeaderValue = Enqueue::Exclu.into();
         assert_eq!(header_value, HeaderValue::from_static("EXCLU"));
 
-        let header_value: HeaderValue = Enqueue::SharedReadWrite.into();
+        let header_value: HeaderValue = Enqueue::Shrw.into();
         assert_eq!(header_value, HeaderValue::from_static("SHRW"));
     }
 
@@ -527,5 +550,54 @@ mod tests {
 
         let response = reqwest::Response::from(http::Response::new(""));
         assert_eq!(get_session_ref(&response).unwrap(), None);
+    }
+
+    #[test]
+    fn test_de_optional_y_n() {
+        #[derive(Debug, Deserialize, PartialEq)]
+        struct Test {
+            #[serde(default, deserialize_with = "de_optional_y_n")]
+            value: Option<bool>,
+        }
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": "Y"}"#).unwrap(),
+            Test { value: Some(true) }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": "N"}"#).unwrap(),
+            Test { value: Some(false) }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": null}"#).unwrap(),
+            Test { value: None }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{}"#).unwrap(),
+            Test { value: None }
+        );
+
+        assert!(serde_json::from_str::<Test>(r#"{"value": "NOPE"}"#).is_err());
+    }
+
+    #[test]
+    fn test_ser_optional_y_n() {
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_y_n(&Some(true), &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""Y""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_y_n(&Some(false), &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""N""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_y_n(&None, &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#"null"#);
     }
 }

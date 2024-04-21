@@ -8,7 +8,7 @@ use crate::ClientCore;
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/variables/rest/1.0/systems/{sysplex}.{system}")]
-pub(super) struct DeleteBuilder<T>
+pub(super) struct VariableDeleteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -26,7 +26,7 @@ where
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &DeleteBuilder<T>,
+    builder: &VariableDeleteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

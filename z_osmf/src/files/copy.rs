@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{to_path}")]
-pub struct CopyBuilder<T>
+pub struct FileCopyBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -24,28 +24,26 @@ where
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
     #[endpoint(skip_builder)]
-    links: Option<Links>,
+    links: Option<FileCopyLinks>,
     #[endpoint(skip_builder)]
-    preserve: Option<Preserve>,
+    preserve: Option<FileCopyPreserve>,
 
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Links {
+pub enum FileCopyLinks {
     All,
     None,
-    #[serde(rename = "src")]
-    Source,
+    Src,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Preserve {
+pub enum FileCopyPreserve {
     All,
-    #[serde(rename = "modtime")]
-    ModificationTime,
+    Modtime,
     None,
 }
 
@@ -56,14 +54,14 @@ struct RequestJson<'a> {
     overwrite: bool,
     recursive: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<Links>,
+    links: Option<FileCopyLinks>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    preserve: Option<Preserve>,
+    preserve: Option<FileCopyPreserve>,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CopyBuilder<T>,
+    builder: &FileCopyBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -116,8 +114,8 @@ mod tests {
             .copy("/u/jiahj/sourceDir", "/u/jiahj/targetDir")
             .overwrite(true)
             .recursive(true)
-            .links(Links::Source)
-            .preserve(Preserve::ModificationTime)
+            .links(FileCopyLinks::Src)
+            .preserve(FileCopyPreserve::Modtime)
             .get_request()
             .unwrap();
 

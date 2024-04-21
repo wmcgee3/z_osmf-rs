@@ -1,8 +1,5 @@
-pub use self::remove::RemoveBuilder;
-pub use self::set::SetBuilder;
-
-mod remove;
-mod set;
+pub mod remove;
+pub mod set;
 
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -13,41 +10,41 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::error::Error;
-use crate::utils::get_transaction_id;
+use crate::restfiles::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Links {
+pub enum FileTagsLinks {
     Change,
     Suppress,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TagType {
+pub enum FileTagType {
     Binary,
     Mixed,
     Text,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Tags {
-    tags: Box<[Tag]>,
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileTagList {
+    tags: Box<[FileTag]>,
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for Tags {
+impl TryFromResponse for FileTagList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
         let transaction_id = get_transaction_id(&value)?;
 
         let TagsResponseJson { stdout } = value.json().await?;
         let tags = stdout
             .iter()
-            .map(|line| Tag::from_str(line))
-            .collect::<Result<Box<[Tag]>, Error>>()?;
+            .map(|line| FileTag::from_str(line))
+            .collect::<Result<Box<[FileTag]>, Error>>()?;
 
-        Ok(Tags {
+        Ok(FileTagList {
             tags,
             transaction_id,
         })
@@ -56,7 +53,7 @@ impl TryFromResponse for Tags {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct TagsBuilder<T>
+pub struct FileTagListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -70,25 +67,25 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Tag {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileTag {
     #[getter(copy)]
-    tag_type: Option<TagType>,
+    tag_type: Option<FileTagType>,
     code_set: Option<Box<str>>,
     #[getter(copy)]
     text_flag: bool,
     path: Box<str>,
 }
 
-impl std::str::FromStr for Tag {
+impl std::str::FromStr for FileTag {
     type Err = crate::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let tag_type = match &s[0..1] {
             "-" => None,
-            "b" => Some(TagType::Binary),
-            "m" => Some(TagType::Mixed),
-            "t" => Some(TagType::Text),
+            "b" => Some(FileTagType::Binary),
+            "m" => Some(FileTagType::Mixed),
+            "t" => Some(FileTagType::Text),
             _ => return Err(Error::Custom("invalid file tag string".into())),
         };
         let code_set = match s[2..14].trim_end() {
@@ -97,7 +94,7 @@ impl std::str::FromStr for Tag {
         };
         let text_flag = s[14..18].trim_end() == "T=on";
 
-        Ok(Tag {
+        Ok(FileTag {
             tag_type,
             code_set,
             text_flag,
@@ -120,7 +117,7 @@ struct TagsResponseJson {
 
 fn build_tags_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &TagsBuilder<T>,
+    builder: &FileTagListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -143,9 +140,9 @@ mod tests {
     #[test]
     fn file_tag_from_str() {
         assert_eq!(
-            Tag::from_str("b untagged    T=off /tmp/file").unwrap(),
-            Tag {
-                tag_type: Some(TagType::Binary),
+            FileTag::from_str("b untagged    T=off /tmp/file").unwrap(),
+            FileTag {
+                tag_type: Some(FileTagType::Binary),
                 code_set: None,
                 text_flag: false,
                 path: "/tmp/file".into(),
@@ -153,9 +150,9 @@ mod tests {
         );
 
         assert_eq!(
-            Tag::from_str("m ISO8859-1   T=off /tmp/file").unwrap(),
-            Tag {
-                tag_type: Some(TagType::Mixed),
+            FileTag::from_str("m ISO8859-1   T=off /tmp/file").unwrap(),
+            FileTag {
+                tag_type: Some(FileTagType::Mixed),
                 code_set: Some("ISO8859-1".into()),
                 text_flag: false,
                 path: "/tmp/file".into(),
@@ -163,9 +160,9 @@ mod tests {
         );
 
         assert_eq!(
-            Tag::from_str("t IBM-1047    T=on  /tmp/file").unwrap(),
-            Tag {
-                tag_type: Some(TagType::Text),
+            FileTag::from_str("t IBM-1047    T=on  /tmp/file").unwrap(),
+            FileTag {
+                tag_type: Some(FileTagType::Text),
                 code_set: Some("IBM-1047".into()),
                 text_flag: true,
                 path: "/tmp/file".into(),
@@ -173,8 +170,8 @@ mod tests {
         );
 
         assert_eq!(
-            Tag::from_str("- untagged    T=off /tmp/file").unwrap(),
-            Tag {
+            FileTag::from_str("- untagged    T=off /tmp/file").unwrap(),
+            FileTag {
                 tag_type: None,
                 code_set: None,
                 text_flag: false,
@@ -182,7 +179,7 @@ mod tests {
             }
         );
 
-        assert!(Tag::from_str("some nonsense").is_err());
+        assert!(FileTag::from_str("some nonsense").is_err());
     }
 
     #[test]

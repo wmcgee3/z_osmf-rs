@@ -11,7 +11,7 @@ use super::{get_member, Enqueue};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{to_dataset}{to_member}")]
-pub struct RenameBuilder<T>
+pub struct DatasetRenameBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -49,7 +49,7 @@ struct FromDataset<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &RenameBuilder<T>,
+    builder: &DatasetRenameBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -64,7 +64,7 @@ where
     })
 }
 
-fn build_to_member<T>(builder: &RenameBuilder<T>) -> String
+fn build_to_member<T>(builder: &DatasetRenameBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

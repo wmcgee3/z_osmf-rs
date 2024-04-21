@@ -10,15 +10,15 @@ use crate::ClientCore;
 use super::get_member;
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds/{name}{member}")]
-pub struct RecallBuilder<T>
+#[endpoint(method = put, path = "/zosmf/restfiles/ds/{dataset}{member}")]
+pub struct DatasetRecallBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    name: Box<str>,
+    dataset: Box<str>,
     #[endpoint(path, builder_fn = build_member)]
     member: Option<Box<str>>,
     #[endpoint(builder_fn = build_body)]
@@ -35,7 +35,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &RecallBuilder<T>,
+    builder: &DatasetRecallBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -46,7 +46,7 @@ where
     })
 }
 
-fn build_member<T>(builder: &RecallBuilder<T>) -> String
+fn build_member<T>(builder: &DatasetRecallBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

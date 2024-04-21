@@ -13,8 +13,10 @@ pub mod datasets;
 pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
-#[cfg(feature = "variables")]
-pub mod variables;
+#[cfg(any(feature = "datasets", feature = "files"))]
+pub mod restfiles;
+#[cfg(feature = "system-variables")]
+pub mod system_variables;
 #[cfg(feature = "workflows")]
 pub mod workflows;
 
@@ -36,8 +38,8 @@ use self::datasets::DatasetsClient;
 use self::files::FilesClient;
 #[cfg(feature = "jobs")]
 use self::jobs::JobsClient;
-#[cfg(feature = "variables")]
-use self::variables::VariablesClient;
+#[cfg(feature = "system-variables")]
+use self::system_variables::SystemVariablesClient;
 #[cfg(feature = "workflows")]
 use self::workflows::WorkflowsClient;
 
@@ -237,9 +239,9 @@ impl ZOsmf {
         JobsClient::new(self.core.clone())
     }
 
-    #[cfg(feature = "variables")]
-    pub fn variables(&self) -> VariablesClient {
-        VariablesClient::new(self.core.clone())
+    #[cfg(feature = "system-variables")]
+    pub fn system_variables(&self) -> SystemVariablesClient {
+        SystemVariablesClient::new(self.core.clone())
     }
 
     #[cfg(feature = "workflows")]

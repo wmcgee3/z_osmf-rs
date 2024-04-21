@@ -1,6 +1,4 @@
-pub use self::read::{FileId, Read, ReadBuilder, RecordRange};
-
-mod read;
+pub mod read;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -9,24 +7,10 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
+use crate::jobs::{get_subsystem, JobIdentifier};
 use crate::ClientCore;
 
-use super::{get_subsystem, Identifier};
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct JobFiles {
-    items: Box<[JobFile]>,
-}
-
-impl TryFromResponse for JobFiles {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(JobFiles {
-            items: value.json().await?,
-        })
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct JobFile {
     #[serde(rename = "jobname")]
@@ -56,9 +40,22 @@ pub struct JobFile {
     proc_step: Option<Box<str>>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct JobFileList {
+    items: Box<[JobFile]>,
+}
+
+impl TryFromResponse for JobFileList {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+        Ok(JobFileList {
+            items: value.json().await?,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files")]
-pub struct JobFilesBuilder<T>
+pub struct JobFileListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -67,14 +64,38 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
 
     target_type: PhantomData<T>,
 }
 
-fn build_subsystem<T>(builder: &JobFilesBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobFileListBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
     get_subsystem(&builder.subsystem)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::get_zosmf;
+
+    use super::*;
+
+    #[test]
+    fn job_files_1() {
+        let zosmf = get_zosmf();
+
+        let manual_request = zosmf
+            .core
+            .client
+            .get("https://test.com/zosmf/restjobs/jobs/TESTJOB1/JOB00023/files")
+            .build()
+            .unwrap();
+
+        let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
+        let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
+
+        assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))
+    }
 }

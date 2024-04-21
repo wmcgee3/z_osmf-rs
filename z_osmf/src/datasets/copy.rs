@@ -11,7 +11,7 @@ use super::{get_member, get_volume};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{to_dataset}{to_member}")]
-pub struct CopyBuilder<T>
+pub struct DatasetCopyBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -30,21 +30,19 @@ where
     #[endpoint(skip_builder)]
     alias: Option<bool>,
     #[endpoint(skip_builder)]
-    enqueue: Option<Enqueue>,
+    enqueue: Option<CopyEnqueue>,
     #[endpoint(skip_builder)]
     replace: Option<bool>,
 
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
-pub enum Enqueue {
-    #[serde(rename = "SHR")]
-    SharedRead,
-    #[serde(rename = "SHRW")]
-    SharedReadWrite,
-    #[serde(rename = "EXCLU")]
-    Exclusive,
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum CopyEnqueue {
+    Shr,
+    Shrw,
+    Exclu,
 }
 
 #[derive(Serialize)]
@@ -53,7 +51,7 @@ struct RequestJson<'a> {
     request: &'a str,
     from_dataset: FromDataset<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enq: Option<Enqueue>,
+    enq: Option<CopyEnqueue>,
     replace: Option<bool>,
 }
 
@@ -68,7 +66,7 @@ struct FromDataset<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CopyBuilder<T>,
+    builder: &DatasetCopyBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -85,14 +83,14 @@ where
     })
 }
 
-fn build_to_member<T>(builder: &CopyBuilder<T>) -> String
+fn build_to_member<T>(builder: &DatasetCopyBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
     get_member(&builder.to_member)
 }
 
-fn build_volume<T>(builder: &CopyBuilder<T>) -> String
+fn build_volume<T>(builder: &DatasetCopyBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

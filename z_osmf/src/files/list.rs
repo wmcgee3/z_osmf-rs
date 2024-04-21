@@ -7,12 +7,12 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::error::Error;
-use crate::utils::get_transaction_id;
+use crate::restfiles::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Files {
-    items: Box<[File]>,
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileList {
+    items: Box<[FileAttributes]>,
     #[getter(copy)]
     returned_rows: i32,
     #[getter(copy)]
@@ -22,7 +22,7 @@ pub struct Files {
     transaction_id: Box<str>,
 }
 
-impl TryFromResponse for Files {
+impl TryFromResponse for FileList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         let transaction_id = get_transaction_id(&value)?;
 
@@ -33,7 +33,7 @@ impl TryFromResponse for Files {
             json_version,
         } = value.json().await?;
 
-        Ok(Files {
+        Ok(FileList {
             items,
             returned_rows,
             total_rows,
@@ -43,8 +43,8 @@ impl TryFromResponse for Files {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct File {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileAttributes {
     name: Box<str>,
     mode: Box<str>,
     #[getter(copy)]
@@ -81,7 +81,7 @@ where
     #[endpoint(query = "name")]
     name: Option<Box<str>>,
     #[endpoint(query = "size")]
-    size: Option<Filter<Size>>,
+    size: Option<Filter<FileSize>>,
     #[endpoint(query = "perm")]
     permissions: Option<Box<str>>,
     #[endpoint(query = "type")]
@@ -100,7 +100,7 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Filter<T>
 where
     T: std::fmt::Display + std::str::FromStr,
@@ -156,48 +156,48 @@ where
 }
 
 // TODO: impl serde?
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub enum Size {
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum FileSize {
     Bytes(u32),
     Kilobytes(u32),
     Megabytes(u32),
     Gigabytes(u32),
 }
 
-impl std::fmt::Display for Size {
+impl std::fmt::Display for FileSize {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Size::Bytes(s) => write!(f, "{}", s),
-            Size::Kilobytes(s) => write!(f, "{}K", s),
-            Size::Megabytes(s) => write!(f, "{}M", s),
-            Size::Gigabytes(s) => write!(f, "{}G", s),
+            FileSize::Bytes(s) => write!(f, "{}", s),
+            FileSize::Kilobytes(s) => write!(f, "{}K", s),
+            FileSize::Megabytes(s) => write!(f, "{}M", s),
+            FileSize::Gigabytes(s) => write!(f, "{}G", s),
         }
     }
 }
 
-impl std::str::FromStr for Size {
+impl std::str::FromStr for FileSize {
     type Err = std::num::ParseIntError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let v = match s {
-            s if s.ends_with('K') => Size::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
-            s if s.ends_with('M') => Size::Megabytes(u32::from_str(s.trim_end_matches('M'))?),
-            s if s.ends_with('G') => Size::Gigabytes(u32::from_str(s.trim_end_matches('G'))?),
-            s => Size::Bytes(u32::from_str(s)?),
+            s if s.ends_with('K') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
+            s if s.ends_with('M') => FileSize::Megabytes(u32::from_str(s.trim_end_matches('M'))?),
+            s if s.ends_with('G') => FileSize::Gigabytes(u32::from_str(s.trim_end_matches('G'))?),
+            s => FileSize::Bytes(u32::from_str(s)?),
         };
 
         Ok(v)
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FileSystem {
     All,
     Same,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum FileType {
     #[serde(rename = "c")]
     CharacterSpecialFile,
@@ -213,7 +213,7 @@ pub enum FileType {
     SymbolicLink,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SymLinks {
     Follow,
@@ -223,7 +223,7 @@ pub enum SymLinks {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    items: Box<[File]>,
+    items: Box<[FileAttributes]>,
     returned_rows: i32,
     total_rows: i32,
     #[serde(rename = "JSONversion")]
@@ -347,7 +347,7 @@ mod tests {
             .lstat(true)
             .modified_days(Filter::EqualTo(1))
             .permissions("755")
-            .size(Filter::EqualTo(Size::Kilobytes(10)))
+            .size(Filter::EqualTo(FileSize::Kilobytes(10)))
             .symlinks(SymLinks::Follow)
             .user("ibmuser")
             .get_request()

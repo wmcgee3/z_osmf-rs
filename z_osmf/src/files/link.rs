@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{target_path}")]
-pub struct LinkBuilder<T>
+pub struct FileLinkBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -20,7 +20,7 @@ where
     #[endpoint(path)]
     target_path: Box<str>,
     #[endpoint(skip_builder)]
-    link_type: LinkType,
+    link_type: FileLinkType,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
     #[endpoint(skip_builder)]
@@ -29,9 +29,9 @@ where
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum LinkType {
+pub enum FileLinkType {
     External,
     Symbol,
 }
@@ -41,14 +41,14 @@ struct RequestJson<'a> {
     request: &'static str,
     from: &'a str,
     #[serde(rename = "type")]
-    link_type: LinkType,
+    link_type: FileLinkType,
     recursive: bool,
     force: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &LinkBuilder<T>,
+    builder: &FileLinkBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -68,7 +68,7 @@ mod tests {
 
     use crate::tests::*;
 
-    use super::LinkType;
+    use super::FileLinkType;
 
     #[test]
     fn maximal() {
@@ -97,7 +97,7 @@ mod tests {
         let request = zosmf
             .files()
             .link(
-                LinkType::Symbol,
+                FileLinkType::Symbol,
                 "/u/jiahj/sourceFile.txt",
                 "/u/jiahj/targetFile.txt",
             )

@@ -1,10 +1,13 @@
 pub mod create;
+pub mod properties;
 
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 use crate::ClientCore;
 
-use self::create::{Create, CreateBuilder};
+use self::create::{WorkflowCreate, WorkflowCreateBuilder};
 
 #[derive(Clone, Debug)]
 pub struct WorkflowsClient {
@@ -22,7 +25,19 @@ impl WorkflowsClient {
         definition_file: &str,
         system: &str,
         owner: &str,
-    ) -> CreateBuilder<Create> {
-        CreateBuilder::new(self.core.clone(), name, definition_file, system, owner)
+    ) -> WorkflowCreateBuilder<WorkflowCreate> {
+        WorkflowCreateBuilder::new(self.core.clone(), name, definition_file, system, owner)
     }
+
+    pub fn properties(&self) {}
+}
+
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize,
+)]
+pub enum WorkflowAccess {
+    Private,
+    #[default]
+    Public,
+    Restricted,
 }

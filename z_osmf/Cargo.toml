@@ -18,14 +18,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = ["datasets", "files", "jobs"]
 
-full = ["datasets", "files", "jobs", "variables", "workflows"]
+full = ["datasets", "files", "jobs", "system-variables", "workflows"]
 
 datasets = []
 files = []
 jobs = []
 
-variables = []
-workflows = []
+system-variables = []
+workflows = ["jobs"]
 
 
 [dependencies]
