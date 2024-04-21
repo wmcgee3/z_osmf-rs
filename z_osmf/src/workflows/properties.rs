@@ -5,20 +5,19 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::jobs::files::JobFile;
 use crate::jobs::{JobStatus, JobType};
 use crate::ClientCore;
 
-use super::WorkflowAccess;
+use super::{WorkflowAccess, WorkflowStatus};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowAutomationStatus {
     start_user: Box<str>,
     #[getter(copy)]
-    started_time: u32,
+    started_time: u64,
     #[getter(copy)]
-    stopped_time: Option<u32>,
+    stopped_time: Option<u64>,
     current_step_name: Option<Box<str>>,
     current_step_number: Option<Box<str>>,
     current_step_title: Option<Box<str>>,
@@ -32,15 +31,6 @@ pub enum WorkflowScope {
     System,
     Sysplex,
     None,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum WorkflowStatus {
-    InProgress,
-    Complete,
-    AutomationInProgress,
-    Canceled,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -116,38 +106,38 @@ pub struct WorkflowStepTemplate {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowStepNonRest,
-    failed_pattern: Box<[Box<str>]>,
-    instructions: Box<str>,
+    failed_pattern: Option<Box<[Box<str>]>>,
+    instructions: Option<Box<str>>,
     #[getter(copy)]
-    instructions_sub: bool,
+    instructions_sub: Option<bool>,
     job_info: Option<WorkflowStepJobInfo>,
     #[getter(copy)]
-    max_lrecl: i32,
+    max_lrecl: Option<i32>,
     output: Option<Box<str>>,
     #[getter(copy)]
-    output_sub: bool,
-    output_variables_prefix: Box<str>,
-    proc_name: Box<str>,
+    output_sub: Option<bool>,
+    output_variables_prefix: Option<Box<str>>,
+    proc_name: Option<Box<str>>,
     #[getter(copy)]
-    region_size: i32,
+    region_size: Option<i32>,
     return_code: Option<Box<str>>,
     save_as_dataset: Option<Box<str>>,
     #[getter(copy)]
-    save_as_dataset_sub: bool,
-    save_as_unix_file: Box<str>,
+    save_as_dataset_sub: Option<bool>,
+    save_as_unix_file: Option<Box<str>>,
     #[getter(copy)]
-    save_as_unix_file_sub: bool,
+    save_as_unix_file_sub: Option<bool>,
     script_parameters: Option<Box<str>>,
     #[getter(copy)]
-    submit_as: WorkflowStepSubmitAs,
-    success_pattern: Box<str>,
-    template: Box<str>,
+    submit_as: Option<WorkflowStepSubmitAs>,
+    success_pattern: Option<Box<str>>,
+    template: Option<Box<str>>,
     #[getter(copy)]
-    template_sub: bool,
+    template_sub: Option<bool>,
     #[getter(copy)]
-    timeout: i32,
+    timeout: Option<i32>,
     #[serde(rename = "variable-references")]
-    variable_references: Box<[WorkflowStepVariableReference]>,
+    variable_references: Option<Box<[WorkflowStepVariableReference]>>,
 }
 
 impl std::ops::Deref for WorkflowStepTemplate {
@@ -161,13 +151,25 @@ impl std::ops::Deref for WorkflowStepTemplate {
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowStepJobInfo {
     #[serde(rename = "jobstatus")]
-    status: JobInfoStatus,
+    status: WorkflowStepJobInfoStatus,
     #[serde(rename = "jobfiles")]
-    files: Box<[JobFile]>,
+    files: Option<Box<[WorkflowStepJobInfoFile]>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct JobInfoStatus {
+#[serde(rename_all = "kebab-case")]
+pub struct WorkflowStepJobInfoFile {
+    ddname: Box<str>,
+    stepname: Box<str>,
+    id: i32,
+    record_count: i32,
+    class: Box<str>,
+    byte_count: i32,
+    procstep: Option<Box<str>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct WorkflowStepJobInfoStatus {
     #[serde(rename = "retcode")]
     return_code: Option<Box<str>>,
     #[serde(rename = "jobname")]
@@ -178,6 +180,7 @@ pub struct JobInfoStatus {
     subsystem: Option<Box<str>>,
     class: Box<str>,
     #[getter(copy)]
+    #[serde(rename = "type")]
     job_type: JobType,
     #[serde(rename = "jobid")]
     id: Box<str>,
@@ -211,6 +214,7 @@ pub struct WorkflowStepCore {
     auto_enable: bool,
     description: Box<str>,
     #[getter(copy)]
+    #[serde(default)]
     is_rest_step: bool,
     #[getter(copy)]
     optional: bool,
@@ -233,13 +237,13 @@ pub struct WorkflowStepNonRest {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowStepCore,
-    assignees: Box<str>,
+    assignees: Option<Box<str>>,
     #[getter(copy)]
     has_called_workflow: bool,
     #[getter(copy)]
-    is_condition_step: bool,
-    owner: Box<str>,
-    skills: Box<str>,
+    is_condition_step: Option<bool>,
+    owner: Option<Box<str>>,
+    skills: Option<Box<str>>,
     weight: Box<str>,
 }
 
@@ -294,13 +298,12 @@ pub struct WorkflowProperties {
     jobs_output_directory: Option<Box<str>>,
     category: Box<str>,
     #[serde(rename = "productID")]
-    product_id: Box<str>,
-    product_name: Box<str>,
-    product_version: Box<str>,
+    product_id: Option<Box<str>>,
+    product_name: Option<Box<str>>,
+    product_version: Option<Box<str>>,
     #[getter(copy)]
     percent_complete: i32,
-    #[getter(copy)]
-    is_callable: Option<bool>,
+    is_callable: Option<Box<str>>,
     #[getter(copy)]
     contains_parallel_steps: bool,
     #[getter(copy)]
@@ -444,6 +447,8 @@ where
 
     #[endpoint(path)]
     key: Box<str>,
+    #[endpoint(skip_setter, builder_fn = build_return_data)]
+    return_data: Option<ReturnData>,
 
     target_type: PhantomData<T>,
 }
@@ -453,6 +458,7 @@ impl WorkflowPropertiesBuilder<WorkflowProperties> {
         WorkflowPropertiesBuilder {
             core: self.core,
             key: self.key,
+            return_data: Some(ReturnData::Steps),
             target_type: PhantomData,
         }
     }
@@ -461,6 +467,7 @@ impl WorkflowPropertiesBuilder<WorkflowProperties> {
         WorkflowPropertiesBuilder {
             core: self.core,
             key: self.key,
+            return_data: Some(ReturnData::Variables),
             target_type: PhantomData,
         }
     }
@@ -471,6 +478,7 @@ impl WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
         WorkflowPropertiesBuilder {
             core: self.core,
             key: self.key,
+            return_data: Some(ReturnData::StepsVariables),
             target_type: PhantomData,
         }
     }
@@ -481,8 +489,33 @@ impl WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
         WorkflowPropertiesBuilder {
             core: self.core,
             key: self.key,
+            return_data: Some(ReturnData::StepsVariables),
             target_type: PhantomData,
         }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum ReturnData {
+    Steps,
+    StepsVariables,
+    Variables,
+}
+
+fn build_return_data<T>(
+    request_builder: reqwest::RequestBuilder,
+    builder: &WorkflowPropertiesBuilder<T>,
+) -> reqwest::RequestBuilder
+where
+    T: TryFromResponse,
+{
+    match &builder.return_data {
+        Some(ReturnData::Steps) => request_builder.query(&[("returnData", "steps")]),
+        Some(ReturnData::StepsVariables) => {
+            request_builder.query(&[("returnData", "steps,variables")])
+        }
+        Some(ReturnData::Variables) => request_builder.query(&[("returnData", "variables")]),
+        None => request_builder,
     }
 }
 

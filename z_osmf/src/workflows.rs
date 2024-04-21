@@ -1,4 +1,5 @@
 pub mod create;
+pub mod list;
 pub mod properties;
 
 use std::sync::Arc;
@@ -8,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use crate::ClientCore;
 
 use self::create::{WorkflowCreate, WorkflowCreateBuilder};
+use self::list::{WorkflowList, WorkflowListBuilder};
+use self::properties::{WorkflowProperties, WorkflowPropertiesBuilder};
 
 #[derive(Clone, Debug)]
 pub struct WorkflowsClient {
@@ -29,15 +32,27 @@ impl WorkflowsClient {
         WorkflowCreateBuilder::new(self.core.clone(), name, definition_file, system, owner)
     }
 
-    pub fn properties(&self) {}
+    pub fn list(&self) -> WorkflowListBuilder<WorkflowList> {
+        WorkflowListBuilder::new(self.core.clone())
+    }
+
+    pub fn properties(&self, key: &str) -> WorkflowPropertiesBuilder<WorkflowProperties> {
+        WorkflowPropertiesBuilder::new(self.core.clone(), key)
+    }
 }
 
-#[derive(
-    Clone, Copy, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize,
-)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum WorkflowAccess {
     Private,
-    #[default]
     Public,
     Restricted,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WorkflowStatus {
+    InProgress,
+    Complete,
+    AutomationInProgress,
+    Canceled,
 }
