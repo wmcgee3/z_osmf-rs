@@ -9,7 +9,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::{de_optional_y_n, ser_optional_y_n, MigratedRecall};
+use super::{de_optional_y_n, ser_optional_y_n, DatasetMigratedRecall};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct MemberAttributesBase {
@@ -129,7 +129,7 @@ where
     #[endpoint(skip_builder)]
     include_total: Option<bool>,
     #[endpoint(header = "X-IBM-Migrated-Recall")]
-    migrated_recall: Option<MigratedRecall>,
+    migrated_recall: Option<DatasetMigratedRecall>,
 
     target_type: PhantomData<T>,
 }

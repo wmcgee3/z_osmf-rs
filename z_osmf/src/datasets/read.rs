@@ -13,7 +13,9 @@ use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-use super::{get_member, get_session_ref, get_volume, DatasetDataType, Enqueue, MigratedRecall};
+use super::{
+    get_member, get_session_ref, get_volume, DatasetDataType, DatasetEnqueue, DatasetMigratedRecall,
+};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct DatasetRead<T> {
@@ -149,11 +151,11 @@ where
     #[endpoint(builder_fn = build_return_etag)]
     return_etag: Option<bool>,
     #[endpoint(header = "X-IBM-Migrated-Recall")]
-    migrated_recall: Option<MigratedRecall>,
+    migrated_recall: Option<DatasetMigratedRecall>,
     #[endpoint(header = "X-IBM-Record-Range")]
     record_range: Option<RecordRange>,
     #[endpoint(header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<Enqueue>,
+    obtain_enq: Option<DatasetEnqueue>,
     #[endpoint(header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
     #[endpoint(builder_fn = build_release_enq)]

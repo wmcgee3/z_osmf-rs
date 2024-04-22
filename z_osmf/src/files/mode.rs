@@ -20,7 +20,7 @@ where
     #[endpoint(builder_fn = build_body)]
     mode: Box<str>,
     #[endpoint(skip_builder)]
-    links: Option<FileModeLinks>,
+    links: Option<FileChangeModeLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
@@ -29,7 +29,7 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileModeLinks {
+pub enum FileChangeModeLinks {
     Follow,
     Suppress,
 }
@@ -39,7 +39,7 @@ struct RequestJson<'a> {
     request: &'static str,
     mode: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<FileModeLinks>,
+    links: Option<FileChangeModeLinks>,
     recursive: bool,
 }
 
@@ -87,7 +87,7 @@ mod tests {
         let request = zosmf
             .files()
             .change_mode("/u/jiahj/text.txt", "755")
-            .links(FileModeLinks::Suppress)
+            .links(FileChangeModeLinks::Suppress)
             .recursive(true)
             .get_request()
             .unwrap();

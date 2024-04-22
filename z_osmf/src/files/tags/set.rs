@@ -7,7 +7,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{FileTagType, FileTagsLinks};
+use super::{FileTagLinks, FileTagType};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
@@ -24,7 +24,7 @@ where
     #[endpoint(skip_builder)]
     code_set: Option<Box<str>>,
     #[endpoint(skip_builder)]
-    links: Option<FileTagsLinks>,
+    links: Option<FileTagLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
@@ -40,7 +40,7 @@ struct RequestJson<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     codeset: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<FileTagsLinks>,
+    links: Option<FileTagLinks>,
     recursive: bool,
 }
 
@@ -99,7 +99,7 @@ mod tests {
             .set_tag("/u/jiahj/testFile.txt")
             .tag_type(FileTagType::Mixed)
             .code_set("IBM-1047")
-            .links(FileTagsLinks::Suppress)
+            .links(FileTagLinks::Suppress)
             .get_request()
             .unwrap();
 

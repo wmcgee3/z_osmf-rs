@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/variables/rest/1.0/systems/{sysplex}.{system}/actions/export")]
-pub struct VariableExportBuilder<T>
+pub struct SystemVariableExportBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -36,7 +36,7 @@ struct RequestJson<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &VariableExportBuilder<T>,
+    builder: &SystemVariableExportBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

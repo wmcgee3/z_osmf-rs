@@ -18,7 +18,7 @@ pub struct WorkflowsClient {
 }
 
 impl WorkflowsClient {
-    pub(super) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
         WorkflowsClient { core }
     }
 

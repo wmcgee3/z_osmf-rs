@@ -8,20 +8,20 @@ use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct NewVariable {
+pub struct NewSystemVariable {
     name: String,
     value: String,
     description: String,
 }
 
-impl NewVariable {
+impl NewSystemVariable {
     pub fn new<N, V, D>(name: N, value: V, description: D) -> Self
     where
         N: ToString,
         V: ToString,
         D: ToString,
     {
-        NewVariable {
+        NewSystemVariable {
             name: name.to_string(),
             value: value.to_string(),
             description: description.to_string(),
@@ -31,7 +31,7 @@ impl NewVariable {
 
 #[derive(Endpoint)]
 #[endpoint(method = post, path = "/zosmf/variables/rest/1.0/systems/{sysplex}.{system}")]
-pub(super) struct VariableCreateBuilder<T>
+pub(crate) struct VariableCreateBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -42,7 +42,7 @@ where
     #[endpoint(path)]
     system: Box<str>,
     #[endpoint(builder_fn = build_body)]
-    new_variables: Box<[NewVariable]>,
+    new_variables: Box<[NewSystemVariable]>,
 
     target_type: PhantomData<T>,
 }
@@ -50,7 +50,7 @@ where
 #[derive(Serialize)]
 #[serde(rename_all = "kebab-case")]
 struct RequestJson<'a> {
-    system_variable_list: &'a [NewVariable],
+    system_variable_list: &'a [NewSystemVariable],
 }
 
 fn build_body<T>(

@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use super::{get_subsystem, JobExec};
+use super::{get_subsystem, JobAttributesExec};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct JobList<T> {
@@ -58,7 +58,7 @@ impl<T> JobListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn exec_data(self) -> JobListBuilder<JobList<JobExec>> {
+    pub fn exec_data(self) -> JobListBuilder<JobList<JobAttributesExec>> {
         JobListBuilder {
             core: self.core,
             subsystem: self.subsystem,

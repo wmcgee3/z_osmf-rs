@@ -8,7 +8,7 @@ use crate::ClientCore;
 
 #[derive(Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/variables/rest/1.0/systems/{sysplex}.{system}")]
-pub(super) struct VariableDeleteBuilder<T>
+pub(crate) struct VariableDeleteBuilder<T>
 where
     T: TryFromResponse,
 {

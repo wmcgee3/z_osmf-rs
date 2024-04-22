@@ -7,7 +7,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{get_member, Enqueue};
+use super::{get_member, DatasetEnqueue};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds/{to_dataset}{to_member}")]
@@ -26,7 +26,7 @@ where
     #[endpoint(path, builder_fn = build_to_member)]
     to_member: Option<Box<str>>,
     #[endpoint(skip_builder)]
-    enqueue: Option<Enqueue>,
+    enqueue: Option<DatasetEnqueue>,
 
     target_type: PhantomData<T>,
 }
@@ -37,7 +37,7 @@ struct RequestJson<'a> {
     request: &'static str,
     from_dataset: FromDataset<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enq: &'a Option<Enqueue>,
+    enq: &'a Option<DatasetEnqueue>,
 }
 
 #[derive(Serialize)]

@@ -22,7 +22,7 @@ where
     #[endpoint(skip_builder)]
     group: Option<Box<str>>,
     #[endpoint(skip_builder)]
-    links: Option<FileOwnerLinks>,
+    links: Option<FileChangeOwnerLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
@@ -31,7 +31,7 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileOwnerLinks {
+pub enum FileChangeOwnerLinks {
     Change,
     Follow,
 }
@@ -43,7 +43,7 @@ struct RequestJson<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     group: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<FileOwnerLinks>,
+    links: Option<FileChangeOwnerLinks>,
     recursive: bool,
 }
 
@@ -97,7 +97,7 @@ mod tests {
             .files()
             .change_owner("/u/jiahj/testDir", "ibmuser")
             .group("ibmgrp")
-            .links(FileOwnerLinks::Change)
+            .links(FileChangeOwnerLinks::Change)
             .recursive(true)
             .get_request()
             .unwrap();

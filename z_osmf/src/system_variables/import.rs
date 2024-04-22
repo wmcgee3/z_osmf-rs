@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Endpoint)]
 #[endpoint(method = post, path = "/zosmf/variables/rest/1.0/systems/{sysplex}.{system}/actions/import")]
-pub(super) struct VariableImportBuilder<T>
+pub(crate) struct VariableImportBuilder<T>
 where
     T: TryFromResponse,
 {

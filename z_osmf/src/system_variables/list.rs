@@ -27,27 +27,27 @@ impl std::fmt::Display for SystemId {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct Variable {
+pub struct SystemVariable {
     name: Box<str>,
     value: Box<str>,
     description: Option<Box<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct Variables {
-    inner: Box<[Variable]>,
+pub struct SystemVariableList {
+    inner: Box<[SystemVariable]>,
 }
 
-impl TryFromResponse for Variables {
+impl TryFromResponse for SystemVariableList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
         let ResponseJson { variables } = value.json().await?;
 
-        Ok(Variables { inner: variables })
+        Ok(SystemVariableList { inner: variables })
     }
 }
 
-impl std::ops::Deref for Variables {
-    type Target = [Variable];
+impl std::ops::Deref for SystemVariableList {
+    type Target = [SystemVariable];
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -56,7 +56,7 @@ impl std::ops::Deref for Variables {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/variables/rest/1.0/systems/{system_id}")]
-pub struct VariablesBuilder<T>
+pub struct SystemVariableListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -70,7 +70,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> VariablesBuilder<T>
+impl<T> SystemVariableListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -104,12 +104,12 @@ where
 #[derive(Deserialize)]
 struct ResponseJson {
     #[serde(rename = "system-variable-list")]
-    variables: Box<[Variable]>,
+    variables: Box<[SystemVariable]>,
 }
 
 fn build_names<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &VariablesBuilder<T>,
+    builder: &SystemVariableListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -123,7 +123,7 @@ where
     request_builder.query(&query)
 }
 
-fn build_system_id<T>(builder: &VariablesBuilder<T>) -> &SystemId
+fn build_system_id<T>(builder: &SystemVariableListBuilder<T>) -> &SystemId
 where
     T: TryFromResponse,
 {

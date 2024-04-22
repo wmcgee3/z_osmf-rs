@@ -28,7 +28,7 @@ use self::extra_attributes::reset::FileExtraAttributesResetBuilder;
 use self::extra_attributes::set::FileExtraAttributesSetBuilder;
 use self::extra_attributes::{FileExtraAttributeList, FileExtraAttributeListBuilder};
 use self::link::{FileLinkBuilder, FileLinkType};
-use self::list::{FileList, FilesBuilder};
+use self::list::{FileList, FileListBuilder};
 use self::mode::FileChangeModeBuilder;
 use self::owner::FileChangeOwnerBuilder;
 use self::read::{FileRead, FileReadBuilder};
@@ -46,7 +46,7 @@ pub struct FilesClient {
 
 /// # Files
 impl FilesClient {
-    pub(super) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
         FilesClient { core }
     }
 
@@ -333,8 +333,8 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, path: &str) -> FilesBuilder<FileList> {
-        FilesBuilder::new(self.core.clone(), path)
+    pub fn list(&self, path: &str) -> FileListBuilder<FileList> {
+        FileListBuilder::new(self.core.clone(), path)
     }
 
     /// # Examples

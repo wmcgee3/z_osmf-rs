@@ -13,60 +13,6 @@ use crate::error::Error;
 use crate::restfiles::get_transaction_id;
 use crate::ClientCore;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FileTagsLinks {
-    Change,
-    Suppress,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FileTagType {
-    Binary,
-    Mixed,
-    Text,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct FileTagList {
-    tags: Box<[FileTag]>,
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for FileTagList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        let TagsResponseJson { stdout } = value.json().await?;
-        let tags = stdout
-            .iter()
-            .map(|line| FileTag::from_str(line))
-            .collect::<Result<Box<[FileTag]>, Error>>()?;
-
-        Ok(FileTagList {
-            tags,
-            transaction_id,
-        })
-    }
-}
-
-#[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileTagListBuilder<T>
-where
-    T: TryFromResponse,
-{
-    core: Arc<ClientCore>,
-
-    #[endpoint(path)]
-    path: Box<str>,
-    #[endpoint(builder_fn = build_tags_body)]
-    recursive: Option<bool>,
-
-    target_type: PhantomData<T>,
-}
-
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileTag {
     #[getter(copy)]
@@ -103,15 +49,69 @@ impl std::str::FromStr for FileTag {
     }
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FileTagLinks {
+    Change,
+    Suppress,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileTagList {
+    tags: Box<[FileTag]>,
+    transaction_id: Box<str>,
+}
+
+impl TryFromResponse for FileTagList {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        let FileTagResponseJson { stdout } = value.json().await?;
+        let tags = stdout
+            .iter()
+            .map(|line| FileTag::from_str(line))
+            .collect::<Result<Box<[FileTag]>, Error>>()?;
+
+        Ok(FileTagList {
+            tags,
+            transaction_id,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Endpoint)]
+#[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
+pub struct FileTagListBuilder<T>
+where
+    T: TryFromResponse,
+{
+    core: Arc<ClientCore>,
+
+    #[endpoint(path)]
+    path: Box<str>,
+    #[endpoint(builder_fn = build_tags_body)]
+    recursive: Option<bool>,
+
+    target_type: PhantomData<T>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FileTagType {
+    Binary,
+    Mixed,
+    Text,
+}
+
 #[derive(Serialize)]
-struct TagsRequestJson {
+struct FileTagRequestJson {
     request: &'static str,
     action: &'static str,
     recursive: bool,
 }
 
 #[derive(Deserialize)]
-struct TagsResponseJson {
+struct FileTagResponseJson {
     stdout: Box<[Box<str>]>,
 }
 
@@ -122,7 +122,7 @@ fn build_tags_body<T>(
 where
     T: TryFromResponse,
 {
-    request_builder.json(&TagsRequestJson {
+    request_builder.json(&FileTagRequestJson {
         request: "chtag",
         action: "list",
         recursive: builder.recursive == Some(true),

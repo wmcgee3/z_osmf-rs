@@ -14,46 +14,6 @@ use crate::ClientCore;
 use super::{de_optional_y_n, ser_optional_y_n};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct DatasetList<T> {
-    items: Box<[T]>,
-    #[getter(copy)]
-    json_version: i32,
-    #[getter(copy)]
-    more_rows: Option<bool>,
-    #[getter(copy)]
-    returned_rows: i32,
-    #[getter(copy)]
-    total_rows: Option<i32>,
-    transaction_id: Box<str>,
-}
-
-impl<T> TryFromResponse for DatasetList<T>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        let ResponseJson {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-        } = value.json().await?;
-
-        Ok(DatasetList {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-            transaction_id,
-        })
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct DatasetAttributesBase {
     #[serde(rename = "dsname")]
     name: Box<str>,
@@ -118,17 +78,125 @@ pub struct DatasetAttributesBase {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct DatasetAttributesDsName {
+pub struct DatasetAttributesName {
     #[serde(rename = "dsname")]
     name: Box<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct DatasetAttributesVol {
+pub struct DatasetAttributesVolume {
     #[serde(rename = "dsname")]
     name: Box<str>,
     #[serde(rename = "vol")]
     volume: DatasetVolume,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct DatasetList<T> {
+    items: Box<[T]>,
+    #[getter(copy)]
+    json_version: i32,
+    #[getter(copy)]
+    more_rows: Option<bool>,
+    #[getter(copy)]
+    returned_rows: i32,
+    #[getter(copy)]
+    total_rows: Option<i32>,
+    transaction_id: Box<str>,
+}
+
+impl<T> TryFromResponse for DatasetList<T>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+        let transaction_id = get_transaction_id(&value)?;
+
+        let ResponseJson {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+        } = value.json().await?;
+
+        Ok(DatasetList {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+            transaction_id,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Endpoint)]
+#[endpoint(method = get, path = "/zosmf/restfiles/ds")]
+pub struct DatasetListBuilder<T>
+where
+    T: TryFromResponse,
+{
+    core: Arc<ClientCore>,
+
+    #[endpoint(query = "dslevel")]
+    level: Box<str>,
+    #[endpoint(query = "volser")]
+    volume: Option<Box<str>>,
+    #[endpoint(query = "start")]
+    start: Option<Box<str>>,
+    #[endpoint(header = "X-IBM-Max-Items")]
+    max_items: Option<i32>,
+    #[endpoint(skip_setter, builder_fn = build_attributes)]
+    attributes: Option<Attrs>,
+    #[endpoint(skip_builder)]
+    include_total: Option<bool>,
+
+    target_type: PhantomData<T>,
+}
+
+impl<T> DatasetListBuilder<T>
+where
+    T: TryFromResponse,
+{
+    pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetAttributesBase>> {
+        DatasetListBuilder {
+            core: self.core,
+            level: self.level,
+            volume: self.volume,
+            start: self.start,
+            max_items: self.max_items,
+            attributes: Some(Attrs::Base),
+            include_total: self.include_total,
+            target_type: PhantomData,
+        }
+    }
+
+    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetAttributesName>> {
+        DatasetListBuilder {
+            core: self.core,
+            level: self.level,
+            volume: self.volume,
+            start: self.start,
+            max_items: self.max_items,
+            attributes: Some(Attrs::Dsname),
+            include_total: self.include_total,
+            target_type: PhantomData,
+        }
+    }
+
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetAttributesVolume>> {
+        DatasetListBuilder {
+            core: self.core,
+            level: self.level,
+            volume: self.volume,
+            start: self.start,
+            max_items: self.max_items,
+            attributes: Some(Attrs::Vol),
+            include_total: self.include_total,
+            target_type: PhantomData,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -169,74 +237,6 @@ impl Serialize for DatasetVolume {
     }
 }
 
-#[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetsBuilder<T>
-where
-    T: TryFromResponse,
-{
-    core: Arc<ClientCore>,
-
-    #[endpoint(query = "dslevel")]
-    level: Box<str>,
-    #[endpoint(query = "volser")]
-    volume: Option<Box<str>>,
-    #[endpoint(query = "start")]
-    start: Option<Box<str>>,
-    #[endpoint(header = "X-IBM-Max-Items")]
-    max_items: Option<i32>,
-    #[endpoint(skip_setter, builder_fn = build_attributes)]
-    attributes: Option<Attrs>,
-    #[endpoint(skip_builder)]
-    include_total: Option<bool>,
-
-    target_type: PhantomData<T>,
-}
-
-impl<T> DatasetsBuilder<T>
-where
-    T: TryFromResponse,
-{
-    pub fn attributes_base(self) -> DatasetsBuilder<DatasetList<DatasetAttributesBase>> {
-        DatasetsBuilder {
-            core: self.core,
-            level: self.level,
-            volume: self.volume,
-            start: self.start,
-            max_items: self.max_items,
-            attributes: Some(Attrs::Base),
-            include_total: self.include_total,
-            target_type: PhantomData,
-        }
-    }
-
-    pub fn attributes_dsname(self) -> DatasetsBuilder<DatasetList<DatasetAttributesDsName>> {
-        DatasetsBuilder {
-            core: self.core,
-            level: self.level,
-            volume: self.volume,
-            start: self.start,
-            max_items: self.max_items,
-            attributes: Some(Attrs::Dsname),
-            include_total: self.include_total,
-            target_type: PhantomData,
-        }
-    }
-
-    pub fn attributes_vol(self) -> DatasetsBuilder<DatasetList<DatasetAttributesVol>> {
-        DatasetsBuilder {
-            core: self.core,
-            level: self.level,
-            volume: self.volume,
-            start: self.start,
-            max_items: self.max_items,
-            attributes: Some(Attrs::Vol),
-            include_total: self.include_total,
-            target_type: PhantomData,
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 enum Attrs {
     Base,
@@ -273,7 +273,7 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: RequestBuilder,
-    list_builder: &DatasetsBuilder<T>,
+    list_builder: &DatasetListBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,

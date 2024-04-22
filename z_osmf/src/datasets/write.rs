@@ -7,7 +7,7 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{get_member, get_volume, Enqueue, MigratedRecall};
+use super::{get_member, get_volume, DatasetEnqueue, DatasetMigratedRecall};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{dataset}{member}")]
@@ -32,9 +32,9 @@ where
     #[endpoint(skip_builder)]
     crlf_newlines: Option<bool>,
     #[endpoint(header = "X-IBM-Migrated-Recall")]
-    migrated_recall: Option<MigratedRecall>,
+    migrated_recall: Option<DatasetMigratedRecall>,
     #[endpoint(header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<Enqueue>,
+    obtain_enq: Option<DatasetEnqueue>,
     #[endpoint(header = "X-IBM-Session-Ref")]
     session_ref: Option<Box<str>>,
     #[endpoint(builder_fn = build_release_enq)]

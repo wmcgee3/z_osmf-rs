@@ -10,12 +10,12 @@ use std::sync::Arc;
 
 use crate::{ClientCore, Error};
 
-use self::create::{NewVariable, VariableCreateBuilder};
+use self::create::{NewSystemVariable, VariableCreateBuilder};
 use self::delete::VariableDeleteBuilder;
-use self::export::VariableExportBuilder;
+use self::export::SystemVariableExportBuilder;
 use self::import::VariableImportBuilder;
-use self::list::{Variables, VariablesBuilder};
-use self::symbols::{Symbols, SymbolsBuilder};
+use self::list::{SystemVariableList, SystemVariableListBuilder};
+use self::symbols::{SystemSymbolList, SystemSymbolListBuilder};
 
 #[derive(Clone, Debug)]
 pub struct SystemVariablesClient {
@@ -23,7 +23,7 @@ pub struct SystemVariablesClient {
 }
 
 impl SystemVariablesClient {
-    pub(super) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
         SystemVariablesClient { core }
     }
 
@@ -31,11 +31,11 @@ impl SystemVariablesClient {
     ///
     /// Create system variables:
     /// ```
-    /// # use z_osmf::system_variables::create::NewVariable;
+    /// # use z_osmf::system_variables::create::NewSystemVariable;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let new_variables = [
-    ///     NewVariable::new("var1", "value1", "description of the variable"),
-    ///     NewVariable::new("var2", "value2", "description of the variable"),
+    ///     NewSystemVariable::new("var1", "value1", "description of the variable"),
+    ///     NewSystemVariable::new("var2", "value2", "description of the variable"),
     /// ];
     ///
     /// zosmf.system_variables()
@@ -51,7 +51,7 @@ impl SystemVariablesClient {
         new_variables: T,
     ) -> Result<(), Error>
     where
-        T: Into<Box<[NewVariable]>>,
+        T: Into<Box<[NewSystemVariable]>>,
     {
         VariableCreateBuilder::new(self.core.clone(), sysplex, system, new_variables)
             .build()
@@ -101,8 +101,13 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn export(&self, sysplex: &str, system: &str, path: &str) -> VariableExportBuilder<()> {
-        VariableExportBuilder::new(self.core.clone(), sysplex, system, path)
+    pub fn export(
+        &self,
+        sysplex: &str,
+        system: &str,
+        path: &str,
+    ) -> SystemVariableExportBuilder<()> {
+        SystemVariableExportBuilder::new(self.core.clone(), sysplex, system, path)
     }
 
     /// # Examples
@@ -149,8 +154,8 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self) -> VariablesBuilder<Variables> {
-        VariablesBuilder::new(self.core.clone())
+    pub fn list(&self) -> SystemVariableListBuilder<SystemVariableList> {
+        SystemVariableListBuilder::new(self.core.clone())
     }
 
     /// # Examples
@@ -162,7 +167,7 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn symbols(&self) -> SymbolsBuilder<Symbols> {
-        SymbolsBuilder::new(self.core.clone())
+    pub fn symbols(&self) -> SystemSymbolListBuilder<SystemSymbolList> {
+        SystemSymbolListBuilder::new(self.core.clone())
     }
 }

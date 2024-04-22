@@ -8,26 +8,26 @@ use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct Symbol {
+pub struct SystemSymbol {
     name: Box<str>,
     value: Box<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct Symbols {
-    inner: Box<[Symbol]>,
+pub struct SystemSymbolList {
+    inner: Box<[SystemSymbol]>,
 }
 
-impl TryFromResponse for Symbols {
+impl TryFromResponse for SystemSymbolList {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
         let ResponseJson { symbols } = value.json().await?;
 
-        Ok(Symbols { inner: symbols })
+        Ok(SystemSymbolList { inner: symbols })
     }
 }
 
-impl std::ops::Deref for Symbols {
-    type Target = [Symbol];
+impl std::ops::Deref for SystemSymbolList {
+    type Target = [SystemSymbol];
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -36,7 +36,7 @@ impl std::ops::Deref for Symbols {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/variables/rest/1.0/systems/local?source=symbol")]
-pub struct SymbolsBuilder<T>
+pub struct SystemSymbolListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -48,7 +48,7 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> SymbolsBuilder<T>
+impl<T> SystemSymbolListBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -82,12 +82,12 @@ where
 #[derive(Deserialize)]
 struct ResponseJson {
     #[serde(rename = "system-symbol-list")]
-    symbols: Box<[Symbol]>,
+    symbols: Box<[SystemSymbol]>,
 }
 
 fn build_names<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &SymbolsBuilder<T>,
+    builder: &SystemSymbolListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

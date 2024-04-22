@@ -15,14 +15,14 @@ use crate::convert::TryFromResponse;
 use crate::error::Error;
 use crate::ClientCore;
 
-use self::class::JobClassBuilder;
+use self::class::JobChangeClassBuilder;
 use self::feedback::{JobFeedback, JobFeedbackBuilder};
 use self::files::read::{JobFileId, JobFileRead, JobFileReadBuilder};
 use self::files::{JobFileList, JobFileListBuilder};
 use self::list::{JobList, JobListBuilder};
 use self::purge::JobPurgeBuilder;
 use self::status::JobStatusBuilder;
-use self::submit::{Jcl, JobSubmitBuilder};
+use self::submit::{JobSource, JobSubmitBuilder};
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
@@ -31,7 +31,7 @@ pub struct JobsClient {
 
 /// # Jobs
 impl JobsClient {
-    pub(super) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
         JobsClient { core }
     }
 
@@ -95,11 +95,11 @@ impl JobsClient {
         &self,
         identifier: JobIdentifier,
         class: C,
-    ) -> JobClassBuilder<JobFeedback>
+    ) -> JobChangeClassBuilder<JobFeedback>
     where
         C: Into<char>,
     {
-        JobClassBuilder::new(self.core.clone(), identifier, class)
+        JobChangeClassBuilder::new(self.core.clone(), identifier, class)
     }
 
     /// # Examples
@@ -138,7 +138,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self) -> JobListBuilder<JobList<Job>> {
+    pub fn list(&self) -> JobListBuilder<JobList<JobAttributes>> {
         JobListBuilder::new(self.core.clone())
     }
 
@@ -258,7 +258,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<Job> {
+    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobAttributes> {
         JobStatusBuilder::new(self.core.clone(), identifier)
     }
 
@@ -266,7 +266,7 @@ impl JobsClient {
     ///
     /// Submit a job from text:
     /// ```
-    /// # use z_osmf::jobs::submit::{Jcl, RecordFormat};
+    /// # use z_osmf::jobs::submit::{JclData, JobRecordFormat, JobSource};
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let jcl = r#"//TESTJOBX JOB (),MSGCLASS=H
     /// // EXEC PGM=IEFBR14
@@ -274,23 +274,23 @@ impl JobsClient {
     ///
     /// let job_data = zosmf
     ///     .jobs()
-    ///     .submit(Jcl::Text(jcl.into()))
+    ///     .submit(JobSource::Jcl(JclData::Text(jcl.into())))
     ///     .message_class('A')
-    ///     .record_format(RecordFormat::Fixed)
+    ///     .record_format(JobRecordFormat::Fixed)
     ///     .record_length(80)
     ///     .build()
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submit(&self, jcl_source: Jcl) -> JobSubmitBuilder<Job> {
+    pub fn submit(&self, jcl_source: JobSource) -> JobSubmitBuilder<JobAttributes> {
         JobSubmitBuilder::new(self.core.clone(), jcl_source)
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Job {
+pub struct JobAttributes {
     #[serde(rename = "jobid")]
     id: Box<str>,
     #[serde(rename = "jobname")]
@@ -313,13 +313,13 @@ pub struct Job {
     reason_not_running: Option<Box<str>>,
 }
 
-impl Job {
+impl JobAttributes {
     pub fn identifier(&self) -> JobIdentifier {
         JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
     }
 }
 
-impl TryFromResponse for Job {
+impl TryFromResponse for JobAttributes {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -327,9 +327,9 @@ impl TryFromResponse for Job {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobExec {
+pub struct JobAttributesExec {
     #[serde(flatten)]
-    job_data: Job,
+    job_data: JobAttributes,
     #[serde(default)]
     exec_system: Option<Box<str>>,
     #[serde(default)]
@@ -340,15 +340,15 @@ pub struct JobExec {
     exec_ended: Option<Box<str>>,
 }
 
-impl std::ops::Deref for JobExec {
-    type Target = Job;
+impl std::ops::Deref for JobAttributesExec {
+    type Target = JobAttributes;
 
     fn deref(&self) -> &Self::Target {
         &self.job_data
     }
 }
 
-impl TryFromResponse for JobExec {
+impl TryFromResponse for JobAttributesExec {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -356,21 +356,21 @@ impl TryFromResponse for JobExec {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobExecStep {
+pub struct JobAttributesExecStep {
     #[serde(flatten)]
-    job_exec_data: JobExec,
-    step_data: Box<[Step]>,
+    job_exec_data: JobAttributesExec,
+    step_data: Box<[JobStepData]>,
 }
 
-impl std::ops::Deref for JobExecStep {
-    type Target = Job;
+impl std::ops::Deref for JobAttributesExecStep {
+    type Target = JobAttributes;
 
     fn deref(&self) -> &Self::Target {
         &self.job_exec_data
     }
 }
 
-impl TryFromResponse for JobExecStep {
+impl TryFromResponse for JobAttributesExecStep {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -378,21 +378,21 @@ impl TryFromResponse for JobExecStep {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct JobStep {
+pub struct JobAttributesStep {
     #[serde(flatten)]
-    job_data: Job,
-    step_data: Box<[Step]>,
+    job_data: JobAttributes,
+    step_data: Box<[JobStepData]>,
 }
 
-impl std::ops::Deref for JobStep {
-    type Target = Job;
+impl std::ops::Deref for JobAttributesStep {
+    type Target = JobAttributes;
 
     fn deref(&self) -> &Self::Target {
         &self.job_data
     }
 }
 
-impl TryFromResponse for JobStep {
+impl TryFromResponse for JobAttributesStep {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
         Ok(value.json().await?)
     }
@@ -423,17 +423,9 @@ pub enum JobStatus {
     Output,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum JobType {
-    Job,
-    Stc,
-    Tsu,
-}
-
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Step {
+pub struct JobStepData {
     #[getter(copy)]
     active: bool,
     #[serde(default, rename = "smfid")]
@@ -458,6 +450,14 @@ pub struct Step {
     completion_code: Option<Box<str>>,
     #[serde(default)]
     abend_reason_code: Option<Box<str>>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum JobType {
+    Job,
+    Stc,
+    Tsu,
 }
 
 fn get_subsystem(value: &Option<Box<str>>) -> String {

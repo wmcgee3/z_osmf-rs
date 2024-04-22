@@ -6,7 +6,10 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::{get_subsystem, Job, JobExec, JobExecStep, JobIdentifier, JobStep};
+use super::{
+    get_subsystem, JobAttributes, JobAttributesExec, JobAttributesExecStep, JobAttributesStep,
+    JobIdentifier,
+};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
@@ -30,8 +33,8 @@ where
     target_type: PhantomData<T>,
 }
 
-impl JobStatusBuilder<Job> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobExec> {
+impl JobStatusBuilder<JobAttributes> {
+    pub fn exec_data(self) -> JobStatusBuilder<JobAttributesExec> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -43,7 +46,7 @@ impl JobStatusBuilder<Job> {
         }
     }
 
-    pub fn step_data(self) -> JobStatusBuilder<JobStep> {
+    pub fn step_data(self) -> JobStatusBuilder<JobAttributesStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -56,8 +59,8 @@ impl JobStatusBuilder<Job> {
     }
 }
 
-impl JobStatusBuilder<JobExec> {
-    pub fn step_data(self) -> JobStatusBuilder<JobExecStep> {
+impl JobStatusBuilder<JobAttributesExec> {
+    pub fn step_data(self) -> JobStatusBuilder<JobAttributesExecStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -70,8 +73,8 @@ impl JobStatusBuilder<JobExec> {
     }
 }
 
-impl JobStatusBuilder<JobStep> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobExecStep> {
+impl JobStatusBuilder<JobAttributesStep> {
+    pub fn exec_data(self) -> JobStatusBuilder<JobAttributesExecStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,

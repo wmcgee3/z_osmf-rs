@@ -12,32 +12,37 @@ use crate::ClientCore;
 use super::get_subsystem;
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum Jcl {
+pub enum JclData {
     Binary(Bytes),
-    Dataset(String),
-    File(String),
     Record(Bytes),
     Text(String),
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub enum JobSource {
+    Dataset(String),
+    File(String),
+    Jcl(JclData),
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum JobEvent {
+pub enum JobNotificationEvent {
     Active,
     Complete,
     Ready,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum RecordFormat {
+pub enum JobRecordFormat {
     Fixed,
     Variable,
 }
 
-impl From<RecordFormat> for reqwest::header::HeaderValue {
-    fn from(value: RecordFormat) -> Self {
+impl From<JobRecordFormat> for reqwest::header::HeaderValue {
+    fn from(value: JobRecordFormat) -> Self {
         match value {
-            RecordFormat::Fixed => "F",
-            RecordFormat::Variable => "V",
+            JobRecordFormat::Fixed => "F",
+            JobRecordFormat::Variable => "V",
         }
         .try_into()
         .unwrap()
@@ -57,7 +62,7 @@ where
     #[endpoint(header = "X-IBM-Intrdr-Class", skip_setter)]
     message_class: Option<Box<str>>,
     #[endpoint(header = "X-IBM-Intrdr-Recfm")]
-    record_format: Option<RecordFormat>,
+    record_format: Option<JobRecordFormat>,
     #[endpoint(header = "X-IBM-Intrdr-Lrecl")]
     record_length: Option<i32>,
     #[endpoint(header = "X-IBM-User-Correlator")]
@@ -65,11 +70,11 @@ where
     #[endpoint(builder_fn = build_symbols)]
     symbols: Option<HashMap<Box<str>, Box<str>>>,
     #[endpoint(builder_fn = build_jcl_source)]
-    jcl_source: Jcl,
+    jcl_source: JobSource,
     #[endpoint(header = "X-IBM-Notification-URL")]
     notification_url: Option<Box<str>>,
     #[endpoint(builder_fn = build_notification_events)]
-    notification_events: Option<Box<[JobEvent]>>,
+    notification_events: Option<Box<[JobNotificationEvent]>>,
     #[endpoint(header = "X-IBM-Intrdr-File-Encoding")]
     encoding: Option<Box<str>>,
 
@@ -108,23 +113,23 @@ where
     T: TryFromResponse,
 {
     match &builder.jcl_source {
-        Jcl::Binary(binary) => request_builder
-            .header("Content-Type", "application/octet-stream")
-            .header("X-IBM-Intrdr-Mode", "BINARY")
-            .body(binary.clone()),
-        Jcl::Dataset(dataset) => request_builder
+        JobSource::Dataset(dataset) => request_builder
             .header("Content-Type", "application/json")
             .json(&Source {
                 file: &format!("//'{}'", dataset),
             }),
-        Jcl::File(file) => request_builder
+        JobSource::File(file) => request_builder
             .header("Content-Type", "application/json")
             .json(&Source { file }),
-        Jcl::Record(record) => request_builder
+        JobSource::Jcl(JclData::Binary(binary)) => request_builder
+            .header("Content-Type", "application/octet-stream")
+            .header("X-IBM-Intrdr-Mode", "BINARY")
+            .body(binary.clone()),
+        JobSource::Jcl(JclData::Record(record)) => request_builder
             .header("Content-Type", "application/octet-stream")
             .header("X-IBM-Intrdr-Mode", "RECORD")
             .body(record.clone()),
-        Jcl::Text(text) => request_builder
+        JobSource::Jcl(JclData::Text(text)) => request_builder
             .header("Content-Type", "text/plain")
             .header("X-IBM-Intrdr-Mode", "TEXT")
             .body(text.to_string()),
@@ -143,9 +148,9 @@ where
             let mut events: Vec<&'static str> = events
                 .iter()
                 .map(|e| match e {
-                    JobEvent::Active => "active",
-                    JobEvent::Complete => "complete",
-                    JobEvent::Ready => "ready",
+                    JobNotificationEvent::Active => "active",
+                    JobNotificationEvent::Complete => "complete",
+                    JobNotificationEvent::Ready => "ready",
                 })
                 .collect();
             events.sort_unstable();
@@ -219,9 +224,9 @@ mod tests {
 
         let job_data = zosmf
             .jobs()
-            .submit(Jcl::Text(jcl.into()))
+            .submit(JobSource::Jcl(JclData::Text(jcl.into())))
             .message_class('A')
-            .record_format(RecordFormat::Fixed)
+            .record_format(JobRecordFormat::Fixed)
             .record_length(80)
             .get_request()
             .unwrap();
@@ -258,8 +263,8 @@ mod tests {
 
         let job_data = zosmf
             .jobs()
-            .submit(Jcl::Text(jcl.into()))
-            .notification_events([JobEvent::Active, JobEvent::Ready])
+            .submit(JobSource::Jcl(JclData::Text(jcl.into())))
+            .notification_events([JobNotificationEvent::Active, JobNotificationEvent::Ready])
             .get_request()
             .unwrap();
 

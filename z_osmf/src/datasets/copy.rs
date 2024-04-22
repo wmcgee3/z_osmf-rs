@@ -30,7 +30,7 @@ where
     #[endpoint(skip_builder)]
     alias: Option<bool>,
     #[endpoint(skip_builder)]
-    enqueue: Option<CopyEnqueue>,
+    enqueue: Option<DatasetCopyEnqueue>,
     #[endpoint(skip_builder)]
     replace: Option<bool>,
 
@@ -39,10 +39,10 @@ where
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "UPPERCASE")]
-pub enum CopyEnqueue {
+pub enum DatasetCopyEnqueue {
+    Exclu,
     Shr,
     Shrw,
-    Exclu,
 }
 
 #[derive(Serialize)]
@@ -51,7 +51,7 @@ struct RequestJson<'a> {
     request: &'a str,
     from_dataset: FromDataset<'a>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    enq: Option<CopyEnqueue>,
+    enq: Option<DatasetCopyEnqueue>,
     replace: Option<bool>,
 }
 

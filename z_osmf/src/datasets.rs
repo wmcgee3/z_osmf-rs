@@ -23,7 +23,7 @@ use self::copy::DatasetCopyBuilder;
 use self::copy_file::DatasetCopyFileBuilder;
 use self::create::DatasetCreateBuilder;
 use self::delete::DatasetDeleteBuilder;
-use self::list::{DatasetAttributesDsName, DatasetList, DatasetsBuilder};
+use self::list::{DatasetAttributesName, DatasetList, DatasetListBuilder};
 use self::members::{MemberAttributesName, MemberList, MemberListBuilder};
 use self::migrate::DatasetMigrateBuilder;
 use self::read::{DatasetRead, DatasetReadBuilder};
@@ -38,7 +38,7 @@ pub struct DatasetsClient {
 
 /// # Datasets
 impl DatasetsClient {
-    pub(super) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
         DatasetsClient { core }
     }
 
@@ -261,8 +261,8 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, level: &str) -> DatasetsBuilder<DatasetList<DatasetAttributesDsName>> {
-        DatasetsBuilder::new(self.core.clone(), level)
+    pub fn list(&self, level: &str) -> DatasetListBuilder<DatasetList<DatasetAttributesName>> {
+        DatasetListBuilder::new(self.core.clone(), level)
     }
 
     /// # Examples
@@ -421,19 +421,17 @@ impl std::fmt::Display for DatasetDataType {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MigratedRecall {
-    Error,
-    NoWait,
-    Wait,
+#[serde(rename_all = "UPPERCASE")]
+pub enum DatasetEnqueue {
+    Exclu,
+    Shrw,
 }
 
-impl From<MigratedRecall> for HeaderValue {
-    fn from(val: MigratedRecall) -> HeaderValue {
+impl From<DatasetEnqueue> for HeaderValue {
+    fn from(val: DatasetEnqueue) -> HeaderValue {
         match val {
-            MigratedRecall::Error => "error",
-            MigratedRecall::NoWait => "nowait",
-            MigratedRecall::Wait => "wait",
+            DatasetEnqueue::Exclu => "EXCLU",
+            DatasetEnqueue::Shrw => "SHRW",
         }
         .try_into()
         .unwrap()
@@ -441,17 +439,19 @@ impl From<MigratedRecall> for HeaderValue {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum Enqueue {
-    Exclu,
-    Shrw,
+#[serde(rename_all = "lowercase")]
+pub enum DatasetMigratedRecall {
+    Error,
+    NoWait,
+    Wait,
 }
 
-impl From<Enqueue> for HeaderValue {
-    fn from(val: Enqueue) -> HeaderValue {
+impl From<DatasetMigratedRecall> for HeaderValue {
+    fn from(val: DatasetMigratedRecall) -> HeaderValue {
         match val {
-            Enqueue::Exclu => "EXCLU",
-            Enqueue::Shrw => "SHRW",
+            DatasetMigratedRecall::Error => "error",
+            DatasetMigratedRecall::NoWait => "nowait",
+            DatasetMigratedRecall::Wait => "wait",
         }
         .try_into()
         .unwrap()
@@ -519,22 +519,22 @@ mod tests {
 
     #[test]
     fn display_migrated_recall() {
-        let header_value: HeaderValue = MigratedRecall::Error.into();
+        let header_value: HeaderValue = DatasetMigratedRecall::Error.into();
         assert_eq!(header_value, HeaderValue::from_static("error"));
 
-        let header_value: HeaderValue = MigratedRecall::NoWait.into();
+        let header_value: HeaderValue = DatasetMigratedRecall::NoWait.into();
         assert_eq!(header_value, HeaderValue::from_static("nowait"));
 
-        let header_value: HeaderValue = MigratedRecall::Wait.into();
+        let header_value: HeaderValue = DatasetMigratedRecall::Wait.into();
         assert_eq!(header_value, HeaderValue::from_static("wait"));
     }
 
     #[test]
     fn display_obtain_enq() {
-        let header_value: HeaderValue = Enqueue::Exclu.into();
+        let header_value: HeaderValue = DatasetEnqueue::Exclu.into();
         assert_eq!(header_value, HeaderValue::from_static("EXCLU"));
 
-        let header_value: HeaderValue = Enqueue::Shrw.into();
+        let header_value: HeaderValue = DatasetEnqueue::Shrw.into();
         assert_eq!(header_value, HeaderValue::from_static("SHRW"));
     }
 

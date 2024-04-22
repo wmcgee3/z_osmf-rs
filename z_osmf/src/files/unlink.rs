@@ -9,7 +9,7 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct FileUnlinkBuilder<T>
+pub(crate) struct FileUnlinkBuilder<T>
 where
     T: TryFromResponse,
 {

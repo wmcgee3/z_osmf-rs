@@ -12,7 +12,7 @@ use super::get_subsystem;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct JobClassBuilder<T>
+pub struct JobChangeClassBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -30,12 +30,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobClassBuilder<T>
+impl<T> JobChangeClassBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> JobClassBuilder<()> {
-        JobClassBuilder {
+    pub fn asynchronous(self) -> JobChangeClassBuilder<()> {
+        JobChangeClassBuilder {
             core: self.core,
             class: self.class,
             subsystem: self.subsystem,
@@ -54,7 +54,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobClassBuilder<T>,
+    builder: &JobChangeClassBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -69,7 +69,7 @@ where
     })
 }
 
-fn build_subsystem<T>(builder: &JobClassBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobChangeClassBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
