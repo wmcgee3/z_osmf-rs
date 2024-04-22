@@ -69,6 +69,96 @@ impl std::ops::Deref for WorkflowStepCalling {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct WorkflowStepCore {
+    name: Box<str>,
+    #[getter(copy)]
+    auto_enable: bool,
+    description: Box<str>,
+    #[getter(copy)]
+    #[serde(default)]
+    is_rest_step: bool,
+    #[getter(copy)]
+    optional: bool,
+    prereq_step: Option<Box<[Box<str>]>>,
+    run_as_user: Option<Box<str>>,
+    #[getter(copy)]
+    run_as_user_dynamic: Option<bool>,
+    #[getter(copy)]
+    state: WorkflowStepStatus,
+    step_number: Box<str>,
+    steps: Option<Box<[WorkflowStep]>>,
+    title: Box<str>,
+    #[getter(copy)]
+    user_defined: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct WorkflowStepJobInfo {
+    #[serde(rename = "jobstatus")]
+    status: WorkflowStepJobInfoStatus,
+    #[serde(rename = "jobfiles")]
+    files: Option<Box<[WorkflowStepJobInfoFile]>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct WorkflowStepJobInfoFile {
+    #[serde(rename = "ddname")]
+    dd_name: Box<str>,
+    #[serde(rename = "stepname")]
+    step_name: Box<str>,
+    id: i32,
+    record_count: i32,
+    class: Box<str>,
+    byte_count: i32,
+    #[serde(rename = "procstep")]
+    proc_step: Option<Box<str>>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct WorkflowStepJobInfoStatus {
+    #[serde(rename = "retcode")]
+    return_code: Option<Box<str>>,
+    #[serde(rename = "jobname")]
+    name: Box<str>,
+    #[getter(copy)]
+    status: Option<JobStatus>,
+    owner: Box<str>,
+    subsystem: Option<Box<str>>,
+    class: Box<str>,
+    #[getter(copy)]
+    #[serde(rename = "type")]
+    job_type: JobType,
+    #[serde(rename = "jobid")]
+    id: Box<str>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkflowStepNonRest {
+    #[getter(skip)]
+    #[serde(flatten)]
+    core: WorkflowStepCore,
+    assignees: Option<Box<str>>,
+    #[getter(copy)]
+    has_called_workflow: bool,
+    #[getter(copy)]
+    is_condition_step: Option<bool>,
+    owner: Option<Box<str>>,
+    skills: Option<Box<str>>,
+    weight: Box<str>,
+}
+
+impl std::ops::Deref for WorkflowStepNonRest {
+    type Target = WorkflowStepCore;
+
+    fn deref(&self) -> &Self::Target {
+        &self.core
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkflowStepRest {
     #[getter(skip)]
     #[serde(flatten)]
@@ -98,6 +188,39 @@ impl std::ops::Deref for WorkflowStepRest {
     fn deref(&self) -> &Self::Target {
         &self.core
     }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub enum WorkflowStepStatus {
+    Unassigned,
+    Assigned,
+    #[serde(rename = "Not Ready")]
+    NotReady,
+    Ready,
+    #[serde(rename = "In Progress")]
+    InProgress,
+    Submitted,
+    Complete,
+    Skipped,
+    #[serde(rename = "Complete (Override)")]
+    CompleteOverride,
+    Failed,
+    Conflicts,
+    #[serde(rename = "Condition Not Satisfied")]
+    ConditionNotSatisfied,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING-KEBAB-CASE")]
+pub enum WorkflowStepSubmitAs {
+    Jcl,
+    TsoRexx,
+    #[serde(rename = "shell-JCL")]
+    ShellJcl,
+    TsoRexxJcl,
+    TsoUnixRexx,
+    #[serde(rename = "TSO-UNIX-shell")]
+    TsoUnixShell,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -149,130 +272,10 @@ impl std::ops::Deref for WorkflowStepTemplate {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct WorkflowStepJobInfo {
-    #[serde(rename = "jobstatus")]
-    status: WorkflowStepJobInfoStatus,
-    #[serde(rename = "jobfiles")]
-    files: Option<Box<[WorkflowStepJobInfoFile]>>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct WorkflowStepJobInfoFile {
-    ddname: Box<str>,
-    stepname: Box<str>,
-    id: i32,
-    record_count: i32,
-    class: Box<str>,
-    byte_count: i32,
-    procstep: Option<Box<str>>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct WorkflowStepJobInfoStatus {
-    #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
-    #[serde(rename = "jobname")]
-    name: Box<str>,
-    #[getter(copy)]
-    status: Option<JobStatus>,
-    owner: Box<str>,
-    subsystem: Option<Box<str>>,
-    class: Box<str>,
-    #[getter(copy)]
-    #[serde(rename = "type")]
-    job_type: JobType,
-    #[serde(rename = "jobid")]
-    id: Box<str>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "SCREAMING-KEBAB-CASE")]
-pub enum WorkflowStepSubmitAs {
-    Jcl,
-    TsoRexx,
-    #[serde(rename = "shell-JCL")]
-    ShellJcl,
-    TsoRexxJcl,
-    TsoUnixRexx,
-    #[serde(rename = "TSO-UNIX-shell")]
-    TsoUnixShell,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowStepVariableReference {
     name: Box<str>,
     #[getter(copy)]
     scope: WorkflowVariableScope,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkflowStepCore {
-    name: Box<str>,
-    #[getter(copy)]
-    auto_enable: bool,
-    description: Box<str>,
-    #[getter(copy)]
-    #[serde(default)]
-    is_rest_step: bool,
-    #[getter(copy)]
-    optional: bool,
-    prereq_step: Option<Box<[Box<str>]>>,
-    run_as_user: Option<Box<str>>,
-    #[getter(copy)]
-    run_as_user_dynamic: Option<bool>,
-    #[getter(copy)]
-    state: WorkflowStepStatus,
-    step_number: Box<str>,
-    steps: Option<Box<[WorkflowStep]>>,
-    title: Box<str>,
-    #[getter(copy)]
-    user_defined: bool,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkflowStepNonRest {
-    #[getter(skip)]
-    #[serde(flatten)]
-    core: WorkflowStepCore,
-    assignees: Option<Box<str>>,
-    #[getter(copy)]
-    has_called_workflow: bool,
-    #[getter(copy)]
-    is_condition_step: Option<bool>,
-    owner: Option<Box<str>>,
-    skills: Option<Box<str>>,
-    weight: Box<str>,
-}
-
-impl std::ops::Deref for WorkflowStepNonRest {
-    type Target = WorkflowStepCore;
-
-    fn deref(&self) -> &Self::Target {
-        &self.core
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum WorkflowStepStatus {
-    Unassigned,
-    Assigned,
-    #[serde(rename = "Not Ready")]
-    NotReady,
-    Ready,
-    #[serde(rename = "In Progress")]
-    InProgress,
-    Submitted,
-    Complete,
-    Skipped,
-    #[serde(rename = "Complete (Override)")]
-    CompleteOverride,
-    Failed,
-    Conflicts,
-    #[serde(rename = "Condition Not Satisfied")]
-    ConditionNotSatisfied,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -337,6 +340,64 @@ pub struct WorkflowProperties {
 impl TryFromResponse for WorkflowProperties {
     async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
         Ok(value.json().await?)
+    }
+}
+
+#[derive(Clone, Debug, Endpoint)]
+#[endpoint(method = get, path = "/zosmf/workflow/rest/1.0/workflows/{key}")]
+pub struct WorkflowPropertiesBuilder<T>
+where
+    T: TryFromResponse,
+{
+    core: Arc<ClientCore>,
+
+    #[endpoint(path)]
+    key: Box<str>,
+    #[endpoint(skip_setter, builder_fn = build_return_data)]
+    return_data: Option<ReturnData>,
+
+    target_type: PhantomData<T>,
+}
+
+impl WorkflowPropertiesBuilder<WorkflowProperties> {
+    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::Steps),
+            target_type: PhantomData,
+        }
+    }
+
+    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::Variables),
+            target_type: PhantomData,
+        }
+    }
+}
+
+impl WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
+    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::StepsVariables),
+            target_type: PhantomData,
+        }
+    }
+}
+
+impl WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
+    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::StepsVariables),
+            target_type: PhantomData,
+        }
     }
 }
 
@@ -435,64 +496,6 @@ pub enum WorkflowVariableType {
     Date,
     Time,
     Array,
-}
-
-#[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/workflow/rest/1.0/workflows/{key}")]
-pub struct WorkflowPropertiesBuilder<T>
-where
-    T: TryFromResponse,
-{
-    core: Arc<ClientCore>,
-
-    #[endpoint(path)]
-    key: Box<str>,
-    #[endpoint(skip_setter, builder_fn = build_return_data)]
-    return_data: Option<ReturnData>,
-
-    target_type: PhantomData<T>,
-}
-
-impl WorkflowPropertiesBuilder<WorkflowProperties> {
-    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::Steps),
-            target_type: PhantomData,
-        }
-    }
-
-    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::Variables),
-            target_type: PhantomData,
-        }
-    }
-}
-
-impl WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
-    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::StepsVariables),
-            target_type: PhantomData,
-        }
-    }
-}
-
-impl WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
-    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::StepsVariables),
-            target_type: PhantomData,
-        }
-    }
 }
 
 #[derive(Clone, Debug)]

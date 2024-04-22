@@ -1,3 +1,5 @@
+//! Functionality shared between the datasets and files modules
+
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
