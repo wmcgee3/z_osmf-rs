@@ -25,6 +25,196 @@ pub struct WorkflowAutomationStatus {
     message_text: Option<Box<str>>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkflowProperties {
+    #[serde(rename = "workflowName")]
+    name: Box<str>,
+    #[serde(rename = "workflowKey")]
+    key: Box<str>,
+    #[serde(rename = "workflowDescription")]
+    description: Box<str>,
+    #[serde(rename = "workflowID")]
+    id: Box<str>,
+    #[serde(rename = "workflowVersion")]
+    version: Box<str>,
+    #[serde(rename = "workflowDefinitionFileMD5Value")]
+    definition_file_hash: Box<str>,
+    vendor: Box<str>,
+    owner: Box<str>,
+    #[serde(rename = "workflowArchiveSAFID")]
+    archive_saf_id: Option<Box<str>>,
+    system: Box<str>,
+    jobs_output_directory: Option<Box<str>>,
+    category: Box<str>,
+    #[serde(rename = "productID")]
+    product_id: Option<Box<str>>,
+    product_name: Option<Box<str>>,
+    product_version: Option<Box<str>>,
+    #[getter(copy)]
+    percent_complete: i32,
+    is_callable: Option<Box<str>>,
+    #[getter(copy)]
+    contains_parallel_steps: bool,
+    #[getter(copy)]
+    scope: WorkflowScope,
+    #[getter(copy)]
+    #[serde(rename = "statusName")]
+    status: WorkflowStatus,
+    #[getter(copy)]
+    delete_completed_jobs: bool,
+    automation_status: Option<WorkflowAutomationStatus>,
+    #[getter(copy)]
+    auto_delete_on_completion: Option<bool>,
+    #[getter(copy)]
+    access: WorkflowAccess,
+    account_info: Option<Box<str>>,
+    job_statement: Option<Box<str>>,
+    template_id: Option<Box<str>>,
+    action_id: Option<Box<str>>,
+    registry_id: Option<Box<str>>,
+    parent_registry_id: Option<Box<str>>,
+    domain_id: Option<Box<str>>,
+    tenant_id: Option<Box<str>>,
+    #[serde(rename = "software-service-instance-name")]
+    software_service_instance_name: Option<Box<str>>,
+    template_name: Option<Box<str>>,
+    global_variable_group: Option<Box<str>>,
+    #[getter(copy)]
+    is_instance_variable_without_prefix: bool,
+}
+
+impl TryFromResponse for WorkflowProperties {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+        Ok(value.json().await?)
+    }
+}
+
+#[derive(Clone, Debug, Endpoint)]
+#[endpoint(method = get, path = "/zosmf/workflow/rest/1.0/workflows/{key}")]
+pub struct WorkflowPropertiesBuilder<T>
+where
+    T: TryFromResponse,
+{
+    core: Arc<ClientCore>,
+
+    #[endpoint(path)]
+    key: Box<str>,
+    #[endpoint(skip_setter, builder_fn = build_return_data)]
+    return_data: Option<ReturnData>,
+
+    target_type: PhantomData<T>,
+}
+
+impl WorkflowPropertiesBuilder<WorkflowProperties> {
+    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::Steps),
+            target_type: PhantomData,
+        }
+    }
+
+    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::Variables),
+            target_type: PhantomData,
+        }
+    }
+}
+
+impl WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
+    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::StepsVariables),
+            target_type: PhantomData,
+        }
+    }
+}
+
+impl WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
+    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
+        WorkflowPropertiesBuilder {
+            core: self.core,
+            key: self.key,
+            return_data: Some(ReturnData::StepsVariables),
+            target_type: PhantomData,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct WorkflowPropertiesSteps {
+    #[getter(skip)]
+    #[serde(flatten)]
+    core: WorkflowProperties,
+    steps: Box<[WorkflowStep]>,
+}
+
+impl std::ops::Deref for WorkflowPropertiesSteps {
+    type Target = WorkflowProperties;
+
+    fn deref(&self) -> &Self::Target {
+        &self.core
+    }
+}
+
+impl TryFromResponse for WorkflowPropertiesSteps {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+        Ok(value.json().await?)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct WorkflowPropertiesStepsVariables {
+    #[getter(skip)]
+    #[serde(flatten)]
+    core: WorkflowProperties,
+    steps: Box<[WorkflowStep]>,
+    variables: Box<[WorkflowVariableInfo]>,
+}
+
+impl std::ops::Deref for WorkflowPropertiesStepsVariables {
+    type Target = WorkflowProperties;
+
+    fn deref(&self) -> &Self::Target {
+        &self.core
+    }
+}
+
+impl TryFromResponse for WorkflowPropertiesStepsVariables {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+        Ok(value.json().await?)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct WorkflowPropertiesVariables {
+    #[getter(skip)]
+    #[serde(flatten)]
+    core: WorkflowProperties,
+    variables: Box<[WorkflowVariableInfo]>,
+}
+
+impl std::ops::Deref for WorkflowPropertiesVariables {
+    type Target = WorkflowProperties;
+
+    fn deref(&self) -> &Self::Target {
+        &self.core
+    }
+}
+
+impl TryFromResponse for WorkflowPropertiesVariables {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+        Ok(value.json().await?)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum WorkflowScope {
@@ -276,196 +466,6 @@ pub struct WorkflowStepVariableReference {
     name: Box<str>,
     #[getter(copy)]
     scope: WorkflowVariableScope,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkflowProperties {
-    #[serde(rename = "workflowName")]
-    name: Box<str>,
-    #[serde(rename = "workflowKey")]
-    key: Box<str>,
-    #[serde(rename = "workflowDescription")]
-    description: Box<str>,
-    #[serde(rename = "workflowID")]
-    id: Box<str>,
-    #[serde(rename = "workflowVersion")]
-    version: Box<str>,
-    #[serde(rename = "workflowDefinitionFileMD5Value")]
-    definition_file_hash: Box<str>,
-    vendor: Box<str>,
-    owner: Box<str>,
-    #[serde(rename = "workflowArchiveSAFID")]
-    archive_saf_id: Option<Box<str>>,
-    system: Box<str>,
-    jobs_output_directory: Option<Box<str>>,
-    category: Box<str>,
-    #[serde(rename = "productID")]
-    product_id: Option<Box<str>>,
-    product_name: Option<Box<str>>,
-    product_version: Option<Box<str>>,
-    #[getter(copy)]
-    percent_complete: i32,
-    is_callable: Option<Box<str>>,
-    #[getter(copy)]
-    contains_parallel_steps: bool,
-    #[getter(copy)]
-    scope: WorkflowScope,
-    #[getter(copy)]
-    #[serde(rename = "statusName")]
-    status: WorkflowStatus,
-    #[getter(copy)]
-    delete_completed_jobs: bool,
-    automation_status: Option<WorkflowAutomationStatus>,
-    #[getter(copy)]
-    auto_delete_on_completion: Option<bool>,
-    #[getter(copy)]
-    access: WorkflowAccess,
-    account_info: Option<Box<str>>,
-    job_statement: Option<Box<str>>,
-    template_id: Option<Box<str>>,
-    action_id: Option<Box<str>>,
-    registry_id: Option<Box<str>>,
-    parent_registry_id: Option<Box<str>>,
-    domain_id: Option<Box<str>>,
-    tenant_id: Option<Box<str>>,
-    #[serde(rename = "software-service-instance-name")]
-    software_service_instance_name: Option<Box<str>>,
-    template_name: Option<Box<str>>,
-    global_variable_group: Option<Box<str>>,
-    #[getter(copy)]
-    is_instance_variable_without_prefix: bool,
-}
-
-impl TryFromResponse for WorkflowProperties {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(value.json().await?)
-    }
-}
-
-#[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/workflow/rest/1.0/workflows/{key}")]
-pub struct WorkflowPropertiesBuilder<T>
-where
-    T: TryFromResponse,
-{
-    core: Arc<ClientCore>,
-
-    #[endpoint(path)]
-    key: Box<str>,
-    #[endpoint(skip_setter, builder_fn = build_return_data)]
-    return_data: Option<ReturnData>,
-
-    target_type: PhantomData<T>,
-}
-
-impl WorkflowPropertiesBuilder<WorkflowProperties> {
-    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::Steps),
-            target_type: PhantomData,
-        }
-    }
-
-    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::Variables),
-            target_type: PhantomData,
-        }
-    }
-}
-
-impl WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
-    pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::StepsVariables),
-            target_type: PhantomData,
-        }
-    }
-}
-
-impl WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
-    pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
-        WorkflowPropertiesBuilder {
-            core: self.core,
-            key: self.key,
-            return_data: Some(ReturnData::StepsVariables),
-            target_type: PhantomData,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct WorkflowPropertiesSteps {
-    #[getter(skip)]
-    #[serde(flatten)]
-    core: WorkflowProperties,
-    steps: Box<[WorkflowStep]>,
-}
-
-impl std::ops::Deref for WorkflowPropertiesSteps {
-    type Target = WorkflowProperties;
-
-    fn deref(&self) -> &Self::Target {
-        &self.core
-    }
-}
-
-impl TryFromResponse for WorkflowPropertiesSteps {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(value.json().await?)
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct WorkflowPropertiesStepsVariables {
-    #[getter(skip)]
-    #[serde(flatten)]
-    core: WorkflowProperties,
-    steps: Box<[WorkflowStep]>,
-    variables: Box<[WorkflowVariableInfo]>,
-}
-
-impl std::ops::Deref for WorkflowPropertiesStepsVariables {
-    type Target = WorkflowProperties;
-
-    fn deref(&self) -> &Self::Target {
-        &self.core
-    }
-}
-
-impl TryFromResponse for WorkflowPropertiesStepsVariables {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(value.json().await?)
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct WorkflowPropertiesVariables {
-    #[getter(skip)]
-    #[serde(flatten)]
-    core: WorkflowProperties,
-    variables: Box<[WorkflowVariableInfo]>,
-}
-
-impl std::ops::Deref for WorkflowPropertiesVariables {
-    type Target = WorkflowProperties;
-
-    fn deref(&self) -> &Self::Target {
-        &self.core
-    }
-}
-
-impl TryFromResponse for WorkflowPropertiesVariables {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
-        Ok(value.json().await?)
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
