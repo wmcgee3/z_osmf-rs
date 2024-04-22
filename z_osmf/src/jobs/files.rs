@@ -55,7 +55,7 @@ impl TryFromResponse for JobFileList {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files")]
-pub struct JobFileListBuilder<T>
+pub struct JobFileListBuilder<'a, T>
 where
     T: TryFromResponse,
 {
@@ -64,7 +64,7 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: JobIdentifier<'a>,
 
     target_type: PhantomData<T>,
 }
@@ -93,7 +93,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOB1".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOB1", "JOB00023");
         let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))

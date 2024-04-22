@@ -41,7 +41,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOB2".to_string(), "JOB00084".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOB2", "JOB00084");
     ///
     /// let job_feedback = zosmf
     ///     .jobs()
@@ -51,7 +51,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback> {
+    pub fn cancel<'a>(&self, identifier: JobIdentifier<'a>) -> JobFeedbackBuilder<'a, JobFeedback> {
         JobFeedbackBuilder::new(self.core.clone(), identifier, "cancel")
     }
 
@@ -61,7 +61,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00085".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00085");
     ///
     /// let job_feedback = zosmf
     ///     .jobs()
@@ -71,7 +71,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel_and_purge(&self, identifier: JobIdentifier) -> JobPurgeBuilder<JobFeedback> {
+    pub fn cancel_and_purge<'a>(
+        &self,
+        identifier: JobIdentifier<'a>,
+    ) -> JobPurgeBuilder<'a, JobFeedback> {
         JobPurgeBuilder::new(self.core.clone(), identifier)
     }
 
@@ -81,7 +84,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
     ///
     /// let job_feedback = zosmf
     ///     .jobs()
@@ -91,11 +94,11 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_class<C>(
+    pub fn change_class<'a, C>(
         &self,
-        identifier: JobIdentifier,
+        identifier: JobIdentifier<'a>,
         class: C,
-    ) -> JobChangeClassBuilder<JobFeedback>
+    ) -> JobChangeClassBuilder<'a, JobFeedback>
     where
         C: Into<char>,
     {
@@ -108,7 +111,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
     ///
     /// let job_feedback = zosmf
     ///     .jobs()
@@ -118,7 +121,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn hold(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback> {
+    pub fn hold<'a>(&self, identifier: JobIdentifier<'a>) -> JobFeedbackBuilder<'a, JobFeedback> {
         JobFeedbackBuilder::new(self.core.clone(), identifier, "hold")
     }
 
@@ -148,7 +151,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOB1".to_string(), "JOB00023".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOB1", "JOB00023");
     ///
     /// let job_files = zosmf
     ///     .jobs()
@@ -158,7 +161,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_files(&self, identifier: JobIdentifier) -> JobFileListBuilder<JobFileList> {
+    pub fn list_files<'a>(
+        &self,
+        identifier: JobIdentifier<'a>,
+    ) -> JobFileListBuilder<'a, JobFileList> {
         JobFileListBuilder::new(self.core.clone(), identifier)
     }
 
@@ -169,7 +175,7 @@ impl JobsClient {
     /// # use z_osmf::jobs::files::read::JobFileId;
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBJ".to_string(), "JOB00023".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00023");
     ///
     /// let job_file = zosmf
     ///     .jobs()
@@ -186,7 +192,7 @@ impl JobsClient {
     /// # use z_osmf::jobs::files::read::{JobFileId, RecordRange};
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBJ".to_string(), "JOB00023".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00023");
     ///
     /// let job_file = zosmf
     ///     .jobs()
@@ -203,7 +209,7 @@ impl JobsClient {
     /// # use z_osmf::jobs::files::read::JobFileId;
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBJ".to_string(), "JOB00060".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00060");
     ///
     /// let job_file = zosmf
     ///     .jobs()
@@ -213,11 +219,11 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read_file(
+    pub fn read_file<'a>(
         &self,
-        identifier: JobIdentifier,
+        identifier: JobIdentifier<'a>,
         id: JobFileId,
-    ) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
+    ) -> JobFileReadBuilder<'a, JobFileRead<Box<str>>> {
         JobFileReadBuilder::new(self.core.clone(), identifier, id)
     }
 
@@ -227,7 +233,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
+    /// let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
     ///
     /// let job_feedback = zosmf
     ///     .jobs()
@@ -237,7 +243,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn release(&self, identifier: JobIdentifier) -> JobFeedbackBuilder<JobFeedback> {
+    pub fn release<'a>(
+        &self,
+        identifier: JobIdentifier<'a>,
+    ) -> JobFeedbackBuilder<'a, JobFeedback> {
         JobFeedbackBuilder::new(self.core.clone(), identifier, "release")
     }
 
@@ -247,7 +256,7 @@ impl JobsClient {
     /// ```
     /// # use z_osmf::jobs::JobIdentifier;
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// let identifier = JobIdentifier::NameId("BLSJPRMI".to_string(), "STC00052".to_string());
+    /// let identifier = JobIdentifier::NameId("BLSJPRMI", "STC00052");
     ///
     /// let job_status = zosmf
     ///     .jobs()
@@ -258,7 +267,7 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn status(&self, identifier: JobIdentifier) -> JobStatusBuilder<JobAttributes> {
+    pub fn status<'a>(&self, identifier: JobIdentifier<'a>) -> JobStatusBuilder<'a, JobAttributes> {
         JobStatusBuilder::new(self.core.clone(), identifier)
     }
 
@@ -315,7 +324,7 @@ pub struct JobAttributes {
 
 impl JobAttributes {
     pub fn identifier(&self) -> JobIdentifier {
-        JobIdentifier::NameId(self.name.to_string(), self.id.to_string())
+        JobIdentifier::NameId(&self.name, &self.id)
     }
 }
 
@@ -398,17 +407,17 @@ impl TryFromResponse for JobAttributesStep {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub enum JobIdentifier {
-    Correlator(String),
-    NameId(String, String),
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub enum JobIdentifier<'a> {
+    Correlator(&'a str),
+    NameId(&'a str, &'a str),
 }
 
-impl std::fmt::Display for JobIdentifier {
+impl<'a> std::fmt::Display for JobIdentifier<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let items = match self {
-            JobIdentifier::Correlator(correlator) => vec![correlator.as_ref()],
-            JobIdentifier::NameId(name, id) => vec![name.as_ref(), id.as_ref()],
+            JobIdentifier::Correlator(correlator) => vec![*correlator],
+            JobIdentifier::NameId(name, id) => vec![*name, *id],
         };
 
         write!(f, "{}", items.join("/"))
@@ -474,7 +483,7 @@ mod tests {
     #[test]
     fn display_job_identifier() {
         assert_eq!(
-            format!("{}", JobIdentifier::Correlator("ABCD1234".into())),
+            format!("{}", JobIdentifier::Correlator("ABCD1234")),
             "ABCD1234"
         );
     }

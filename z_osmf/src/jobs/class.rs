@@ -12,7 +12,7 @@ use super::get_subsystem;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct JobChangeClassBuilder<T>
+pub struct JobChangeClassBuilder<'a, T>
 where
     T: TryFromResponse,
 {
@@ -21,7 +21,7 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: JobIdentifier<'a>,
     #[endpoint(builder_fn = build_body)]
     class: char,
     #[endpoint(skip_setter, skip_builder)]
@@ -30,11 +30,11 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobChangeClassBuilder<T>
+impl<'a, T> JobChangeClassBuilder<'a, T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> JobChangeClassBuilder<()> {
+    pub fn asynchronous(self) -> JobChangeClassBuilder<'a, ()> {
         JobChangeClassBuilder {
             core: self.core,
             class: self.class,
@@ -101,7 +101,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
         let job_feedback = zosmf
             .jobs()
             .change_class(identifier, 'A')
@@ -135,7 +135,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
         let job_feedback = zosmf
             .jobs()
             .change_class(identifier, 'A')

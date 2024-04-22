@@ -10,7 +10,7 @@ use super::{get_subsystem, JobIdentifier};
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = delete, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct JobPurgeBuilder<T>
+pub struct JobPurgeBuilder<'a, T>
 where
     T: TryFromResponse,
 {
@@ -19,18 +19,18 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: JobIdentifier<'a>,
     #[endpoint(skip_setter, builder_fn = build_asynchronous)]
     asynchronous: Option<bool>,
 
     target_type: PhantomData<T>,
 }
 
-impl<T> JobPurgeBuilder<T>
+impl<'a, T> JobPurgeBuilder<'a, T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> JobPurgeBuilder<()> {
+    pub fn asynchronous(self) -> JobPurgeBuilder<'a, ()> {
         JobPurgeBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -83,7 +83,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW".into(), "JOB00085".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00085");
         let job_feedback = zosmf
             .jobs()
             .cancel_and_purge(identifier)

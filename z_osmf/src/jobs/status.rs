@@ -13,7 +13,7 @@ use super::{
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct JobStatusBuilder<T>
+pub struct JobStatusBuilder<'a, T>
 where
     T: TryFromResponse,
 {
@@ -22,7 +22,7 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: JobIdentifier<'a>,
     #[endpoint(skip_setter, builder_fn = build_exec_data)]
     exec_data: Option<bool>,
     #[endpoint(skip_setter, builder_fn = build_step_data)]
@@ -33,8 +33,8 @@ where
     target_type: PhantomData<T>,
 }
 
-impl JobStatusBuilder<JobAttributes> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobAttributesExec> {
+impl<'a> JobStatusBuilder<'a, JobAttributes> {
+    pub fn exec_data(self) -> JobStatusBuilder<'a, JobAttributesExec> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -46,7 +46,7 @@ impl JobStatusBuilder<JobAttributes> {
         }
     }
 
-    pub fn step_data(self) -> JobStatusBuilder<JobAttributesStep> {
+    pub fn step_data(self) -> JobStatusBuilder<'a, JobAttributesStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -59,8 +59,8 @@ impl JobStatusBuilder<JobAttributes> {
     }
 }
 
-impl JobStatusBuilder<JobAttributesExec> {
-    pub fn step_data(self) -> JobStatusBuilder<JobAttributesExecStep> {
+impl<'a> JobStatusBuilder<'a, JobAttributesExec> {
+    pub fn step_data(self) -> JobStatusBuilder<'a, JobAttributesExecStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -73,8 +73,8 @@ impl JobStatusBuilder<JobAttributesExec> {
     }
 }
 
-impl JobStatusBuilder<JobAttributesStep> {
-    pub fn exec_data(self) -> JobStatusBuilder<JobAttributesExecStep> {
+impl<'a> JobStatusBuilder<'a, JobAttributesStep> {
+    pub fn exec_data(self) -> JobStatusBuilder<'a, JobAttributesExecStep> {
         JobStatusBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -138,7 +138,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("BLSJPRMI".into(), "STC00052".into());
+        let identifier = JobIdentifier::NameId("BLSJPRMI", "STC00052");
         let job_status = zosmf
             .jobs()
             .status(identifier)

@@ -61,7 +61,7 @@ impl TryFromResponse for JobFileRead<Bytes> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files/{id}/records")]
-pub struct JobFileReadBuilder<T>
+pub struct JobFileReadBuilder<'a, T>
 where
     T: TryFromResponse,
 {
@@ -70,7 +70,7 @@ where
     #[endpoint(path, builder_fn = build_subsystem)]
     subsystem: Option<Box<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier,
+    identifier: JobIdentifier<'a>,
     #[endpoint(path)]
     id: JobFileId,
     #[endpoint(header = "X-IBM-Record-Range")]
@@ -91,11 +91,11 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<U> JobFileReadBuilder<JobFileRead<U>>
+impl<'a, U> JobFileReadBuilder<'a, JobFileRead<U>>
 where
     JobFileRead<U>: TryFromResponse,
 {
-    pub fn binary(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
+    pub fn binary(self) -> JobFileReadBuilder<'a, JobFileRead<Bytes>> {
         JobFileReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -112,7 +112,7 @@ where
         }
     }
 
-    pub fn record(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
+    pub fn record(self) -> JobFileReadBuilder<'a, JobFileRead<Bytes>> {
         JobFileReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -129,7 +129,7 @@ where
         }
     }
 
-    pub fn text(self) -> JobFileReadBuilder<JobFileRead<Box<str>>> {
+    pub fn text(self) -> JobFileReadBuilder<'a, JobFileRead<Box<str>>> {
         JobFileReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -194,7 +194,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00023");
         let file_id = JobFileId::Id(1);
         let job_file = zosmf
             .jobs()
@@ -217,7 +217,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00023");
         let file_id = JobFileId::Id(8);
         let job_file = zosmf
             .jobs()
@@ -240,7 +240,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ".into(), "JOB00060".into());
+        let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00060");
         let file_id = JobFileId::Jcl;
 
         let job_file = zosmf
