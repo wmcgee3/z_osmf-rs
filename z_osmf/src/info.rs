@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
@@ -40,7 +39,7 @@ pub(crate) struct InfoBuilder<T>
 where
     T: TryFromResponse,
 {
-    core: Arc<ClientCore>,
+    core: ClientCore,
 
     target_type: PhantomData<T>,
 }

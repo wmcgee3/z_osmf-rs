@@ -6,8 +6,6 @@ pub mod purge;
 pub mod status;
 pub mod submit;
 
-use std::sync::Arc;
-
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
@@ -26,12 +24,12 @@ use self::submit::{JobSource, JobSubmitBuilder};
 
 #[derive(Clone, Debug)]
 pub struct JobsClient {
-    core: Arc<ClientCore>,
+    core: ClientCore,
 }
 
 /// # Jobs
 impl JobsClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: ClientCore) -> Self {
         JobsClient { core }
     }
 
@@ -51,7 +49,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel<'a>(&self, identifier: JobIdentifier<'a>) -> JobFeedbackBuilder<'a, JobFeedback> {
+    pub fn cancel<'a, I>(&self, identifier: I) -> JobFeedbackBuilder<'a, JobFeedback>
+    where
+        I: Into<JobIdentifier<'a>>,
+    {
         JobFeedbackBuilder::new(self.core.clone(), identifier, "cancel")
     }
 
@@ -71,10 +72,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn cancel_and_purge<'a>(
-        &self,
-        identifier: JobIdentifier<'a>,
-    ) -> JobPurgeBuilder<'a, JobFeedback> {
+    pub fn cancel_and_purge<'a, I>(&self, identifier: I) -> JobPurgeBuilder<'a, JobFeedback>
+    where
+        I: Into<JobIdentifier<'a>>,
+    {
         JobPurgeBuilder::new(self.core.clone(), identifier)
     }
 
@@ -94,12 +95,13 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn change_class<'a, C>(
+    pub fn change_class<'a, I, C>(
         &self,
-        identifier: JobIdentifier<'a>,
+        identifier: I,
         class: C,
     ) -> JobChangeClassBuilder<'a, JobFeedback>
     where
+        I: Into<JobIdentifier<'a>>,
         C: Into<char>,
     {
         JobChangeClassBuilder::new(self.core.clone(), identifier, class)
@@ -121,7 +123,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn hold<'a>(&self, identifier: JobIdentifier<'a>) -> JobFeedbackBuilder<'a, JobFeedback> {
+    pub fn hold<'a, I>(&self, identifier: I) -> JobFeedbackBuilder<'a, JobFeedback>
+    where
+        I: Into<JobIdentifier<'a>>,
+    {
         JobFeedbackBuilder::new(self.core.clone(), identifier, "hold")
     }
 
@@ -161,10 +166,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list_files<'a>(
-        &self,
-        identifier: JobIdentifier<'a>,
-    ) -> JobFileListBuilder<'a, JobFileList> {
+    pub fn list_files<'a, I>(&self, identifier: I) -> JobFileListBuilder<'a, JobFileList>
+    where
+        I: Into<JobIdentifier<'a>>,
+    {
         JobFileListBuilder::new(self.core.clone(), identifier)
     }
 
@@ -219,12 +224,16 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read_file<'a>(
+    pub fn read_file<'a, I, F>(
         &self,
-        identifier: JobIdentifier<'a>,
-        id: JobFileId,
-    ) -> JobFileReadBuilder<'a, JobFileRead<Box<str>>> {
-        JobFileReadBuilder::new(self.core.clone(), identifier, id)
+        identifier: I,
+        file_id: F,
+    ) -> JobFileReadBuilder<'a, JobFileRead<Box<str>>>
+    where
+        I: Into<JobIdentifier<'a>>,
+        F: Into<JobFileId>,
+    {
+        JobFileReadBuilder::new(self.core.clone(), identifier, file_id)
     }
 
     /// # Examples
@@ -243,10 +252,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn release<'a>(
-        &self,
-        identifier: JobIdentifier<'a>,
-    ) -> JobFeedbackBuilder<'a, JobFeedback> {
+    pub fn release<'a, I>(&self, identifier: I) -> JobFeedbackBuilder<'a, JobFeedback>
+    where
+        I: Into<JobIdentifier<'a>>,
+    {
         JobFeedbackBuilder::new(self.core.clone(), identifier, "release")
     }
 
@@ -267,7 +276,10 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn status<'a>(&self, identifier: JobIdentifier<'a>) -> JobStatusBuilder<'a, JobAttributes> {
+    pub fn status<'a, I>(&self, identifier: I) -> JobStatusBuilder<'a, JobAttributes>
+    where
+        I: Into<JobIdentifier<'a>>,
+    {
         JobStatusBuilder::new(self.core.clone(), identifier)
     }
 
@@ -292,8 +304,11 @@ impl JobsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submit(&self, jcl_source: JobSource) -> JobSubmitBuilder<JobAttributes> {
-        JobSubmitBuilder::new(self.core.clone(), jcl_source)
+    pub fn submit<S>(&self, source: S) -> JobSubmitBuilder<JobAttributes>
+    where
+        S: Into<JobSource>,
+    {
+        JobSubmitBuilder::new(self.core.clone(), source)
     }
 }
 
@@ -309,6 +324,7 @@ pub struct JobAttributes {
     #[getter(copy)]
     status: Option<JobStatus>,
     #[getter(copy)]
+    #[serde(rename = "type")]
     job_type: Option<JobType>,
     class: Box<str>,
     #[serde(rename = "retcode")]

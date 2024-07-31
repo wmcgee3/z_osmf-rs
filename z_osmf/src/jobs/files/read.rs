@@ -26,6 +26,12 @@ impl std::fmt::Display for JobFileId {
     }
 }
 
+impl From<i32> for JobFileId {
+    fn from(value: i32) -> Self {
+        JobFileId::Id(value)
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct JobFileRead<T> {
     data: T,

@@ -41,7 +41,7 @@ where
     definition_file_system: Option<Box<str>>,
     variable_input_file: Option<Box<str>>,
     variables: Option<Box<[WorkflowVariableOverride]>>,
-    resolve_global_conflict_by_using: Option<WorkflowVariableResolveConflict>,
+    resolve_global_conflict_by_using: Option<WorkflowCreateResolveVariableConflict>,
     archive_saf_id: Option<Box<str>>,
     comments: Option<Box<str>>,
     assign_to_owner: Option<bool>,
@@ -76,7 +76,7 @@ impl WorkflowVariableOverride {
     Clone, Copy, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum WorkflowVariableResolveConflict {
+pub enum WorkflowCreateResolveVariableConflict {
     #[default]
     Global,
     Input,
@@ -94,7 +94,7 @@ struct RequestJson<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     variables: Option<&'a [WorkflowVariableOverride]>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    resolve_global_conflict_by_using: Option<&'a WorkflowVariableResolveConflict>,
+    resolve_global_conflict_by_using: Option<&'a WorkflowCreateResolveVariableConflict>,
     system: &'a str,
     owner: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]

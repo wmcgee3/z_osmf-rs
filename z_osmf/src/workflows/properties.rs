@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::jobs::{JobStatus, JobType};
 use crate::ClientCore;
 
-use super::{WorkflowAccess, WorkflowStatus};
+use super::{ReturnData, WorkflowAccess, WorkflowStatus};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +21,7 @@ pub struct WorkflowAutomationStatus {
     current_step_name: Option<Box<str>>,
     current_step_number: Option<Box<str>>,
     current_step_title: Option<Box<str>>,
+    #[serde(rename = "messageID")]
     message_id: Option<Box<str>>,
     message_text: Option<Box<str>>,
 }
@@ -82,6 +83,7 @@ pub struct WorkflowProperties {
     global_variable_group: Option<Box<str>>,
     #[getter(copy)]
     is_instance_variable_without_prefix: bool,
+    software_type: Option<Box<str>>,
 }
 
 impl TryFromResponse for WorkflowProperties {
@@ -496,13 +498,6 @@ pub enum WorkflowVariableType {
     Date,
     Time,
     Array,
-}
-
-#[derive(Clone, Debug)]
-enum ReturnData {
-    Steps,
-    StepsVariables,
-    Variables,
 }
 
 fn build_return_data<T>(

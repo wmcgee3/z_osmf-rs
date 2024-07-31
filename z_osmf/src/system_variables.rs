@@ -6,8 +6,6 @@ pub mod symbols;
 mod delete;
 mod import;
 
-use std::sync::Arc;
-
 use crate::{ClientCore, Error};
 
 use self::create::{NewSystemVariable, VariableCreateBuilder};
@@ -19,11 +17,11 @@ use self::symbols::{SystemSymbolList, SystemSymbolListBuilder};
 
 #[derive(Clone, Debug)]
 pub struct SystemVariablesClient {
-    core: Arc<ClientCore>,
+    core: ClientCore,
 }
 
 impl SystemVariablesClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: ClientCore) -> Self {
         SystemVariablesClient { core }
     }
 
@@ -39,19 +37,20 @@ impl SystemVariablesClient {
     /// ];
     ///
     /// zosmf.system_variables()
-    ///     .create("TESTPLEX", "TESTNODE", new_variables)
+    ///     .create("TESTPLEX", "TESTNODE", &new_variables)
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn create<T>(
+    pub async fn create<P, S>(
         &self,
-        sysplex: &str,
-        system: &str,
-        new_variables: T,
+        sysplex: P,
+        system: S,
+        new_variables: &[NewSystemVariable],
     ) -> Result<(), Error>
     where
-        T: Into<Box<[NewSystemVariable]>>,
+        P: std::fmt::Display,
+        S: std::fmt::Display,
     {
         VariableCreateBuilder::new(self.core.clone(), sysplex, system, new_variables)
             .build()
@@ -64,25 +63,32 @@ impl SystemVariablesClient {
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let variable_names = [
-    ///     "var1".to_string(),
-    ///     "var2".to_string(),
+    ///     "var1",
+    ///     "var2",
     /// ];
     ///
     /// zosmf.system_variables()
-    ///     .delete("TESTPLEX", "TESTNODE", variable_names)
+    ///     .delete("TESTPLEX", "TESTNODE", &variable_names)
     ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn delete<T>(
+    pub async fn delete<P, S, N>(
         &self,
-        sysplex: &str,
-        system: &str,
-        variable_names: T,
+        sysplex: P,
+        system: S,
+        variable_names: &[N],
     ) -> Result<(), Error>
     where
-        T: Into<Box<[String]>>,
+        P: std::fmt::Display,
+        S: std::fmt::Display,
+        N: std::fmt::Display,
     {
+        let variable_names = variable_names
+            .iter()
+            .map(|name| name.to_string())
+            .collect::<Box<[_]>>();
+
         VariableDeleteBuilder::new(self.core.clone(), sysplex, system, variable_names)
             .build()
             .await
@@ -101,12 +107,12 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn export(
-        &self,
-        sysplex: &str,
-        system: &str,
-        path: &str,
-    ) -> SystemVariableExportBuilder<()> {
+    pub fn export<X, S, P>(&self, sysplex: X, system: S, path: P) -> SystemVariableExportBuilder<()>
+    where
+        X: std::fmt::Display,
+        S: std::fmt::Display,
+        P: std::fmt::Display,
+    {
         SystemVariableExportBuilder::new(self.core.clone(), sysplex, system, path)
     }
 
@@ -121,7 +127,12 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn import(&self, sysplex: &str, system: &str, path: &str) -> Result<(), Error> {
+    pub async fn import<X, S, P>(&self, sysplex: X, system: S, path: P) -> Result<(), Error>
+    where
+        X: std::fmt::Display,
+        S: std::fmt::Display,
+        P: std::fmt::Display,
+    {
         VariableImportBuilder::new(self.core.clone(), sysplex, system, path)
             .build()
             .await

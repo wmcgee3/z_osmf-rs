@@ -10,10 +10,8 @@ pub mod recall;
 pub mod rename;
 pub mod write;
 
-use std::sync::Arc;
-
 use reqwest::header::HeaderValue;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::error::Error;
 use crate::restfiles::Etag;
@@ -33,12 +31,12 @@ use self::write::DatasetWriteBuilder;
 
 #[derive(Clone, Debug)]
 pub struct DatasetsClient {
-    core: Arc<ClientCore>,
+    core: ClientCore,
 }
 
 /// # Datasets
 impl DatasetsClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: ClientCore) -> Self {
         DatasetsClient { core }
     }
 
@@ -69,7 +67,11 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> DatasetCopyBuilder<String> {
+    pub fn copy<F, T>(&self, from_dataset: F, to_dataset: T) -> DatasetCopyBuilder<String>
+    where
+        F: std::fmt::Display,
+        T: std::fmt::Display,
+    {
         DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
@@ -99,13 +101,17 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> DatasetCopyFileBuilder<String> {
+    pub fn copy_file<F, T>(&self, from_path: F, to_dataset: T) -> DatasetCopyFileBuilder<String>
+    where
+        F: std::fmt::Display,
+        T: std::fmt::Display,
+    {
         DatasetCopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
     /// # Examples
     ///
-    /// Creating a sequential dataset:
+    /// Create a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_dataset = zosmf
@@ -127,7 +133,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Creating a partitioned dataset (PDS):
+    /// Create a partitioned dataset (PDS):
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pds = zosmf
@@ -150,7 +156,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Creating a library / partitioned dataset extended (PDS-E):
+    /// Create a library / partitioned dataset extended (PDS-E):
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pdse = zosmf
@@ -173,13 +179,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset: &str) -> DatasetCreateBuilder<String> {
+    pub fn create<D>(&self, dataset: D) -> DatasetCreateBuilder<String>
+    where
+        D: std::fmt::Display,
+    {
         DatasetCreateBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Deleting a sequential dataset:
+    /// Delete a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_dataset = zosmf
@@ -191,7 +200,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Deleting an uncataloged sequential dataset:
+    /// Delete an uncataloged sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged = zosmf
@@ -204,7 +213,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Deleting a PDS member:
+    /// Delete a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_member = zosmf
@@ -217,7 +226,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Deleting an uncataloged PDS member:
+    /// Delete an uncataloged PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged_member = zosmf
@@ -230,13 +239,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset: &str) -> DatasetDeleteBuilder<String> {
+    pub fn delete<D>(&self, dataset: D) -> DatasetDeleteBuilder<String>
+    where
+        D: std::fmt::Display,
+    {
         DatasetDeleteBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Listing datasets:
+    /// List datasets:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets = zosmf
@@ -248,7 +260,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Listing the base attributes of uncataloged datasets:
+    /// List the base attributes of uncataloged datasets:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets_base = zosmf
@@ -261,13 +273,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, level: &str) -> DatasetListBuilder<DatasetList<DatasetAttributesName>> {
+    pub fn list<L>(&self, level: L) -> DatasetListBuilder<DatasetList<DatasetAttributesName>>
+    where
+        L: std::fmt::Display,
+    {
         DatasetListBuilder::new(self.core.clone(), level)
     }
 
     /// # Examples
     ///
-    /// Listing PDS members:
+    /// List PDS members:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members = zosmf
@@ -279,7 +294,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Listing the base attributes of PDS members:
+    /// List the base attributes of PDS members:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members_base = zosmf
@@ -291,7 +306,10 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn members(&self, dataset: &str) -> MemberListBuilder<MemberList<MemberAttributesName>> {
+    pub fn members<D>(&self, dataset: D) -> MemberListBuilder<MemberList<MemberAttributesName>>
+    where
+        D: std::fmt::Display,
+    {
         MemberListBuilder::new(self.core.clone(), dataset)
     }
 
@@ -308,13 +326,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn migrate(&self, dataset: &str) -> DatasetMigrateBuilder<Etag> {
+    pub fn migrate<D>(&self, dataset: D) -> DatasetMigrateBuilder<Etag>
+    where
+        D: std::fmt::Display,
+    {
         DatasetMigrateBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Reading a PDS member:
+    /// Read a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_member = zosmf
@@ -327,7 +348,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Reading a sequential dataset:
+    /// Read a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_dataset = zosmf
@@ -338,7 +359,10 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset: &str) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
+    pub fn read<D>(&self, dataset: D) -> DatasetReadBuilder<DatasetRead<Box<str>>>
+    where
+        D: std::fmt::Display,
+    {
         DatasetReadBuilder::new(self.core.clone(), dataset)
     }
 
@@ -355,13 +379,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn recall(&self, dataset: &str) -> DatasetRecallBuilder<String> {
+    pub fn recall<D>(&self, dataset: D) -> DatasetRecallBuilder<String>
+    where
+        D: std::fmt::Display,
+    {
         DatasetRecallBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Renaming MY.OLD.DSN to MY.NEW.DSN:
+    /// Rename MY.OLD.DSN to MY.NEW.DSN:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let rename_dataset = zosmf
@@ -372,16 +399,20 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> DatasetRenameBuilder<String> {
+    pub fn rename<F, T>(&self, from_dataset: F, to_dataset: T) -> DatasetRenameBuilder<String>
+    where
+        F: std::fmt::Display,
+        T: std::fmt::Display,
+    {
         DatasetRenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// # Examples
     ///
-    /// Writing to a PDS member:
+    /// Write to a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # let string_data = "".to_string();
+    /// # let string_data = "";
     /// let write_dataset = zosmf
     ///     .datasets()
     ///     .write("SYS1.PARMLIB")
@@ -393,9 +424,20 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset: &str) -> DatasetWriteBuilder<Etag> {
+    pub fn write<D>(&self, dataset: D) -> DatasetWriteBuilder<Etag>
+    where
+        D: std::fmt::Display,
+    {
         DatasetWriteBuilder::new(self.core.clone(), dataset)
     }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(untagged)]
+pub enum Enigma<T> {
+    #[serde(deserialize_with = "de_unknown", serialize_with = "ser_unknown")]
+    Unknown,
+    Known(T),
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -456,6 +498,26 @@ impl From<DatasetMigratedRecall> for HeaderValue {
         .try_into()
         .unwrap()
     }
+}
+
+#[derive(Deserialize, Serialize)]
+enum Unknown {
+    #[serde(rename = "?")]
+    Unknown,
+}
+
+fn de_unknown<'de, D>(deserializer: D) -> Result<(), D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Unknown::deserialize(deserializer).map(|_| ())
+}
+
+fn ser_unknown<S>(serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    Unknown::Unknown.serialize(serializer)
 }
 
 fn de_optional_y_n<'de, D>(deserializer: D) -> core::result::Result<Option<bool>, D::Error>

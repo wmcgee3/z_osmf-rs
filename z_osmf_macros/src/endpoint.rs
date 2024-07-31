@@ -73,10 +73,17 @@ impl Endpoint {
             .map(|f| {
                 let EndpointField { ident, ty, .. } = f;
 
-                (
-                    quote! { #ident: impl Into<#ty> },
-                    quote! { #ident: #ident.into() },
-                )
+                if ty.to_token_stream().to_string() == "Box < str >" {
+                    (
+                        quote! { #ident: impl std::fmt::Display },
+                        quote! { #ident: #ident.to_string().into() },
+                    )
+                } else {
+                    (
+                        quote! { #ident: impl Into<#ty> },
+                        quote! { #ident: #ident.into() },
+                    )
+                }
             })
             .unzip();
 
@@ -123,13 +130,9 @@ impl Endpoint {
 
                 #( #request_builders )*
 
-                if let Ok(lock) = &self.core.cookie.read() {
-                    match lock.as_ref() {
-                        Some(cookie) => {
-                            request_builder = request_builder.header("Cookie", cookie);
-                        }
-                        _ => {}
-                    }
+                let read = self.core.token.read().map_err(|err| crate::Error::Custom(err.to_string().into()))?;
+                if let Some(ref token) = *read {
+                    request_builder = request_builder.headers(token.into());
                 }
 
                 Ok(request_builder.build()?)
@@ -251,106 +254,67 @@ impl EndpointField {
 
     fn setter(&self) -> Option<TokenStream> {
         match self {
-            EndpointField { ty, .. } if !is_option(ty) => None,
             EndpointField {
-                skip_setter: true, ..
-            } => None,
+                ty, skip_setter, ..
+            } if !is_option(ty) | skip_setter => None,
             EndpointField {
-                setter_fn: Some(setter_fn),
+                setter_fn,
                 ident: Some(ident),
                 ty,
                 ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    #setter_fn(self, Some(value.to_string().into()))
-                }
-            }),
-            EndpointField {
-                setter_fn: Some(setter_fn),
-                ident: Some(ident),
-                ty,
-                ..
-            } if ty.to_token_stream().to_string() == "Box < str >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    #setter_fn(self, value.to_string().into())
-                }
-            }),
-            EndpointField {
-                setter_fn: Some(setter_fn),
-                ident: Some(ident),
-                ty,
-                ..
-            } if is_option(ty) => {
-                let ty = extract_optional_type(ty).unwrap();
+            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => {
+                let body = if let Some(setter_fn) = setter_fn {
+                    quote! {
+                        #setter_fn(self, value)
+                    }
+                } else {
+                    quote! {
+                        let mut new = self;
+                        new.#ident = Some(value.to_string().into());
+
+                        new
+                    }
+                };
 
                 Some(quote! {
-                    pub fn #ident(self, value: impl Into<#ty>) -> Self {
-                        #setter_fn(self, Some(value.into()))
+                    pub fn #ident<V>(self, value: V) -> Self
+                    where
+                        V: std::fmt::Display,
+                    {
+                        #body
                     }
                 })
             }
             EndpointField {
-                setter_fn: Some(setter_fn),
+                setter_fn,
                 ident: Some(ident),
                 ty,
                 ..
-            } => Some(quote! {
-                pub fn #ident(self, value: impl Into<#ty>) -> Self {
-                    #setter_fn(self, value.into())
-                }
-            }),
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    let mut new = self;
-                    new.#ident = Some(value.to_string().into());
-
-                    new
-                }
-            }),
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } if ty.to_token_stream().to_string() == "Box < str >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    let mut new = self;
-                    new.#ident = value.to_string().into();
-
-                    new
-                }
-            }),
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } if is_option(ty) => {
+            } => {
                 let ty = extract_optional_type(ty).unwrap();
 
-                Some(quote! {
-                    pub fn #ident(self, value: impl Into<#ty>) -> Self {
+                let body = if let Some(setter_fn) = setter_fn {
+                    quote! {
+                        #setter_fn(self, Some(value.into()))
+                    }
+                } else {
+                    quote! {
                         let mut new = self;
                         new.#ident = Some(value.into());
 
                         new
                     }
+                };
+
+                Some(quote! {
+                    pub fn #ident<V>(self, value: V) -> Self
+                    where
+                        V: Into<#ty>,
+                    {
+                        #body
+                    }
                 })
             }
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } => Some(quote! {
-                pub fn #ident(self, value: impl Into<#ty>) -> Self {
-                    let mut new = self;
-                    new.#ident = value.into();
-
-                    new
-                }
-            }),
             _ => None,
         }
     }

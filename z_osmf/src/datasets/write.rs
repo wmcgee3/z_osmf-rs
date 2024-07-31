@@ -71,7 +71,7 @@ where
 
     pub fn text<S>(self, data: S) -> Self
     where
-        S: ToString,
+        S: std::fmt::Display,
     {
         DatasetWriteBuilder {
             data: Some(Data::Text(data.to_string())),

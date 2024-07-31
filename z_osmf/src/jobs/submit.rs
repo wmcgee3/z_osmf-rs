@@ -96,11 +96,6 @@ where
 }
 
 #[derive(Serialize)]
-struct NotificationOptions {
-    events: Vec<&'static str>,
-}
-
-#[derive(Serialize)]
 struct Source<'a> {
     file: &'a str,
 }

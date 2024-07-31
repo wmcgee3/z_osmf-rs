@@ -29,14 +29,15 @@ workflows = ["jobs"]
 
 
 [dependencies]
-bytes = { version = "1.5", features = ["serde"] }
+bytes = { version = "1.6", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
 thiserror = "1.0"
-tokio = { version = "1.32", default-features = false }
+tokio = { version = "1.38", default-features = false }
 
-z_osmf_macros = { version = "0.10", path = "../z_osmf_macros" }
+z_osmf_macros = { version = "0.13", path = "../z_osmf_macros" }
 
 
 [dev-dependencies]
@@ -46,5 +47,5 @@ http = "1.1"
 rand = "0.8"
 reqwest = { version = "0.12", features = ["rustls-tls"] }
 serde_json = "1.0"
-tokio = { version = "1.32", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.38", features = ["macros", "rt-multi-thread"] }
 z_osmf = { path = ".", features = ["full"] }
