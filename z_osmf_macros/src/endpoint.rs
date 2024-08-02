@@ -126,11 +126,11 @@ impl Endpoint {
 
                 let mut request_builder = self.core
                     .client
-                    .#method(format!("{}{}", self.core.base_url, path));
+                    .#method(format!("{}{}", self.core.url, path));
 
                 #( #request_builders )*
 
-                let read = self.core.token.read().map_err(|err| crate::Error::Custom(err.to_string().into()))?;
+                let read = self.core.token.read().map_err(|err| crate::Error::RwLockPoisonError(err.to_string()))?;
                 if let Some(ref token) = *read {
                     request_builder = request_builder.headers(token.into());
                 }

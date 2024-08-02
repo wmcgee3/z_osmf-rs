@@ -32,7 +32,7 @@ impl std::str::FromStr for FileTag {
             "b" => Some(FileTagType::Binary),
             "m" => Some(FileTagType::Mixed),
             "t" => Some(FileTagType::Text),
-            _ => return Err(Error::Custom("invalid file tag string".into())),
+            c => return Err(Error::InvalidValue(format!("invalid file tag: {}", c))),
         };
         let code_set = match s[2..14].trim_end() {
             "untagged" => None,

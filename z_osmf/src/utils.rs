@@ -29,37 +29,18 @@ impl FromStr for RecordRange {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if let Some(s) = s.strip_prefix('-') {
-            return Ok(RecordRange::StartEnd(
-                None,
-                s.parse()
-                    .map_err(|_| Error::Custom("invalid end value".into()))?,
-            ));
+            return Ok(RecordRange::StartEnd(None, s.parse()?));
         }
 
         if let Some((start, end)) = s.split_once('-') {
-            return Ok(RecordRange::StartEnd(
-                Some(
-                    start
-                        .parse()
-                        .map_err(|_| Error::Custom("invalid start value".into()))?,
-                ),
-                end.parse()
-                    .map_err(|_| Error::Custom("invalid end value".into()))?,
-            ));
+            return Ok(RecordRange::StartEnd(Some(start.parse()?), end.parse()?));
         }
 
         if let Some((start, count)) = s.split_once(',') {
-            return Ok(RecordRange::StartCount(
-                start
-                    .parse()
-                    .map_err(|_| Error::Custom("invalid start value".into()))?,
-                count
-                    .parse()
-                    .map_err(|_| Error::Custom("invalid end value".into()))?,
-            ));
+            return Ok(RecordRange::StartCount(start.parse()?, count.parse()?));
         }
 
-        Err(Error::Custom("failed to get RecordRange from str".into()))
+        Err(Error::RecordRange(s.to_string()))
     }
 }
 

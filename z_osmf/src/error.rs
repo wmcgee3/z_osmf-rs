@@ -3,40 +3,44 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("missing Etag")]
-    Etag,
+    #[error("data serialization failed: {0}")]
+    Fmt(#[from] std::fmt::Error),
+    #[error("invalid response format: {0:?}")]
+    InvalidFormat(Box<[Box<str>]>),
+    #[error("invalid value: {0}")]
+    InvalidValue(String),
+    #[error("missing etag")]
+    NoEtag,
     #[error("missing transaction id")]
-    TransactionId,
+    NoTransactionId,
+    #[error("failed to parse int: {0}")]
+    NumParseInt(#[from] core::num::ParseIntError),
+    #[error("invalid record range: {0}")]
+    RecordRange(String),
     #[error("API call failed: {0}")]
-    Api(#[from] reqwest::Error),
-    #[error("deserialization of data failed")]
-    Deserialization(#[from] serde::de::value::Error),
-    #[error("serialization of data failed")]
-    Serialization(#[from] std::fmt::Error),
-    #[error("failed to convert to string")]
-    ToString(#[from] reqwest::header::ToStrError),
-    #[error(
-        "error response from z/OSMF:
-{url}
-{status}
-category: {category}
-return code: {return_code}
-reason: {reason}
-message: {message}
-details: {details:#?}
-"
-    )]
-    Zosmf {
-        url: Box<reqwest::Url>,
+    Reqwest(#[from] reqwest::Error),
+    #[error("poisoned read-write lock: {0}")]
+    RwLockPoisonError(String),
+    #[error("data deserialization failed: {0}")]
+    SerdeDe(#[from] serde::de::value::Error),
+    #[error("header value to string failed: {0}")]
+    ReqwestHeaderToString(#[from] reqwest::header::ToStrError),
+    #[error("z/OSMF error response: {0:?}")]
+    ZOsmf(ZOsmfError),
+}
+
+#[derive(Debug)]
+pub enum ZOsmfError {
+    Json {
+        url: String,
         status: reqwest::StatusCode,
         category: i32,
         return_code: i32,
         reason: i32,
-        message: Box<str>,
-        details: Option<Box<[Box<str>]>>,
+        message: String,
+        details: Option<Vec<String>>,
     },
-    #[error("an error ocurred: {0}")]
-    Custom(Box<str>),
+    Text(String),
 }
 
 pub trait CheckStatus {
@@ -50,17 +54,19 @@ impl CheckStatus for reqwest::Response {
         match self.error_for_status_ref() {
             Ok(_) => {}
             Err(err) => {
-                let url = self.url().clone().into();
+                let url = self.url().to_string();
                 let status = self.status();
+                let text = self.text().await.map_err(|_| Error::Reqwest(err))?;
                 let ErrorJson {
                     category,
                     return_code,
                     reason,
                     message,
                     details,
-                } = self.json().await.map_err(|_| Error::Api(err))?;
+                } = serde_json::from_str(&text)
+                    .map_err(|_| Error::ZOsmf(ZOsmfError::Text(text)))?;
 
-                return Err(Error::Zosmf {
+                return Err(Error::ZOsmf(ZOsmfError::Json {
                     url,
                     status,
                     category,
@@ -68,7 +74,7 @@ impl CheckStatus for reqwest::Response {
                     reason,
                     message,
                     details,
-                });
+                }));
             }
         }
 
@@ -76,13 +82,13 @@ impl CheckStatus for reqwest::Response {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct ErrorJson {
     category: i32,
     #[serde(rename = "rc")]
     return_code: i32,
     reason: i32,
-    message: Box<str>,
+    message: String,
     #[serde(default)]
-    details: Option<Box<[Box<str>]>>,
+    details: Option<Vec<String>>,
 }

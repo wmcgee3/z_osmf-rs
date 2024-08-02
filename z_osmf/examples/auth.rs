@@ -5,6 +5,7 @@ async fn main() -> anyhow::Result<()> {
     let password = dotenvy::var("ZOSMF_PASSWORD")?;
 
     let client = reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(10))
         .danger_accept_invalid_certs(true)
         .build()?;
 
