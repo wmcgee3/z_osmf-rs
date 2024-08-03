@@ -10,7 +10,7 @@ use definition::{WorkflowDefinition, WorkflowDefinitionBuilder};
 use delete::WorkflowType;
 use serde::{Deserialize, Serialize};
 
-use crate::{ClientCore, Error};
+use crate::{ClientCore, Result};
 
 use self::cancel::{WorkflowCancel, WorkflowCancelBuilder};
 use self::create::{WorkflowCreate, WorkflowCreateBuilder};
@@ -51,13 +51,13 @@ impl WorkflowsClient {
         WorkflowStartBuilder::new(self.core.clone(), key)
     }
 
-    pub async fn cancel(&self, key: &str) -> Result<WorkflowCancel, Error> {
+    pub async fn cancel(&self, key: &str) -> Result<WorkflowCancel> {
         WorkflowCancelBuilder::new(self.core.clone(), key)
             .build()
             .await
     }
 
-    pub async fn delete(&self, key: &str) -> Result<(), Error> {
+    pub async fn delete(&self, key: &str) -> Result<()> {
         WorkflowDeleteBuilder::new(self.core.clone(), WorkflowType::Workflows, key)
             .build()
             .await
@@ -73,7 +73,7 @@ impl WorkflowsClient {
 
     pub fn properties_archived(&self) {}
 
-    pub async fn delete_archived(&self, key: &str) -> Result<(), Error> {
+    pub async fn delete_archived(&self, key: &str) -> Result<()> {
         WorkflowDeleteBuilder::new(self.core.clone(), WorkflowType::ArchivedWorkflows, key)
             .build()
             .await

@@ -6,9 +6,8 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
 use crate::restfiles::get_transaction_id;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileAttributes {
@@ -45,7 +44,7 @@ where
     T: std::fmt::Display + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -70,7 +69,7 @@ where
     T: std::fmt::Display + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -97,7 +96,7 @@ pub struct FileList {
 }
 
 impl TryFromResponse for FileList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let transaction_id = get_transaction_id(&value)?;
 
         let ResponseJson {
@@ -178,7 +177,7 @@ impl std::fmt::Display for FileSize {
 impl std::str::FromStr for FileSize {
     type Err = std::num::ParseIntError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let v = match s {
             s if s.ends_with('K') => FileSize::Kilobytes(u32::from_str(s.trim_end_matches('K'))?),
             s if s.ends_with('M') => FileSize::Megabytes(u32::from_str(s.trim_end_matches('M'))?),

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Info {
@@ -18,7 +18,7 @@ pub struct Info {
 }
 
 impl TryFromResponse for Info {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }

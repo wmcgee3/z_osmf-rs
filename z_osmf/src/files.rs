@@ -16,7 +16,7 @@ pub mod write;
 use serde::{Deserialize, Serialize};
 
 use crate::restfiles::Etag;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use self::copy::FileCopyBuilder;
 use self::copy_dataset::FileCopyDatasetBuilder;
@@ -282,7 +282,7 @@ impl FilesClient {
     pub async fn get_extra_attributes<P>(
         &self,
         path: P,
-    ) -> Result<FileExtraAttributeList, crate::error::Error>
+    ) -> Result<FileExtraAttributeList>
     where
         P: std::fmt::Display,
     {
@@ -578,7 +578,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn unlink<P>(&self, path: P) -> Result<String, crate::error::Error>
+    pub async fn unlink<P>(&self, path: P) -> Result<String>
     where
         P: std::fmt::Display,
     {

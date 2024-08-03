@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum SystemId {
@@ -39,7 +39,7 @@ pub struct SystemVariableList {
 }
 
 impl TryFromResponse for SystemVariableList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let ResponseJson { variables } = value.json().await?;
 
         Ok(SystemVariableList { inner: variables })

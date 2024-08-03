@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::ReturnData;
 
@@ -40,7 +40,7 @@ pub struct WorkflowDefinition {
 }
 
 impl TryFromResponse for WorkflowDefinition {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -62,7 +62,7 @@ impl std::ops::Deref for WorkflowDefinitionSteps {
 }
 
 impl TryFromResponse for WorkflowDefinitionSteps {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -84,7 +84,7 @@ impl std::ops::Deref for WorkflowDefinitionStepsVariables {
 }
 
 impl TryFromResponse for WorkflowDefinitionStepsVariables {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -106,7 +106,7 @@ impl std::ops::Deref for WorkflowDefinitionVariables {
 }
 
 impl TryFromResponse for WorkflowDefinitionVariables {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let text: String = value.text().await?;
         std::fs::write("output.json", &text).unwrap();
 

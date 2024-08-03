@@ -8,7 +8,7 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::jobs::{get_subsystem, JobIdentifier};
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -46,7 +46,7 @@ pub struct JobFileList {
 }
 
 impl TryFromResponse for JobFileList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(JobFileList {
             items: value.json().await?,
         })

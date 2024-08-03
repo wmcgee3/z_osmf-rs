@@ -9,7 +9,7 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::restfiles::get_transaction_id;
-use crate::{ClientCore, Error};
+use crate::{ClientCore, Error, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileExtraAttributeList {
@@ -22,7 +22,7 @@ pub struct FileExtraAttributeList {
 }
 
 impl TryFromResponse for FileExtraAttributeList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let transaction_id = get_transaction_id(&value)?;
 
         let json: ResponseJson = value.json().await?;

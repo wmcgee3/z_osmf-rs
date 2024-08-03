@@ -36,7 +36,7 @@ impl From<Endpoint> for proc_macro::TokenStream {
 
                 #get_response_fn
 
-                pub async fn build(self) -> Result<T, crate::error::Error> {
+                pub async fn build(self) -> crate::Result<T> {
                     use crate::convert::TryIntoTarget;
 
                     self.get_response().await?.try_into_target().await
@@ -117,7 +117,7 @@ impl Endpoint {
         let request_builders: Vec<_> = fields.iter().map(|f| f.request_builder()).collect();
 
         quote! {
-            fn get_request(&self) -> Result<reqwest::Request, crate::error::Error> {
+            fn get_request(&self) -> crate::Result<reqwest::Request> {
                 let path = {
                     #( #path_builders )*
 
@@ -138,7 +138,7 @@ impl Endpoint {
                 Ok(request_builder.build()?)
             }
 
-            async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
+            async fn get_response(&self) -> crate::Result<reqwest::Response> {
                 use crate::error::CheckStatus;
 
                 let request = self.get_request()?;

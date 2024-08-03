@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowCancel {
@@ -21,7 +21,7 @@ impl std::ops::Deref for WorkflowCancel {
 }
 
 impl TryFromResponse for WorkflowCancel {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let ResponseJson { workflow_name } = value.json().await?;
 
         Ok(WorkflowCancel {

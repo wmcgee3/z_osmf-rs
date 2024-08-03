@@ -9,9 +9,8 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
 use crate::restfiles::get_transaction_id;
-use crate::ClientCore;
+use crate::{ClientCore, Error, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileTag {
@@ -24,9 +23,9 @@ pub struct FileTag {
 }
 
 impl std::str::FromStr for FileTag {
-    type Err = crate::error::Error;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let tag_type = match &s[0..1] {
             "-" => None,
             "b" => Some(FileTagType::Binary),
@@ -63,14 +62,14 @@ pub struct FileTagList {
 }
 
 impl TryFromResponse for FileTagList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let transaction_id = get_transaction_id(&value)?;
 
         let FileTagResponseJson { stdout } = value.json().await?;
         let tags = stdout
             .iter()
             .map(|line| FileTag::from_str(line))
-            .collect::<Result<Box<[FileTag]>, Error>>()?;
+            .collect::<Result<Box<[FileTag]>>>()?;
 
         Ok(FileTagList {
             tags,

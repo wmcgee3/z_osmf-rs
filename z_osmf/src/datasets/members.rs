@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::{de_optional_y_n, ser_optional_y_n, DatasetMigratedRecall};
 
@@ -89,7 +88,7 @@ impl<T> TryFromResponse for MemberList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let ResponseJson {
             items,
             returned_rows,

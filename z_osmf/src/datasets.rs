@@ -13,9 +13,8 @@ pub mod write;
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::error::Error;
 use crate::restfiles::Etag;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use self::copy::DatasetCopyBuilder;
 use self::copy_file::DatasetCopyFileBuilder;
@@ -506,21 +505,21 @@ enum Unknown {
     Unknown,
 }
 
-fn de_unknown<'de, D>(deserializer: D) -> Result<(), D::Error>
+fn de_unknown<'de, D>(deserializer: D) -> std::result::Result<(), D::Error>
 where
     D: Deserializer<'de>,
 {
     Unknown::deserialize(deserializer).map(|_| ())
 }
 
-fn ser_unknown<S>(serializer: S) -> Result<S::Ok, S::Error>
+fn ser_unknown<S>(serializer: S) -> std::result::Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
     Unknown::Unknown.serialize(serializer)
 }
 
-fn de_optional_y_n<'de, D>(deserializer: D) -> core::result::Result<Option<bool>, D::Error>
+fn de_optional_y_n<'de, D>(deserializer: D) -> std::result::Result<Option<bool>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -540,7 +539,7 @@ fn get_member(value: &Option<Box<str>>) -> String {
         .unwrap_or("".to_string())
 }
 
-fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
+fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
@@ -556,7 +555,7 @@ fn get_volume(value: &Option<Box<str>>) -> String {
         .unwrap_or("".to_string())
 }
 
-fn ser_optional_y_n<S>(v: &Option<bool>, serializer: S) -> core::result::Result<S::Ok, S::Error>
+fn ser_optional_y_n<S>(v: &Option<bool>, serializer: S) -> std::result::Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {

@@ -6,7 +6,7 @@ use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::jobs::{JobStatus, JobType};
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::{ReturnData, WorkflowAccess, WorkflowStatus};
 
@@ -87,7 +87,7 @@ pub struct WorkflowProperties {
 }
 
 impl TryFromResponse for WorkflowProperties {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -167,7 +167,7 @@ impl std::ops::Deref for WorkflowPropertiesSteps {
 }
 
 impl TryFromResponse for WorkflowPropertiesSteps {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -190,7 +190,7 @@ impl std::ops::Deref for WorkflowPropertiesStepsVariables {
 }
 
 impl TryFromResponse for WorkflowPropertiesStepsVariables {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -212,7 +212,7 @@ impl std::ops::Deref for WorkflowPropertiesVariables {
 }
 
 impl TryFromResponse for WorkflowPropertiesVariables {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }

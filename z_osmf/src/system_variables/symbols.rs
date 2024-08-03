@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SystemSymbol {
@@ -19,7 +19,7 @@ pub struct SystemSymbolList {
 }
 
 impl TryFromResponse for SystemSymbolList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let ResponseJson { symbols } = value.json().await?;
 
         Ok(SystemSymbolList { inner: symbols })

@@ -7,9 +7,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
 use crate::restfiles::get_transaction_id;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::{de_optional_y_n, ser_optional_y_n};
 
@@ -109,7 +108,7 @@ impl<T> TryFromResponse for DatasetList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let transaction_id = get_transaction_id(&value)?;
 
         let ResponseJson {
@@ -208,7 +207,7 @@ pub enum DatasetVolume {
 }
 
 impl<'de> Deserialize<'de> for DatasetVolume {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -224,7 +223,7 @@ impl<'de> Deserialize<'de> for DatasetVolume {
 }
 
 impl Serialize for DatasetVolume {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -298,7 +297,7 @@ where
 
 pub fn de_optional_date<'de, D: Deserializer<'de>>(
     deserializer: D,
-) -> Result<Option<NaiveDate>, D::Error> {
+) -> std::result::Result<Option<NaiveDate>, D::Error> {
     let s: String = Deserialize::deserialize(deserializer)?;
 
     match s.as_str() {
@@ -309,7 +308,7 @@ pub fn de_optional_date<'de, D: Deserializer<'de>>(
     }
 }
 
-fn de_optional_yes_no<'de, D>(deserializer: D) -> core::result::Result<Option<bool>, D::Error>
+fn de_optional_yes_no<'de, D>(deserializer: D) -> std::result::Result<Option<bool>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -322,7 +321,7 @@ where
         .transpose()
 }
 
-fn de_yes_no<'de, D>(deserializer: D) -> core::result::Result<bool, D::Error>
+fn de_yes_no<'de, D>(deserializer: D) -> std::result::Result<bool, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -335,7 +334,7 @@ where
     }
 }
 
-fn ser_optional_yes_no<S>(v: &Option<bool>, serializer: S) -> core::result::Result<S::Ok, S::Error>
+fn ser_optional_yes_no<S>(v: &Option<bool>, serializer: S) -> std::result::Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -345,7 +344,7 @@ where
     }
 }
 
-fn ser_yes_no<S>(v: &bool, serializer: S) -> core::result::Result<S::Ok, S::Error>
+fn ser_yes_no<S>(v: &bool, serializer: S) -> std::result::Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {

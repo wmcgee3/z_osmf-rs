@@ -4,7 +4,7 @@ use std::str::FromStr;
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 
-use crate::error::Error;
+use crate::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum RecordRange {
@@ -27,7 +27,7 @@ impl From<RecordRange> for HeaderValue {
 impl FromStr for RecordRange {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         if let Some(s) = s.strip_prefix('-') {
             return Ok(RecordRange::StartEnd(None, s.parse()?));
         }

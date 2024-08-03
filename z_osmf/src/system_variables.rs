@@ -6,7 +6,7 @@ pub mod symbols;
 mod delete;
 mod import;
 
-use crate::{ClientCore, Error};
+use crate::{ClientCore, Result};
 
 use self::create::{NewSystemVariable, VariableCreateBuilder};
 use self::delete::VariableDeleteBuilder;
@@ -47,7 +47,7 @@ impl SystemVariablesClient {
         sysplex: P,
         system: S,
         new_variables: &[NewSystemVariable],
-    ) -> Result<(), Error>
+    ) -> Result<()>
     where
         P: std::fmt::Display,
         S: std::fmt::Display,
@@ -73,12 +73,7 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn delete<P, S, N>(
-        &self,
-        sysplex: P,
-        system: S,
-        variable_names: &[N],
-    ) -> Result<(), Error>
+    pub async fn delete<P, S, N>(&self, sysplex: P, system: S, variable_names: &[N]) -> Result<()>
     where
         P: std::fmt::Display,
         S: std::fmt::Display,
@@ -127,7 +122,7 @@ impl SystemVariablesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn import<X, S, P>(&self, sysplex: X, system: S, path: P) -> Result<(), Error>
+    pub async fn import<X, S, P>(&self, sysplex: X, system: S, path: P) -> Result<()>
     where
         X: std::fmt::Display,
         S: std::fmt::Display,

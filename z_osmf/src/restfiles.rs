@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
 use crate::convert::TryFromResponse;
-use crate::Error;
+use crate::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -21,7 +21,7 @@ pub struct Etag {
 }
 
 impl TryFromResponse for Etag {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let etag = get_etag(&value)?;
         let transaction_id = get_transaction_id(&value)?;
 
@@ -32,7 +32,7 @@ impl TryFromResponse for Etag {
     }
 }
 
-pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
+pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Box<str>>> {
     Ok(response
         .headers()
         .get("Etag")
@@ -41,7 +41,7 @@ pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Box<str>>,
         .map(|v| v.into()))
 }
 
-pub(crate) fn get_transaction_id(response: &reqwest::Response) -> Result<Box<str>, Error> {
+pub(crate) fn get_transaction_id(response: &reqwest::Response) -> Result<Box<str>> {
     Ok(response
         .headers()
         .get("X-IBM-Txid")
@@ -51,7 +51,7 @@ pub(crate) fn get_transaction_id(response: &reqwest::Response) -> Result<Box<str
 }
 
 impl TryFromResponse for String {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         get_transaction_id(&value).map(|v| v.to_string())
     }
 }

@@ -9,7 +9,7 @@ use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
 use crate::jobs::{get_subsystem, JobIdentifier};
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum JobFileId {
@@ -44,7 +44,7 @@ impl JobFileRead<Box<str>> {
 }
 
 impl TryFromResponse for JobFileRead<Box<str>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(JobFileRead {
             data: value.text().await?.into(),
         })
@@ -58,7 +58,7 @@ impl JobFileRead<Bytes> {
 }
 
 impl TryFromResponse for JobFileRead<Bytes> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(JobFileRead {
             data: value.bytes().await?,
         })

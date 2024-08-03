@@ -7,9 +7,8 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id};
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::FileDataType;
 
@@ -28,7 +27,7 @@ impl FileRead<Box<str>> {
 }
 
 impl TryFromResponse for FileRead<Box<str>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = value.text().await?.into();
@@ -48,7 +47,7 @@ impl FileRead<Bytes> {
 }
 
 impl TryFromResponse for FileRead<Bytes> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
@@ -68,7 +67,7 @@ impl FileRead<Option<Box<str>>> {
 }
 
 impl TryFromResponse for FileRead<Option<Box<str>>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = if value.status() == StatusCode::NOT_MODIFIED {
@@ -92,7 +91,7 @@ impl FileRead<Option<Bytes>> {
 }
 
 impl TryFromResponse for FileRead<Option<Bytes>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, transaction_id) = get_headers(&value)?;
 
         let data = if value.status() == StatusCode::NOT_MODIFIED {
@@ -266,7 +265,7 @@ where
     }
 }
 
-fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>), Error> {
+fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>)> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
 }
 

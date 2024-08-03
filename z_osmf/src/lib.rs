@@ -78,7 +78,7 @@ pub mod system_variables;
 #[cfg(feature = "workflows")]
 pub mod workflows;
 
-pub use self::error::Error;
+pub use self::error::{Error, Result};
 
 pub mod info;
 
@@ -166,7 +166,7 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn info(&self) -> Result<Info, Error> {
+    pub async fn info(&self) -> Result<Info> {
         InfoBuilder::new(self.core.clone()).build().await
     }
 
@@ -179,7 +179,7 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn login<U, P>(&self, username: U, password: P) -> Result<Vec<AuthToken>, Error>
+    pub async fn login<U, P>(&self, username: U, password: P) -> Result<Vec<AuthToken>>
     where
         U: std::fmt::Display,
         P: std::fmt::Display,
@@ -221,7 +221,7 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn logout(&self) -> Result<(), Error> {
+    pub async fn logout(&self) -> Result<()> {
         self.core
             .client
             .delete(format!("{}/zosmf/services/authenticate", self.core.url))
@@ -277,17 +277,35 @@ impl ZOsmf {
         JobsClient::new(self.core.clone())
     }
 
+    /// Create a sub-client for interacting with system symbols and variables.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let system_variables = zosmf.system_variables();
+    /// # Ok(())
+    /// # }
+    /// ```
     #[cfg(feature = "system-variables")]
     pub fn system_variables(&self) -> SystemVariablesClient {
         SystemVariablesClient::new(self.core.clone())
     }
 
+    /// Create a sub-client for interacting with workflows.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let workflows = zosmf.workflows();
+    /// # Ok(())
+    /// # }
+    /// ```
     #[cfg(feature = "workflows")]
     pub fn workflows(&self) -> WorkflowsClient {
         WorkflowsClient::new(self.core.clone())
     }
 
-    fn set_token(&self, token: Option<AuthToken>) -> Result<(), Error> {
+    fn set_token(&self, token: Option<AuthToken>) -> Result<()> {
         let mut write = self
             .core
             .token
@@ -306,9 +324,9 @@ pub enum AuthToken {
 }
 
 impl std::str::FromStr for AuthToken {
-    type Err = crate::Error;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let (name, value) = s.split_once('=').ok_or(Error::InvalidValue(format!(
             "invalid set-cookie header value: {}",
             s
@@ -325,9 +343,9 @@ impl std::str::FromStr for AuthToken {
 }
 
 impl TryFrom<&HeaderValue> for AuthToken {
-    type Error = crate::Error;
+    type Error = Error;
 
-    fn try_from(value: &HeaderValue) -> Result<Self, Self::Error> {
+    fn try_from(value: &HeaderValue) -> Result<Self> {
         let s = value.to_str()?;
 
         s.split_once(';')

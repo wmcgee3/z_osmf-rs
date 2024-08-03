@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use thiserror::Error;
 
+pub type Result<T> = std::result::Result<T, Error>;
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("data serialization failed: {0}")]
@@ -14,7 +16,7 @@ pub enum Error {
     #[error("missing transaction id")]
     NoTransactionId,
     #[error("failed to parse int: {0}")]
-    NumParseInt(#[from] core::num::ParseIntError),
+    NumParseInt(#[from] std::num::ParseIntError),
     #[error("invalid record range: {0}")]
     RecordRange(String),
     #[error("API call failed: {0}")]
@@ -44,13 +46,13 @@ pub enum ZOsmfError {
 }
 
 pub trait CheckStatus {
-    fn check_status(self) -> impl std::future::Future<Output = Result<Self, Error>> + Send
+    fn check_status(self) -> impl std::future::Future<Output = Result<Self>> + Send
     where
         Self: Sized;
 }
 
 impl CheckStatus for reqwest::Response {
-    async fn check_status(self) -> Result<Self, Error> {
+    async fn check_status(self) -> Result<Self> {
         match self.error_for_status_ref() {
             Ok(_) => {}
             Err(err) => {

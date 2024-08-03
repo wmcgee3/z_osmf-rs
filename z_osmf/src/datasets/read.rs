@@ -9,9 +9,8 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
 use crate::restfiles::{get_etag, get_transaction_id};
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::{
     get_member, get_session_ref, get_volume, DatasetDataType, DatasetEnqueue, DatasetMigratedRecall,
@@ -33,7 +32,7 @@ impl DatasetRead<Box<str>> {
 }
 
 impl TryFromResponse for DatasetRead<Box<str>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.text().await?.into();
@@ -54,7 +53,7 @@ impl DatasetRead<Bytes> {
 }
 
 impl TryFromResponse for DatasetRead<Bytes> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = value.bytes().await?;
@@ -75,7 +74,7 @@ impl DatasetRead<Option<Box<str>>> {
 }
 
 impl TryFromResponse for DatasetRead<Option<Box<str>>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = if value.status() == StatusCode::NOT_MODIFIED {
@@ -100,7 +99,7 @@ impl DatasetRead<Option<Bytes>> {
 }
 
 impl TryFromResponse for DatasetRead<Option<Bytes>> {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
         let data = if value.status() == StatusCode::NOT_MODIFIED {
@@ -423,7 +422,7 @@ where
 
 type H = (Option<Box<str>>, Option<Box<str>>, Box<str>);
 
-fn get_headers(response: &reqwest::Response) -> Result<H, Error> {
+fn get_headers(response: &reqwest::Response) -> Result<H> {
     Ok((
         get_etag(response)?,
         get_session_ref(response)?,

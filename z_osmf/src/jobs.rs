@@ -10,8 +10,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use self::class::JobChangeClassBuilder;
 use self::feedback::{JobFeedback, JobFeedbackBuilder};
@@ -345,7 +344,7 @@ impl JobAttributes {
 }
 
 impl TryFromResponse for JobAttributes {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -374,7 +373,7 @@ impl std::ops::Deref for JobAttributesExec {
 }
 
 impl TryFromResponse for JobAttributesExec {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -396,7 +395,7 @@ impl std::ops::Deref for JobAttributesExecStep {
 }
 
 impl TryFromResponse for JobAttributesExecStep {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
@@ -418,7 +417,7 @@ impl std::ops::Deref for JobAttributesStep {
 }
 
 impl TryFromResponse for JobAttributesStep {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::{WorkflowAccess, WorkflowStatus};
 
@@ -44,7 +44,7 @@ pub struct WorkflowList {
 }
 
 impl TryFromResponse for WorkflowList {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let items = value.json::<ResponseJson>().await?.workflows;
 
         Ok(WorkflowList { items })

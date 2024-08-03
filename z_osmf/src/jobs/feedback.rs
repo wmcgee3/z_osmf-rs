@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
 use super::{get_subsystem, JobIdentifier};
 
@@ -30,7 +29,7 @@ pub struct JobFeedback {
 }
 
 impl TryFromResponse for JobFeedback {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(value.json().await?)
     }
 }
