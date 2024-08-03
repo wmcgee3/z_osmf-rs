@@ -11,21 +11,21 @@ use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileAttributes {
-    name: Box<str>,
-    mode: Box<str>,
+    name: Arc<str>,
+    mode: Arc<str>,
     #[getter(copy)]
     size: i32,
     #[getter(copy)]
     uid: i32,
     #[serde(default)]
-    user: Option<Box<str>>,
+    user: Option<Arc<str>>,
     #[getter(copy)]
     gid: i32,
-    group: Box<str>,
+    group: Arc<str>,
     #[getter(copy)]
     mtime: NaiveDateTime,
     #[serde(default)]
-    target: Option<Box<str>>,
+    target: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -85,14 +85,14 @@ where
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileList {
-    items: Box<[FileAttributes]>,
+    items: Arc<[FileAttributes]>,
     #[getter(copy)]
     returned_rows: i32,
     #[getter(copy)]
     total_rows: i32,
     #[getter(copy)]
     json_version: i32,
-    transaction_id: Box<str>,
+    transaction_id: Arc<str>,
 }
 
 impl TryFromResponse for FileList {
@@ -125,23 +125,23 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(query = "path")]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_lstat)]
     lstat: Option<bool>,
     #[endpoint(query = "group")]
-    group: Option<Box<str>>,
+    group: Option<Arc<str>>,
     #[endpoint(query = "mtime")]
     modified_days: Option<FileFilter<u32>>,
     #[endpoint(query = "name")]
-    name: Option<Box<str>>,
+    name: Option<Arc<str>>,
     #[endpoint(query = "size")]
     size: Option<FileFilter<FileSize>>,
     #[endpoint(query = "perm")]
-    permissions: Option<Box<str>>,
+    permissions: Option<Arc<str>>,
     #[endpoint(query = "type")]
     file_type: Option<FileType>,
     #[endpoint(query = "user")]
-    user: Option<Box<str>>,
+    user: Option<Arc<str>>,
     #[endpoint(query = "depth")]
     depth: Option<i32>,
     #[endpoint(query = "limit")]
@@ -222,7 +222,7 @@ pub enum FileType {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    items: Box<[FileAttributes]>,
+    items: Arc<[FileAttributes]>,
     returned_rows: i32,
     total_rows: i32,
     #[serde(rename = "JSONversion")]

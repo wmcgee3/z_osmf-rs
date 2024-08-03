@@ -17,6 +17,23 @@ pub enum SystemId {
     },
 }
 
+impl SystemId {
+    pub fn new() -> Self {
+        SystemId::default()
+    }
+
+    pub fn named<X, S>(sysplex: X, system: S) -> Self
+    where
+        X: std::fmt::Display,
+        S: std::fmt::Display,
+    {
+        let sysplex = sysplex.to_string();
+        let system = system.to_string();
+
+        SystemId::Named { sysplex, system }
+    }
+}
+
 impl std::fmt::Display for SystemId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -28,14 +45,14 @@ impl std::fmt::Display for SystemId {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SystemVariable {
-    name: Box<str>,
-    value: Box<str>,
-    description: Option<Box<str>>,
+    name: Arc<str>,
+    value: Arc<str>,
+    description: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SystemVariableList {
-    inner: Box<[SystemVariable]>,
+    inner: Arc<[SystemVariable]>,
 }
 
 impl TryFromResponse for SystemVariableList {
@@ -65,7 +82,7 @@ where
     #[endpoint(path, builder_fn = build_system_id)]
     system_id: Option<SystemId>,
     #[endpoint(skip_setter, builder_fn = build_names)]
-    names: Option<Vec<String>>,
+    names: Option<Vec<Arc<str>>>,
 
     target_type: PhantomData<T>,
 }
@@ -76,12 +93,12 @@ where
 {
     pub fn name<V>(self, value: V) -> Self
     where
-        V: ToString,
+        V: std::fmt::Display,
     {
         let mut new = self;
         match new.names {
-            Some(ref mut names) => names.push(value.to_string()),
-            None => new.names = Some(vec![value.to_string()]),
+            Some(ref mut names) => names.push(value.to_string().into()),
+            None => new.names = Some(vec![value.to_string().into()]),
         }
 
         new
@@ -89,12 +106,12 @@ where
 
     pub fn names<V>(self, value: &[V]) -> Self
     where
-        V: ToString,
+        V: std::fmt::Display,
     {
         let mut new = self;
         match new.names {
-            Some(ref mut names) => names.extend(value.iter().map(|v| v.to_string())),
-            None => new.names = Some(value.iter().map(|v| v.to_string()).collect()),
+            Some(ref mut names) => names.extend(value.iter().map(|v| v.to_string().into())),
+            None => new.names = Some(value.iter().map(|v| v.to_string().into()).collect()),
         }
 
         new
@@ -104,7 +121,7 @@ where
 #[derive(Deserialize)]
 struct ResponseJson {
     #[serde(rename = "system-variable-list")]
-    variables: Box<[SystemVariable]>,
+    variables: Arc<[SystemVariable]>,
 }
 
 fn build_names<T>(
@@ -114,7 +131,7 @@ fn build_names<T>(
 where
     T: TryFromResponse,
 {
-    let query: Box<[_]> = builder
+    let query: Arc<[_]> = builder
         .names
         .iter()
         .map(|name| ("var-name", name))

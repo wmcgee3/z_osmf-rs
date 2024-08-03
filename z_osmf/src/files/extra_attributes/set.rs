@@ -17,7 +17,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
     apf_authorized: Option<bool>,
     #[endpoint(skip_builder)]

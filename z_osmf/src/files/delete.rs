@@ -15,7 +15,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_recursive)]
     recursive: Option<bool>,
 

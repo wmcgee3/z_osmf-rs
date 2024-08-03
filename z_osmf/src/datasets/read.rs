@@ -20,18 +20,18 @@ use super::{
 pub struct DatasetRead<T> {
     #[getter(skip)]
     data: T,
-    etag: Option<Box<str>>,
-    session_ref: Option<Box<str>>,
-    transaction_id: Box<str>,
+    etag: Option<Arc<str>>,
+    session_ref: Option<Arc<str>>,
+    transaction_id: Arc<str>,
 }
 
-impl DatasetRead<Box<str>> {
+impl DatasetRead<Arc<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for DatasetRead<Box<str>> {
+impl TryFromResponse for DatasetRead<Arc<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
@@ -67,13 +67,13 @@ impl TryFromResponse for DatasetRead<Bytes> {
     }
 }
 
-impl DatasetRead<Option<Box<str>>> {
+impl DatasetRead<Option<Arc<str>>> {
     pub fn data(&self) -> Option<&str> {
         self.data.as_deref()
     }
 }
 
-impl TryFromResponse for DatasetRead<Option<Box<str>>> {
+impl TryFromResponse for DatasetRead<Option<Arc<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, session_ref, transaction_id) = get_headers(&value)?;
 
@@ -126,15 +126,15 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_volume)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(path, builder_fn = build_member)]
-    member: Option<Box<str>>,
+    member: Option<Arc<str>>,
     #[endpoint(query = "search")]
-    search: Option<Box<str>>,
+    search: Option<Arc<str>>,
     #[endpoint(query = "research")]
-    regex_search: Option<Box<str>>,
+    regex_search: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     search_is_regex: Option<bool>,
     #[endpoint(builder_fn = build_search_case_sensitive)]
@@ -142,11 +142,11 @@ where
     #[endpoint(query = "maxreturnsize")]
     search_max_return: Option<i32>,
     #[endpoint(header = "If-None-Match", skip_setter)]
-    if_none_match: Option<Box<str>>,
+    if_none_match: Option<Arc<str>>,
     #[endpoint(skip_setter, builder_fn = build_data_type)]
     data_type: Option<DatasetDataType>,
     #[endpoint(skip_builder)]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(builder_fn = build_return_etag)]
     return_etag: Option<bool>,
     #[endpoint(header = "X-IBM-Migrated-Recall")]
@@ -156,11 +156,11 @@ where
     #[endpoint(header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<DatasetEnqueue>,
     #[endpoint(header = "X-IBM-Session-Ref")]
-    session_ref: Option<Box<str>>,
+    session_ref: Option<Arc<str>>,
     #[endpoint(builder_fn = build_release_enq)]
     release_enq: Option<bool>,
     #[endpoint(header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<Box<str>>,
+    dsname_encoding: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
@@ -220,7 +220,7 @@ where
         }
     }
 
-    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Box<str>>> {
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Arc<str>>> {
         DatasetReadBuilder {
             core: self.core,
             search: self.search,
@@ -328,7 +328,7 @@ where
         }
     }
 
-    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Box<str>>>> {
+    pub fn text(self) -> DatasetReadBuilder<DatasetRead<Option<Arc<str>>>> {
         DatasetReadBuilder {
             core: self.core,
             search: self.search,
@@ -420,7 +420,7 @@ where
     }
 }
 
-type H = (Option<Box<str>>, Option<Box<str>>, Box<str>);
+type H = (Option<Arc<str>>, Option<Arc<str>>, Arc<str>);
 
 fn get_headers(response: &reqwest::Response) -> Result<H> {
     Ok((

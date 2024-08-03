@@ -16,10 +16,10 @@ use crate::{ClientCore, Error, Result};
 pub struct FileTag {
     #[getter(copy)]
     tag_type: Option<FileTagType>,
-    code_set: Option<Box<str>>,
+    code_set: Option<Arc<str>>,
     #[getter(copy)]
     text_flag: bool,
-    path: Box<str>,
+    path: Arc<str>,
 }
 
 impl std::str::FromStr for FileTag {
@@ -57,8 +57,8 @@ pub enum FileTagLinks {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileTagList {
-    tags: Box<[FileTag]>,
-    transaction_id: Box<str>,
+    tags: Arc<[FileTag]>,
+    transaction_id: Arc<str>,
 }
 
 impl TryFromResponse for FileTagList {
@@ -69,7 +69,7 @@ impl TryFromResponse for FileTagList {
         let tags = stdout
             .iter()
             .map(|line| FileTag::from_str(line))
-            .collect::<Result<Box<[FileTag]>>>()?;
+            .collect::<Result<Arc<[FileTag]>>>()?;
 
         Ok(FileTagList {
             tags,
@@ -87,7 +87,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_tags_body)]
     recursive: Option<bool>,
 
@@ -111,7 +111,7 @@ struct FileTagRequestJson {
 
 #[derive(Deserialize)]
 struct FileTagResponseJson {
-    stdout: Box<[Box<str>]>,
+    stdout: Arc<[Arc<str>]>,
 }
 
 fn build_tags_body<T>(

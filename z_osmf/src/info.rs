@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
@@ -8,13 +9,13 @@ use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Info {
-    zosmf_saf_realm: Box<str>,
-    zosmf_port: Box<str>,
-    plugins: Box<[Plugin]>,
-    api_version: Box<str>,
-    zos_version: Box<str>,
-    zosmf_version: Box<str>,
-    zosmf_hostname: Box<str>,
+    zosmf_saf_realm: Arc<str>,
+    zosmf_port: Arc<str>,
+    plugins: Arc<[Plugin]>,
+    api_version: Arc<str>,
+    zos_version: Arc<str>,
+    zosmf_version: Arc<str>,
+    zosmf_hostname: Arc<str>,
 }
 
 impl TryFromResponse for Info {
@@ -26,11 +27,11 @@ impl TryFromResponse for Info {
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Plugin {
     #[serde(rename = "pluginVersion")]
-    version: Box<str>,
+    version: Arc<str>,
     #[serde(default, rename = "pluginStatus")]
-    status: Option<Box<str>>,
+    status: Option<Arc<str>>,
     #[serde(rename = "pluginDefaultName")]
-    default_name: Box<str>,
+    default_name: Arc<str>,
 }
 
 #[derive(Clone, Debug, Endpoint)]

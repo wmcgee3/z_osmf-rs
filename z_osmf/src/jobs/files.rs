@@ -14,35 +14,35 @@ use crate::{ClientCore, Result};
 #[serde(rename_all = "kebab-case")]
 pub struct JobFile {
     #[serde(rename = "jobname")]
-    job_name: Box<str>,
+    job_name: Arc<str>,
     #[serde(rename = "recfm")]
-    record_format: Box<str>,
+    record_format: Arc<str>,
     #[getter(copy)]
     byte_count: i32,
     #[getter(copy)]
     record_count: i32,
-    job_correlator: Option<Box<str>>,
-    class: Box<str>,
+    job_correlator: Option<Arc<str>>,
+    class: Arc<str>,
     #[serde(rename = "jobid")]
-    job_id: Box<str>,
+    job_id: Arc<str>,
     #[getter(copy)]
     id: i32,
     #[serde(rename = "ddname")]
-    dd_name: Box<str>,
-    records_url: Box<str>,
+    dd_name: Arc<str>,
+    records_url: Arc<str>,
     #[getter(copy)]
     #[serde(rename = "lrecl")]
     record_length: i32,
-    subsystem: Box<str>,
+    subsystem: Arc<str>,
     #[serde(rename = "stepname")]
-    step_name: Option<Box<str>>,
+    step_name: Option<Arc<str>>,
     #[serde(rename = "procstep")]
-    proc_step: Option<Box<str>>,
+    proc_step: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct JobFileList {
-    items: Box<[JobFile]>,
+    items: Arc<[JobFile]>,
 }
 
 impl TryFromResponse for JobFileList {
@@ -55,16 +55,16 @@ impl TryFromResponse for JobFileList {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files")]
-pub struct JobFileListBuilder<'a, T>
+pub struct JobFileListBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier<'a>,
+    identifier: JobIdentifier,
 
     target_type: PhantomData<T>,
 }
@@ -93,7 +93,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOB1", "JOB00023");
+        let identifier = JobIdentifier::NameId("TESTJOB1".to_string(), "JOB00023".to_string());
         let job_files = zosmf.jobs().list_files(identifier).get_request().unwrap();
 
         assert_eq!(format!("{:?}", manual_request), format!("{:?}", job_files))

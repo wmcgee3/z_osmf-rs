@@ -6,6 +6,8 @@ pub mod symbols;
 mod delete;
 mod import;
 
+use std::sync::Arc;
+
 use crate::{ClientCore, Result};
 
 use self::create::{NewSystemVariable, VariableCreateBuilder};
@@ -82,7 +84,7 @@ impl SystemVariablesClient {
         let variable_names = variable_names
             .iter()
             .map(|name| name.to_string())
-            .collect::<Box<[_]>>();
+            .collect::<Arc<[_]>>();
 
         VariableDeleteBuilder::new(self.core.clone(), sysplex, system, variable_names)
             .build()

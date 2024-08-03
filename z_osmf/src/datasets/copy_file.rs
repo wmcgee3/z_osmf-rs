@@ -19,15 +19,15 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    from_path: Box<str>,
+    from_path: Arc<str>,
     #[endpoint(skip_builder)]
     file_type: Option<CopyDataType>,
     #[endpoint(path, builder_fn = build_volume)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(path)]
-    to_dataset: Box<str>,
+    to_dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_to_member)]
-    to_member: Option<Box<str>>,
+    to_member: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     replace: Option<bool>,
 

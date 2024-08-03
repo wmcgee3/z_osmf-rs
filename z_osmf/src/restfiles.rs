@@ -1,5 +1,7 @@
 //! Functionality shared between the datasets and files modules
 
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 use z_osmf_macros::Getters;
 
@@ -16,8 +18,8 @@ pub enum CopyDataType {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Etag {
-    etag: Option<Box<str>>,
-    transaction_id: Box<str>,
+    etag: Option<Arc<str>>,
+    transaction_id: Arc<str>,
 }
 
 impl TryFromResponse for Etag {
@@ -32,7 +34,7 @@ impl TryFromResponse for Etag {
     }
 }
 
-pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Box<str>>> {
+pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Arc<str>>> {
     Ok(response
         .headers()
         .get("Etag")
@@ -41,7 +43,7 @@ pub(crate) fn get_etag(response: &reqwest::Response) -> Result<Option<Box<str>>>
         .map(|v| v.into()))
 }
 
-pub(crate) fn get_transaction_id(response: &reqwest::Response) -> Result<Box<str>> {
+pub(crate) fn get_transaction_id(response: &reqwest::Response) -> Result<Arc<str>> {
     Ok(response
         .headers()
         .get("X-IBM-Txid")

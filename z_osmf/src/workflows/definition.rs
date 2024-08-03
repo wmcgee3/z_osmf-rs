@@ -13,30 +13,30 @@ use super::ReturnData;
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowDefinition {
     #[serde(rename = "workflowDefaultName")]
-    default_name: Option<Box<str>>,
+    default_name: Option<Arc<str>>,
     #[serde(rename = "workflowDescription")]
-    description: Box<str>,
+    description: Arc<str>,
     #[serde(rename = "workflowID")]
-    id: Box<str>,
+    id: Arc<str>,
     #[serde(rename = "workflowVersion")]
-    version: Box<str>,
-    vendor: Box<str>,
+    version: Arc<str>,
+    vendor: Arc<str>,
     #[serde(rename = "workflowDefinitionFileMD5Value")]
-    hash: Box<str>,
-    is_callable: Option<Box<str>>,
+    hash: Arc<str>,
+    is_callable: Option<Arc<str>>,
     #[getter(copy)]
     contains_parallel_steps: bool,
-    scope: Box<str>,
-    jobs_output_directory: Option<Box<str>>,
-    category: Box<str>,
+    scope: Arc<str>,
+    jobs_output_directory: Option<Arc<str>>,
+    category: Arc<str>,
     #[serde(rename = "productID")]
-    product_id: Option<Box<str>>,
-    product_name: Option<Box<str>>,
-    product_version: Option<Box<str>>,
-    global_variable_group: Option<Box<str>>,
+    product_id: Option<Arc<str>>,
+    product_name: Option<Arc<str>>,
+    product_version: Option<Arc<str>>,
+    global_variable_group: Option<Arc<str>>,
     #[getter(copy)]
     is_instance_variable_without_prefix: bool,
-    software_type: Option<Box<str>>,
+    software_type: Option<Arc<str>>,
 }
 
 impl TryFromResponse for WorkflowDefinition {
@@ -50,7 +50,7 @@ pub struct WorkflowDefinitionSteps {
     #[getter(skip)]
     #[serde(flatten)]
     inner: WorkflowDefinition,
-    steps: Box<[StepCore]>,
+    steps: Arc<[StepCore]>,
 }
 
 impl std::ops::Deref for WorkflowDefinitionSteps {
@@ -72,7 +72,7 @@ pub struct WorkflowDefinitionStepsVariables {
     #[getter(skip)]
     #[serde(flatten)]
     inner: WorkflowDefinitionSteps,
-    variables: Box<[VariableDefinition]>,
+    variables: Arc<[VariableDefinition]>,
 }
 
 impl std::ops::Deref for WorkflowDefinitionStepsVariables {
@@ -94,7 +94,7 @@ pub struct WorkflowDefinitionVariables {
     #[getter(skip)]
     #[serde(flatten)]
     inner: WorkflowDefinition,
-    variables: Box<[VariableDefinition]>,
+    variables: Arc<[VariableDefinition]>,
 }
 
 impl std::ops::Deref for WorkflowDefinitionVariables {
@@ -117,39 +117,39 @@ impl TryFromResponse for WorkflowDefinitionVariables {
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StepCore {
-    name: Box<str>,
-    title: Box<str>,
-    description: Box<str>,
-    prereq_step: Option<Box<[Box<str>]>>,
+    name: Arc<str>,
+    title: Arc<str>,
+    description: Arc<str>,
+    prereq_step: Option<Arc<[Arc<str>]>>,
     optional: bool,
-    steps: Option<Box<[StepCore]>>,
+    steps: Option<Arc<[StepCore]>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct VariableDefinition {
-    name: Box<str>,
-    scope: Box<str>,
+    name: Arc<str>,
+    scope: Arc<str>,
     #[serde(rename = "abstract")]
-    short_description: Box<str>,
-    category: Box<str>,
-    choice: Option<Box<[Box<str>]>>,
+    short_description: Arc<str>,
+    category: Arc<str>,
+    choice: Option<Arc<[Arc<str>]>>,
     decimal_places: Option<i32>,
-    default: Option<Box<str>>,
-    description: Box<str>,
+    default: Option<Arc<str>>,
+    description: Arc<str>,
     expose_to_user: bool,
     max_length: Option<i32>,
-    max_value: Option<Box<str>>,
+    max_value: Option<Arc<str>>,
     min_length: Option<i32>,
-    min_value: Option<Box<str>>,
+    min_value: Option<Arc<str>>,
     prompt_at_create: bool,
-    regular_expression: Option<Box<str>>,
+    regular_expression: Option<Arc<str>>,
     required_at_create: bool,
     #[serde(rename = "type")]
-    variable_type: Box<str>,
-    validation_type: Option<Box<str>>,
+    variable_type: Arc<str>,
+    validation_type: Option<Arc<str>>,
     value_must_be_choice: Option<bool>,
-    visibility: Box<str>,
+    visibility: Arc<str>,
 }
 
 #[derive(Clone, Debug, Endpoint)]
@@ -161,9 +161,9 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(query = "workflowDefinitionFileSystem")]
-    file_system: Option<Box<str>>,
+    file_system: Option<Arc<str>>,
     #[endpoint(skip_setter, builder_fn = build_return_data)]
     return_data: Option<ReturnData>,
 

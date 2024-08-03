@@ -15,11 +15,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    sysplex: Box<str>,
+    sysplex: Arc<str>,
     #[endpoint(path)]
-    system: Box<str>,
+    system: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    variable_names: Box<[String]>,
+    variable_names: Arc<[String]>,
 
     target_type: PhantomData<T>,
 }

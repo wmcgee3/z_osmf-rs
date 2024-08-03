@@ -16,17 +16,17 @@ use super::FileDataType;
 pub struct FileRead<T> {
     #[getter(skip)]
     data: T,
-    etag: Option<Box<str>>,
-    transaction_id: Box<str>,
+    etag: Option<Arc<str>>,
+    transaction_id: Arc<str>,
 }
 
-impl FileRead<Box<str>> {
+impl FileRead<Arc<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for FileRead<Box<str>> {
+impl TryFromResponse for FileRead<Arc<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, transaction_id) = get_headers(&value)?;
 
@@ -60,13 +60,13 @@ impl TryFromResponse for FileRead<Bytes> {
     }
 }
 
-impl FileRead<Option<Box<str>>> {
+impl FileRead<Option<Arc<str>>> {
     pub fn data(&self) -> Option<&str> {
         self.data.as_deref()
     }
 }
 
-impl TryFromResponse for FileRead<Option<Box<str>>> {
+impl TryFromResponse for FileRead<Option<Arc<str>>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let (etag, transaction_id) = get_headers(&value)?;
 
@@ -117,11 +117,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(query = "search")]
-    search: Option<Box<str>>,
+    search: Option<Arc<str>>,
     #[endpoint(query = "research")]
-    regex_search: Option<Box<str>>,
+    regex_search: Option<Arc<str>>,
     #[endpoint(builder_fn = build_search_case_sensitive)]
     search_case_sensitive: Option<bool>,
     #[endpoint(query = "maxreturnsize")]
@@ -129,9 +129,9 @@ where
     #[endpoint(skip_setter, builder_fn = build_data_type)]
     data_type: Option<FileDataType>,
     #[endpoint(skip_builder)]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(header = "If-None-Match", skip_setter)]
-    etag: Option<Box<str>>,
+    etag: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
@@ -156,7 +156,7 @@ where
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileRead<Box<str>>> {
+    pub fn text(self) -> FileReadBuilder<FileRead<Arc<str>>> {
         FileReadBuilder {
             core: self.core,
             path: self.path,
@@ -209,7 +209,7 @@ where
         }
     }
 
-    pub fn text(self) -> FileReadBuilder<FileRead<Option<Box<str>>>> {
+    pub fn text(self) -> FileReadBuilder<FileRead<Option<Arc<str>>>> {
         FileReadBuilder {
             core: self.core,
             path: self.path,
@@ -265,7 +265,7 @@ where
     }
 }
 
-fn get_headers(response: &reqwest::Response) -> Result<(Option<Box<str>>, Box<str>)> {
+fn get_headers(response: &reqwest::Response) -> Result<(Option<Arc<str>>, Arc<str>)> {
     Ok((get_etag(response)?, get_transaction_id(response)?))
 }
 

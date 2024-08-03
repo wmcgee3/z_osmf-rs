@@ -13,48 +13,48 @@ use super::{ReturnData, WorkflowAccess, WorkflowStatus};
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowAutomationStatus {
-    start_user: Box<str>,
+    start_user: Arc<str>,
     #[getter(copy)]
     started_time: u64,
     #[getter(copy)]
     stopped_time: Option<u64>,
-    current_step_name: Option<Box<str>>,
-    current_step_number: Option<Box<str>>,
-    current_step_title: Option<Box<str>>,
+    current_step_name: Option<Arc<str>>,
+    current_step_number: Option<Arc<str>>,
+    current_step_title: Option<Arc<str>>,
     #[serde(rename = "messageID")]
-    message_id: Option<Box<str>>,
-    message_text: Option<Box<str>>,
+    message_id: Option<Arc<str>>,
+    message_text: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowProperties {
     #[serde(rename = "workflowName")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "workflowKey")]
-    key: Box<str>,
+    key: Arc<str>,
     #[serde(rename = "workflowDescription")]
-    description: Box<str>,
+    description: Arc<str>,
     #[serde(rename = "workflowID")]
-    id: Box<str>,
+    id: Arc<str>,
     #[serde(rename = "workflowVersion")]
-    version: Box<str>,
+    version: Arc<str>,
     #[serde(rename = "workflowDefinitionFileMD5Value")]
-    definition_file_hash: Box<str>,
-    vendor: Box<str>,
-    owner: Box<str>,
+    definition_file_hash: Arc<str>,
+    vendor: Arc<str>,
+    owner: Arc<str>,
     #[serde(rename = "workflowArchiveSAFID")]
-    archive_saf_id: Option<Box<str>>,
-    system: Box<str>,
-    jobs_output_directory: Option<Box<str>>,
-    category: Box<str>,
+    archive_saf_id: Option<Arc<str>>,
+    system: Arc<str>,
+    jobs_output_directory: Option<Arc<str>>,
+    category: Arc<str>,
     #[serde(rename = "productID")]
-    product_id: Option<Box<str>>,
-    product_name: Option<Box<str>>,
-    product_version: Option<Box<str>>,
+    product_id: Option<Arc<str>>,
+    product_name: Option<Arc<str>>,
+    product_version: Option<Arc<str>>,
     #[getter(copy)]
     percent_complete: i32,
-    is_callable: Option<Box<str>>,
+    is_callable: Option<Arc<str>>,
     #[getter(copy)]
     contains_parallel_steps: bool,
     #[getter(copy)]
@@ -69,21 +69,21 @@ pub struct WorkflowProperties {
     auto_delete_on_completion: Option<bool>,
     #[getter(copy)]
     access: WorkflowAccess,
-    account_info: Option<Box<str>>,
-    job_statement: Option<Box<str>>,
-    template_id: Option<Box<str>>,
-    action_id: Option<Box<str>>,
-    registry_id: Option<Box<str>>,
-    parent_registry_id: Option<Box<str>>,
-    domain_id: Option<Box<str>>,
-    tenant_id: Option<Box<str>>,
+    account_info: Option<Arc<str>>,
+    job_statement: Option<Arc<str>>,
+    template_id: Option<Arc<str>>,
+    action_id: Option<Arc<str>>,
+    registry_id: Option<Arc<str>>,
+    parent_registry_id: Option<Arc<str>>,
+    domain_id: Option<Arc<str>>,
+    tenant_id: Option<Arc<str>>,
     #[serde(rename = "software-service-instance-name")]
-    software_service_instance_name: Option<Box<str>>,
-    template_name: Option<Box<str>>,
-    global_variable_group: Option<Box<str>>,
+    software_service_instance_name: Option<Arc<str>>,
+    template_name: Option<Arc<str>>,
+    global_variable_group: Option<Arc<str>>,
     #[getter(copy)]
     is_instance_variable_without_prefix: bool,
-    software_type: Option<Box<str>>,
+    software_type: Option<Arc<str>>,
 }
 
 impl TryFromResponse for WorkflowProperties {
@@ -101,7 +101,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    key: Box<str>,
+    key: Arc<str>,
     #[endpoint(skip_setter, builder_fn = build_return_data)]
     return_data: Option<ReturnData>,
 
@@ -155,7 +155,7 @@ pub struct WorkflowPropertiesSteps {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowProperties,
-    steps: Box<[WorkflowStep]>,
+    steps: Arc<[WorkflowStep]>,
 }
 
 impl std::ops::Deref for WorkflowPropertiesSteps {
@@ -177,8 +177,8 @@ pub struct WorkflowPropertiesStepsVariables {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowProperties,
-    steps: Box<[WorkflowStep]>,
-    variables: Box<[WorkflowVariableInfo]>,
+    steps: Arc<[WorkflowStep]>,
+    variables: Arc<[WorkflowVariableInfo]>,
 }
 
 impl std::ops::Deref for WorkflowPropertiesStepsVariables {
@@ -200,7 +200,7 @@ pub struct WorkflowPropertiesVariables {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowProperties,
-    variables: Box<[WorkflowVariableInfo]>,
+    variables: Arc<[WorkflowVariableInfo]>,
 }
 
 impl std::ops::Deref for WorkflowPropertiesVariables {
@@ -239,16 +239,16 @@ pub struct WorkflowStepCalling {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowStepNonRest,
-    called_instance_key: Option<Box<str>>,
+    called_instance_key: Option<Arc<str>>,
     #[getter(copy)]
     called_instance_scope: Option<WorkflowScope>,
-    called_instance_url: Option<Box<str>>,
-    called_workflow_id: Option<Box<str>>,
-    called_workflow_version: Option<Box<str>>,
+    called_instance_url: Option<Arc<str>>,
+    called_workflow_id: Option<Arc<str>>,
+    called_workflow_version: Option<Arc<str>>,
     #[serde(rename = "calledWorkflowMD5")]
-    called_workflow_hash: Option<Box<str>>,
-    called_workflow_description: Box<str>,
-    called_workflow_definition_file: Option<Box<str>>,
+    called_workflow_hash: Option<Arc<str>>,
+    called_workflow_description: Arc<str>,
+    called_workflow_definition_file: Option<Arc<str>>,
 }
 
 impl std::ops::Deref for WorkflowStepCalling {
@@ -262,24 +262,24 @@ impl std::ops::Deref for WorkflowStepCalling {
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkflowStepCore {
-    name: Box<str>,
+    name: Arc<str>,
     #[getter(copy)]
     auto_enable: bool,
-    description: Box<str>,
+    description: Arc<str>,
     #[getter(copy)]
     #[serde(default)]
     is_rest_step: bool,
     #[getter(copy)]
     optional: bool,
-    prereq_step: Option<Box<[Box<str>]>>,
-    run_as_user: Option<Box<str>>,
+    prereq_step: Option<Arc<[Arc<str>]>>,
+    run_as_user: Option<Arc<str>>,
     #[getter(copy)]
     run_as_user_dynamic: Option<bool>,
     #[getter(copy)]
     state: WorkflowStepStatus,
-    step_number: Box<str>,
-    steps: Option<Box<[WorkflowStep]>>,
-    title: Box<str>,
+    step_number: Arc<str>,
+    steps: Option<Arc<[WorkflowStep]>>,
+    title: Arc<str>,
     #[getter(copy)]
     user_defined: bool,
 }
@@ -289,40 +289,40 @@ pub struct WorkflowStepJobInfo {
     #[serde(rename = "jobstatus")]
     status: WorkflowStepJobInfoStatus,
     #[serde(rename = "jobfiles")]
-    files: Option<Box<[WorkflowStepJobInfoFile]>>,
+    files: Option<Arc<[WorkflowStepJobInfoFile]>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct WorkflowStepJobInfoFile {
     #[serde(rename = "ddname")]
-    dd_name: Box<str>,
+    dd_name: Arc<str>,
     #[serde(rename = "stepname")]
-    step_name: Box<str>,
+    step_name: Arc<str>,
     id: i32,
     record_count: i32,
-    class: Box<str>,
+    class: Arc<str>,
     byte_count: i32,
     #[serde(rename = "procstep")]
-    proc_step: Option<Box<str>>,
+    proc_step: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowStepJobInfoStatus {
     #[serde(rename = "retcode")]
-    return_code: Option<Box<str>>,
+    return_code: Option<Arc<str>>,
     #[serde(rename = "jobname")]
-    name: Box<str>,
+    name: Arc<str>,
     #[getter(copy)]
     status: Option<JobStatus>,
-    owner: Box<str>,
-    subsystem: Option<Box<str>>,
-    class: Box<str>,
+    owner: Arc<str>,
+    subsystem: Option<Arc<str>>,
+    class: Arc<str>,
     #[getter(copy)]
     #[serde(rename = "type")]
     job_type: JobType,
     #[serde(rename = "jobid")]
-    id: Box<str>,
+    id: Arc<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -331,14 +331,14 @@ pub struct WorkflowStepNonRest {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowStepCore,
-    assignees: Option<Box<str>>,
+    assignees: Option<Arc<str>>,
     #[getter(copy)]
     has_called_workflow: bool,
     #[getter(copy)]
     is_condition_step: Option<bool>,
-    owner: Option<Box<str>>,
-    skills: Option<Box<str>>,
-    weight: Box<str>,
+    owner: Option<Arc<str>>,
+    skills: Option<Arc<str>>,
+    weight: Arc<str>,
 }
 
 impl std::ops::Deref for WorkflowStepNonRest {
@@ -355,21 +355,21 @@ pub struct WorkflowStepRest {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowStepCore,
-    actual_status_code: Box<str>,
-    expected_status_code: Box<str>,
-    hostname: Box<str>,
-    http_method: Box<str>,
-    port: Box<str>,
-    query_parameters: Box<str>,
+    actual_status_code: Arc<str>,
+    expected_status_code: Arc<str>,
+    hostname: Arc<str>,
+    http_method: Arc<str>,
+    port: Arc<str>,
+    query_parameters: Arc<str>,
     #[getter(copy)]
     query_parameters_sub: bool,
-    request_body: Box<str>,
+    request_body: Arc<str>,
     #[getter(copy)]
     request_body_sub: bool,
-    scheme_name: Box<str>,
+    scheme_name: Arc<str>,
     #[getter(copy)]
     scheme_name_sub: bool,
-    uri_path: Box<str>,
+    uri_path: Arc<str>,
     #[getter(copy)]
     uri_path_sub: bool,
 }
@@ -421,38 +421,38 @@ pub struct WorkflowStepTemplate {
     #[getter(skip)]
     #[serde(flatten)]
     core: WorkflowStepNonRest,
-    failed_pattern: Option<Box<[Box<str>]>>,
-    instructions: Option<Box<str>>,
+    failed_pattern: Option<Arc<[Arc<str>]>>,
+    instructions: Option<Arc<str>>,
     #[getter(copy)]
     instructions_sub: Option<bool>,
     job_info: Option<WorkflowStepJobInfo>,
     #[getter(copy)]
     max_lrecl: Option<i32>,
-    output: Option<Box<str>>,
+    output: Option<Arc<str>>,
     #[getter(copy)]
     output_sub: Option<bool>,
-    output_variables_prefix: Option<Box<str>>,
-    proc_name: Option<Box<str>>,
+    output_variables_prefix: Option<Arc<str>>,
+    proc_name: Option<Arc<str>>,
     #[getter(copy)]
     region_size: Option<i32>,
-    return_code: Option<Box<str>>,
-    save_as_dataset: Option<Box<str>>,
+    return_code: Option<Arc<str>>,
+    save_as_dataset: Option<Arc<str>>,
     #[getter(copy)]
     save_as_dataset_sub: Option<bool>,
-    save_as_unix_file: Option<Box<str>>,
+    save_as_unix_file: Option<Arc<str>>,
     #[getter(copy)]
     save_as_unix_file_sub: Option<bool>,
-    script_parameters: Option<Box<str>>,
+    script_parameters: Option<Arc<str>>,
     #[getter(copy)]
     submit_as: Option<WorkflowStepSubmitAs>,
-    success_pattern: Option<Box<str>>,
-    template: Option<Box<str>>,
+    success_pattern: Option<Arc<str>>,
+    template: Option<Arc<str>>,
     #[getter(copy)]
     template_sub: Option<bool>,
     #[getter(copy)]
     timeout: Option<i32>,
     #[serde(rename = "variable-references")]
-    variable_references: Option<Box<[WorkflowStepVariableReference]>>,
+    variable_references: Option<Arc<[WorkflowStepVariableReference]>>,
 }
 
 impl std::ops::Deref for WorkflowStepTemplate {
@@ -465,21 +465,21 @@ impl std::ops::Deref for WorkflowStepTemplate {
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowStepVariableReference {
-    name: Box<str>,
+    name: Arc<str>,
     #[getter(copy)]
     scope: WorkflowVariableScope,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowVariableInfo {
-    name: Box<str>,
+    name: Arc<str>,
     #[getter(copy)]
     scope: WorkflowVariableScope,
     #[getter(copy)]
     #[serde(rename = "type")]
     variable_type: WorkflowVariableType,
-    value: Option<Box<str>>,
-    visibility: Box<str>,
+    value: Option<Arc<str>>,
+    visibility: Arc<str>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]

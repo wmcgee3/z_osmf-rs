@@ -16,9 +16,9 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    from_path: Box<str>,
+    from_path: Arc<str>,
     #[endpoint(path)]
-    to_path: Box<str>,
+    to_path: Arc<str>,
     #[endpoint(skip_builder)]
     overwrite: Option<bool>,
 

@@ -16,11 +16,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    owner: Box<str>,
+    owner: Arc<str>,
     #[endpoint(skip_builder)]
-    group: Option<Box<str>>,
+    group: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     links: Option<FileChangeOwnerLinks>,
     #[endpoint(skip_builder)]

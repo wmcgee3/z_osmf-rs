@@ -11,7 +11,7 @@ use super::{get_subsystem, JobAttributesExec};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct JobList<T> {
-    items: Box<[T]>,
+    items: Arc<[T]>,
 }
 
 impl<T> TryFromResponse for JobList<T>
@@ -34,17 +34,17 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(query = "owner")]
-    owner: Option<Box<str>>,
+    owner: Option<Arc<str>>,
     #[endpoint(query = "prefix")]
-    prefix: Option<Box<str>>,
+    prefix: Option<Arc<str>>,
     #[endpoint(query = "jobid")]
-    job_id: Option<Box<str>>,
+    job_id: Option<Arc<str>>,
     #[endpoint(query = "max-jobs")]
     max_jobs: Option<i32>,
     #[endpoint(query = "user-correlator")]
-    user_correlator: Option<Box<str>>,
+    user_correlator: Option<Arc<str>>,
     #[endpoint(skip_setter, builder_fn = build_exec_data)]
     exec_data: Option<bool>,
     #[endpoint(builder_fn = build_active_only)]

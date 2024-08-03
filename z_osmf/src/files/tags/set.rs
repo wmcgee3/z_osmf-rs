@@ -18,11 +18,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
     tag_type: Option<FileTagType>,
     #[endpoint(skip_builder)]
-    code_set: Option<Box<str>>,
+    code_set: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     links: Option<FileTagLinks>,
     #[endpoint(skip_builder)]

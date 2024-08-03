@@ -18,9 +18,9 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_member)]
-    member: Option<Box<str>>,
+    member: Option<Arc<str>>,
     #[endpoint(builder_fn = build_body )]
     wait: Option<bool>,
 

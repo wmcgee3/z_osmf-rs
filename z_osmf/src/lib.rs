@@ -319,8 +319,8 @@ impl ZOsmf {
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum AuthToken {
-    Jwt(Arc<str>),
-    Ltpa2(Arc<str>),
+    Jwt(String),
+    Ltpa2(String),
 }
 
 impl std::str::FromStr for AuthToken {
@@ -333,8 +333,8 @@ impl std::str::FromStr for AuthToken {
         )))?;
 
         let token = match name {
-            "jwtToken" => AuthToken::Jwt(value.into()),
-            "LtpaToken2" => AuthToken::Ltpa2(value.into()),
+            "jwtToken" => AuthToken::Jwt(value.to_string()),
+            "LtpaToken2" => AuthToken::Ltpa2(value.to_string()),
             _ => return Err(Error::InvalidValue(format!("invalid token name: {}", name))),
         };
 

@@ -13,6 +13,8 @@ pub mod tags;
 pub mod unlink;
 pub mod write;
 
+use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
 
 use crate::restfiles::Etag;
@@ -279,10 +281,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn get_extra_attributes<P>(
-        &self,
-        path: P,
-    ) -> Result<FileExtraAttributeList>
+    pub async fn get_extra_attributes<P>(&self, path: P) -> Result<FileExtraAttributeList>
     where
         P: std::fmt::Display,
     {
@@ -409,7 +408,7 @@ impl FilesClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read<P>(&self, path: P) -> FileReadBuilder<FileRead<Box<str>>>
+    pub fn read<P>(&self, path: P) -> FileReadBuilder<FileRead<Arc<str>>>
     where
         P: std::fmt::Display,
     {

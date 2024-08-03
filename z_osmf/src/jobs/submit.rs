@@ -58,25 +58,25 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Intrdr-Class", skip_setter)]
-    message_class: Option<Box<str>>,
+    message_class: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Intrdr-Recfm")]
     record_format: Option<JobRecordFormat>,
     #[endpoint(header = "X-IBM-Intrdr-Lrecl")]
     record_length: Option<i32>,
     #[endpoint(header = "X-IBM-User-Correlator")]
-    user_correlator: Option<Box<str>>,
+    user_correlator: Option<Arc<str>>,
     #[endpoint(builder_fn = build_symbols)]
-    symbols: Option<HashMap<Box<str>, Box<str>>>,
+    symbols: Option<HashMap<Arc<str>, Arc<str>>>,
     #[endpoint(builder_fn = build_jcl_source)]
     jcl_source: JobSource,
     #[endpoint(header = "X-IBM-Notification-URL")]
-    notification_url: Option<Box<str>>,
+    notification_url: Option<Arc<str>>,
     #[endpoint(builder_fn = build_notification_events)]
-    notification_events: Option<Box<[JobNotificationEvent]>>,
+    notification_events: Option<Arc<[JobNotificationEvent]>>,
     #[endpoint(header = "X-IBM-Intrdr-File-Encoding")]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }

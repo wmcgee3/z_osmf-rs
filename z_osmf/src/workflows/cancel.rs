@@ -9,7 +9,7 @@ use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowCancel {
-    inner: Box<str>,
+    inner: Arc<str>,
 }
 
 impl std::ops::Deref for WorkflowCancel {
@@ -39,7 +39,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    key: Box<str>,
+    key: Arc<str>,
 
     target_type: PhantomData<T>,
 }
@@ -47,5 +47,5 @@ where
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson {
-    workflow_name: Box<str>,
+    workflow_name: Arc<str>,
 }

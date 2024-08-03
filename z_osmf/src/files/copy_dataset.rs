@@ -17,11 +17,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    from_dataset: Box<str>,
+    from_dataset: Arc<str>,
     #[endpoint(path)]
-    to_path: Box<str>,
+    to_path: Arc<str>,
     #[endpoint(skip_builder)]
-    from_member: Option<Box<str>>,
+    from_member: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     dataset_type: Option<CopyDataType>,
 

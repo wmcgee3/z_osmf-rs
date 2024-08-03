@@ -2,29 +2,29 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use z_osmf_macros::Endpoint;
+use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct NewSystemVariable {
-    name: String,
-    value: String,
-    description: String,
+    name: Arc<str>,
+    value: Arc<str>,
+    description: Arc<str>,
 }
 
 impl NewSystemVariable {
     pub fn new<N, V, D>(name: N, value: V, description: D) -> Self
     where
-        N: ToString,
-        V: ToString,
-        D: ToString,
+        N: std::fmt::Display,
+        V: std::fmt::Display,
+        D: std::fmt::Display,
     {
         NewSystemVariable {
-            name: name.to_string(),
-            value: value.to_string(),
-            description: description.to_string(),
+            name: name.to_string().into(),
+            value: value.to_string().into(),
+            description: description.to_string().into(),
         }
     }
 }
@@ -38,11 +38,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    sysplex: Box<str>,
+    sysplex: Arc<str>,
     #[endpoint(path)]
-    system: Box<str>,
+    system: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    new_variables: Box<[NewSystemVariable]>,
+    new_variables: Arc<[NewSystemVariable]>,
 
     target_type: PhantomData<T>,
 }

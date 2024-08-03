@@ -19,28 +19,28 @@ pub enum WorkflowCategory {
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowInfo {
     #[serde(rename = "workflowName")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "workflowKey")]
-    key: Box<str>,
+    key: Arc<str>,
     #[serde(rename = "workflowDescription")]
-    description: Box<str>,
+    description: Arc<str>,
     #[serde(rename = "workflowID")]
-    id: Box<str>,
+    id: Arc<str>,
     #[serde(rename = "workflowVersion")]
-    version: Box<str>,
+    version: Arc<str>,
     #[serde(rename = "workflowDefinitionFileMD5Value")]
-    definition_file_hash: Box<str>,
+    definition_file_hash: Arc<str>,
     #[serde(rename = "instanceURI")]
-    instance_uri: Box<str>,
-    owner: Box<str>,
-    vendor: Box<str>,
+    instance_uri: Arc<str>,
+    owner: Arc<str>,
+    vendor: Arc<str>,
     #[getter(copy)]
     access: WorkflowAccess,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowList {
-    items: Box<[WorkflowInfo]>,
+    items: Arc<[WorkflowInfo]>,
 }
 
 impl TryFromResponse for WorkflowList {
@@ -60,22 +60,22 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(query = "workflowName")]
-    name: Option<Box<str>>,
+    name: Option<Arc<str>>,
     #[endpoint(query = "category")]
     category: Option<WorkflowCategory>,
     #[endpoint(query = "system")]
-    system: Option<Box<str>>,
+    system: Option<Arc<str>>,
     #[endpoint(query = "statusName")]
     status: Option<WorkflowStatus>,
     #[endpoint(query = "owner")]
-    owner: Option<Box<str>>,
+    owner: Option<Arc<str>>,
     #[endpoint(query = "vendor")]
-    vendor: Option<Box<str>>,
+    vendor: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
 
 #[derive(Deserialize)]
 struct ResponseJson {
-    workflows: Box<[WorkflowInfo]>,
+    workflows: Arc<[WorkflowInfo]>,
 }

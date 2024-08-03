@@ -13,7 +13,7 @@ use super::{de_optional_y_n, ser_optional_y_n, DatasetMigratedRecall};
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct MemberAttributesBase {
     #[serde(rename = "member")]
-    name: Box<str>,
+    name: Arc<str>,
     #[getter(copy)]
     #[serde(default, rename = "vers")]
     version: Option<i32>,
@@ -36,11 +36,11 @@ pub struct MemberAttributesBase {
     #[serde(default, rename = "mnorc")]
     modified_number_of_records: Option<i32>,
     #[serde(default, rename = "mtime")]
-    modified_time: Option<Box<str>>,
+    modified_time: Option<Arc<str>>,
     #[serde(default, rename = "msec")]
-    modified_seconds: Option<Box<str>>,
+    modified_seconds: Option<Arc<str>>,
     #[serde(default)]
-    user: Option<Box<str>>,
+    user: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(
         default,
@@ -50,30 +50,30 @@ pub struct MemberAttributesBase {
     )]
     modified_by_sclm: Option<bool>,
     #[serde(default, rename = "ac")]
-    authorization_code: Option<Box<str>>,
+    authorization_code: Option<Arc<str>>,
     #[serde(default)]
-    amode: Option<Box<str>>,
+    amode: Option<Arc<str>>,
     #[serde(default, rename = "attr")]
-    attributes: Option<Box<str>>,
+    attributes: Option<Arc<str>>,
     #[serde(default)]
-    rmode: Option<Box<str>>,
+    rmode: Option<Arc<str>>,
     #[serde(default)]
-    size: Option<Box<str>>,
+    size: Option<Arc<str>>,
     #[serde(default)]
-    ttr: Option<Box<str>>,
+    ttr: Option<Arc<str>>,
     #[serde(default)]
-    ssi: Option<Box<str>>,
+    ssi: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct MemberAttributesName {
     #[serde(rename = "member")]
-    name: Box<str>,
+    name: Arc<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct MemberList<T> {
-    items: Box<[T]>,
+    items: Arc<[T]>,
     #[getter(copy)]
     json_version: i32,
     #[getter(copy)]
@@ -116,11 +116,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(query = "start")]
-    start: Option<Box<str>>,
+    start: Option<Arc<str>>,
     #[endpoint(query = "pattern")]
-    pattern: Option<Box<str>>,
+    pattern: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
     #[endpoint(skip_setter, builder_fn = build_attributes)]
@@ -188,7 +188,7 @@ impl std::fmt::Display for Attrs {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson<T> {
-    items: Box<[T]>,
+    items: Arc<[T]>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,

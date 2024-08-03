@@ -16,9 +16,9 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    mode: Box<str>,
+    mode: Arc<str>,
     #[endpoint(skip_builder)]
     links: Option<FileChangeModeLinks>,
     #[endpoint(skip_builder)]

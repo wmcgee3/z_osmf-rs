@@ -16,9 +16,9 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    source_path: Box<str>,
+    source_path: Arc<str>,
     #[endpoint(path)]
-    target_path: Box<str>,
+    target_path: Arc<str>,
     #[endpoint(skip_builder)]
     link_type: FileLinkType,
     #[endpoint(skip_builder)]

@@ -13,12 +13,12 @@ use crate::{ClientCore, Error, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileExtraAttributeList {
-    name: Box<str>,
+    name: Arc<str>,
     apf_authorized: bool,
     program_controlled: bool,
     shared_address_space: bool,
     shared_library: bool,
-    transaction_id: Box<str>,
+    transaction_id: Arc<str>,
 }
 
 impl TryFromResponse for FileExtraAttributeList {
@@ -56,7 +56,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
     target_type: PhantomData<T>,
@@ -80,12 +80,12 @@ where
 struct RequestJson {
     request: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    set: Option<Box<str>>,
+    set: Option<Arc<str>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    reset: Option<Box<str>>,
+    reset: Option<Arc<str>>,
 }
 
 #[derive(Deserialize)]
 struct ResponseJson {
-    stdout: Box<[Box<str>]>,
+    stdout: Arc<[Arc<str>]>,
 }

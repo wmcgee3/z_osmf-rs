@@ -16,16 +16,16 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(skip_builder)]
     crlf_newlines: Option<bool>,
     #[endpoint(skip_setter, builder_fn = build_data)]
     data: Option<Data>,
     #[endpoint(skip_builder)]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(header = "If-Match")]
-    if_match: Option<Box<str>>,
+    if_match: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
@@ -90,7 +90,7 @@ where
 #[derive(Clone, Debug)]
 enum Data {
     Binary(Bytes),
-    Text(Box<str>),
+    Text(Arc<str>),
 }
 
 #[cfg(test)]

@@ -18,17 +18,17 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_volume)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(path, builder_fn = build_member)]
-    member: Option<Box<str>>,
+    member: Option<Arc<str>>,
     #[endpoint(header = "If-Match")]
-    if_match: Option<Box<str>>,
+    if_match: Option<Arc<str>>,
     #[endpoint(skip_setter, builder_fn = build_data)]
     data: Option<Data>,
     #[endpoint(skip_builder)]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     crlf_newlines: Option<bool>,
     #[endpoint(header = "X-IBM-Migrated-Recall")]
@@ -36,11 +36,11 @@ where
     #[endpoint(header = "X-IBM-Obtain-ENQ")]
     obtain_enq: Option<DatasetEnqueue>,
     #[endpoint(header = "X-IBM-Session-Ref")]
-    session_ref: Option<Box<str>>,
+    session_ref: Option<Arc<str>>,
     #[endpoint(builder_fn = build_release_enq)]
     release_enq: Option<bool>,
     #[endpoint(header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<Box<str>>,
+    dsname_encoding: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }

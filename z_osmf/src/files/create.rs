@@ -24,12 +24,12 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
     file_type: Option<FileCreateType>,
     #[endpoint(skip_builder)]
-    mode: Option<Box<str>>,
+    mode: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }

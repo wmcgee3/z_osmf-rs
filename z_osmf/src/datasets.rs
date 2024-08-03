@@ -10,6 +10,8 @@ pub mod recall;
 pub mod rename;
 pub mod write;
 
+use std::sync::Arc;
+
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -358,7 +360,7 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read<D>(&self, dataset: D) -> DatasetReadBuilder<DatasetRead<Box<str>>>
+    pub fn read<D>(&self, dataset: D) -> DatasetReadBuilder<DatasetRead<Arc<str>>>
     where
         D: std::fmt::Display,
     {
@@ -532,14 +534,14 @@ where
         .transpose()
 }
 
-fn get_member(value: &Option<Box<str>>) -> String {
+fn get_member(value: &Option<Arc<str>>) -> String {
     value
         .as_ref()
         .map(|v| format!("({})", v))
-        .unwrap_or("".to_string())
+        .unwrap_or_default()
 }
 
-fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>> {
+fn get_session_ref(response: &reqwest::Response) -> Result<Option<Arc<str>>> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
@@ -548,11 +550,11 @@ fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>> {
         .map(|v| v.into()))
 }
 
-fn get_volume(value: &Option<Box<str>>) -> String {
+fn get_volume(value: &Option<Arc<str>>) -> String {
     value
         .as_ref()
         .map(|v| format!("/-({})", v))
-        .unwrap_or("".to_string())
+        .unwrap_or_default()
 }
 
 fn ser_optional_y_n<S>(v: &Option<bool>, serializer: S) -> std::result::Result<S::Ok, S::Error>

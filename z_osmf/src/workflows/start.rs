@@ -16,19 +16,19 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    key: Box<str>,
+    key: Arc<str>,
     #[endpoint(builder_fn = build_body)]
     resolve_conflict_by_using: Option<WorkflowStartResolveVariableConflict>,
     #[endpoint(skip_builder)]
-    step_name: Option<Box<str>>,
+    step_name: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     perform_subsequent: Option<bool>,
     #[endpoint(skip_builder)]
-    notification_url: Option<Box<str>>,
+    notification_url: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    target_system_user: Option<Box<str>>,
+    target_system_user: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    target_system_password: Option<Box<str>>,
+    target_system_password: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }

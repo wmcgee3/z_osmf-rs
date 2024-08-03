@@ -11,11 +11,11 @@ use super::WorkflowAccess;
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowCreate {
-    description: Box<str>,
-    id: Box<str>,
-    key: Box<str>,
-    vendor: Box<str>,
-    version: Box<str>,
+    description: Arc<str>,
+    id: Arc<str>,
+    key: Arc<str>,
+    vendor: Arc<str>,
+    version: Arc<str>,
 }
 
 impl TryFromResponse for WorkflowCreate {
@@ -33,41 +33,45 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    name: Box<str>,
-    definition_file: Box<str>,
-    system: Box<str>,
-    owner: Box<str>,
+    name: Arc<str>,
+    definition_file: Arc<str>,
+    system: Arc<str>,
+    owner: Arc<str>,
 
-    definition_file_system: Option<Box<str>>,
-    variable_input_file: Option<Box<str>>,
-    variables: Option<Box<[WorkflowVariableOverride]>>,
+    definition_file_system: Option<Arc<str>>,
+    variable_input_file: Option<Arc<str>>,
+    variables: Option<Arc<[WorkflowVariableOverride]>>,
     resolve_global_conflict_by_using: Option<WorkflowCreateResolveVariableConflict>,
-    archive_saf_id: Option<Box<str>>,
-    comments: Option<Box<str>>,
+    archive_saf_id: Option<Arc<str>>,
+    comments: Option<Arc<str>>,
     assign_to_owner: Option<bool>,
     access_type: Option<WorkflowAccess>,
-    account_info: Option<Box<str>>,
-    job_statement: Option<Box<str>>,
+    account_info: Option<Arc<str>>,
+    job_statement: Option<Arc<str>>,
     delete_completed_jobs: Option<bool>,
-    jobs_output_directory: Option<Box<str>>,
+    jobs_output_directory: Option<Arc<str>>,
     auto_delete_on_completion: Option<bool>,
-    target_system_uid: Option<Box<str>>,
-    target_system_password: Option<Box<str>>,
+    target_system_uid: Option<Arc<str>>,
+    target_system_password: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct WorkflowVariableOverride {
-    name: Box<str>,
-    value: Box<str>,
+    name: Arc<str>,
+    value: Arc<str>,
 }
 
 impl WorkflowVariableOverride {
-    pub fn new(name: &str, value: &str) -> Self {
+    pub fn new<N, V>(name: N, value: V) -> Self
+    where
+        N: std::fmt::Display,
+        V: std::fmt::Display,
+    {
         WorkflowVariableOverride {
-            name: name.into(),
-            value: value.into(),
+            name: name.to_string().into(),
+            value: value.to_string().into(),
         }
     }
 }

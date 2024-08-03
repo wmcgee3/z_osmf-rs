@@ -15,27 +15,27 @@ use super::{de_optional_y_n, ser_optional_y_n};
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct DatasetAttributesBase {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "blksz")]
-    block_size: Option<Box<str>>,
+    block_size: Option<Arc<str>>,
     #[serde(rename = "catnm")]
-    catalog: Option<Box<str>>,
+    catalog: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(default, deserialize_with = "de_optional_date", rename = "cdate")]
     creation_date: Option<NaiveDate>,
     #[serde(rename = "dev")]
-    device_type: Option<Box<str>>,
+    device_type: Option<Arc<str>>,
     #[serde(rename = "dsntp")]
-    dataset_type: Option<Box<str>>,
+    dataset_type: Option<Arc<str>>,
     #[serde(rename = "dsorg")]
-    organization: Option<Box<str>>,
+    organization: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(default, deserialize_with = "de_optional_date", rename = "edate")]
     expiration_date: Option<NaiveDate>,
     #[serde(rename = "extx")]
-    extents_used: Option<Box<str>>,
+    extents_used: Option<Arc<str>>,
     #[serde(rename = "lrecl")]
-    record_length: Option<Box<str>>,
+    record_length: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(
         rename = "migr",
@@ -63,36 +63,36 @@ pub struct DatasetAttributesBase {
     #[serde(default, deserialize_with = "de_optional_date", rename = "rdate")]
     last_referenced_date: Option<NaiveDate>,
     #[serde(rename = "recfm")]
-    record_format: Option<Box<str>>,
+    record_format: Option<Arc<str>>,
     #[serde(rename = "sizex")]
-    size_in_tracks: Option<Box<str>>,
+    size_in_tracks: Option<Arc<str>>,
     #[serde(rename = "spacu")]
-    space_units: Option<Box<str>>,
+    space_units: Option<Arc<str>>,
     #[serde(rename = "used")]
-    percent_used: Option<Box<str>>,
+    percent_used: Option<Arc<str>>,
     #[serde(rename = "vol")]
     volume: DatasetVolume,
     #[serde(rename = "vols")]
-    volumes: Option<Box<str>>,
+    volumes: Option<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct DatasetAttributesName {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    name: Arc<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct DatasetAttributesVolume {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "vol")]
     volume: DatasetVolume,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct DatasetList<T> {
-    items: Box<[T]>,
+    items: Arc<[T]>,
     #[getter(copy)]
     json_version: i32,
     #[getter(copy)]
@@ -101,7 +101,7 @@ pub struct DatasetList<T> {
     returned_rows: i32,
     #[getter(copy)]
     total_rows: Option<i32>,
-    transaction_id: Box<str>,
+    transaction_id: Arc<str>,
 }
 
 impl<T> TryFromResponse for DatasetList<T>
@@ -139,11 +139,11 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(query = "dslevel")]
-    level: Box<str>,
+    level: Arc<str>,
     #[endpoint(query = "volser")]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(query = "start")]
-    start: Option<Box<str>>,
+    start: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
     #[endpoint(skip_setter, builder_fn = build_attributes)]
@@ -260,7 +260,7 @@ impl std::fmt::Display for Attrs {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson<T> {
-    items: Box<[T]>,
+    items: Arc<[T]>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,

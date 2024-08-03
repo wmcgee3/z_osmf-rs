@@ -17,7 +17,7 @@ where
     #[endpoint(path, skip_setter)]
     workflow_type: WorkflowType,
     #[endpoint(path)]
-    key: Box<str>,
+    key: Arc<str>,
 
     target_type: PhantomData<T>,
 }

@@ -37,13 +37,13 @@ pub struct JobFileRead<T> {
     data: T,
 }
 
-impl JobFileRead<Box<str>> {
+impl JobFileRead<Arc<str>> {
     pub fn data(&self) -> &str {
         &self.data
     }
 }
 
-impl TryFromResponse for JobFileRead<Box<str>> {
+impl TryFromResponse for JobFileRead<Arc<str>> {
     async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         Ok(JobFileRead {
             data: value.text().await?.into(),
@@ -67,16 +67,16 @@ impl TryFromResponse for JobFileRead<Bytes> {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}/files/{id}/records")]
-pub struct JobFileReadBuilder<'a, T>
+pub struct JobFileReadBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier<'a>,
+    identifier: JobIdentifier,
     #[endpoint(path)]
     id: JobFileId,
     #[endpoint(header = "X-IBM-Record-Range")]
@@ -84,11 +84,11 @@ where
     #[endpoint(skip_setter, query = "mode")]
     data_type: Option<DataType>,
     #[endpoint(query = "fileEncoding")]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(query = "search")]
-    search: Option<Box<str>>,
+    search: Option<Arc<str>>,
     #[endpoint(query = "research")]
-    search_regex: Option<Box<str>>,
+    search_regex: Option<Arc<str>>,
     #[endpoint(builder_fn = build_search_case_sensitive)]
     search_case_sensitive: Option<bool>,
     #[endpoint(query = "maxreturnsize")]
@@ -97,11 +97,11 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<'a, U> JobFileReadBuilder<'a, JobFileRead<U>>
+impl<U> JobFileReadBuilder<JobFileRead<U>>
 where
     JobFileRead<U>: TryFromResponse,
 {
-    pub fn binary(self) -> JobFileReadBuilder<'a, JobFileRead<Bytes>> {
+    pub fn binary(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
         JobFileReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -118,7 +118,7 @@ where
         }
     }
 
-    pub fn record(self) -> JobFileReadBuilder<'a, JobFileRead<Bytes>> {
+    pub fn record(self) -> JobFileReadBuilder<JobFileRead<Bytes>> {
         JobFileReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -135,7 +135,7 @@ where
         }
     }
 
-    pub fn text(self) -> JobFileReadBuilder<'a, JobFileRead<Box<str>>> {
+    pub fn text(self) -> JobFileReadBuilder<JobFileRead<Arc<str>>> {
         JobFileReadBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -200,7 +200,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00023");
+        let identifier = JobIdentifier::NameId("TESTJOBJ".to_string(), "JOB00023".to_string());
         let file_id = JobFileId::Id(1);
         let job_file = zosmf
             .jobs()
@@ -223,7 +223,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00023");
+        let identifier = JobIdentifier::NameId("TESTJOBJ".to_string(), "JOB00023".to_string());
         let file_id = JobFileId::Id(8);
         let job_file = zosmf
             .jobs()
@@ -246,7 +246,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBJ", "JOB00060");
+        let identifier = JobIdentifier::NameId("TESTJOBJ".to_string(), "JOB00060".to_string());
         let file_id = JobFileId::Jcl;
 
         let job_file = zosmf

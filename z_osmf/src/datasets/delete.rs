@@ -17,13 +17,13 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_volume)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(path, builder_fn = build_member)]
-    member: Option<Box<str>>,
+    member: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<Box<str>>,
+    dsname_encoding: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }

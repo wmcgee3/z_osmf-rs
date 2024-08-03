@@ -73,7 +73,7 @@ impl Endpoint {
             .map(|f| {
                 let EndpointField { ident, ty, .. } = f;
 
-                if ty.to_token_stream().to_string() == "Box < str >" {
+                if ty.to_token_stream().to_string() == "Arc < str >" {
                     (
                         quote! { #ident: impl std::fmt::Display },
                         quote! { #ident: #ident.to_string().into() },
@@ -209,7 +209,7 @@ impl EndpointField {
                 ident: Some(ident),
                 ty,
                 ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
+            } if ty.to_token_stream().to_string() == "Option < Arc < str > >" => Some(quote! {
                 if let Some(value) = &self.#ident {
                     request_builder = request_builder.header(#header, value.as_ref());
                 }
@@ -262,7 +262,7 @@ impl EndpointField {
                 ident: Some(ident),
                 ty,
                 ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => {
+            } if ty.to_token_stream().to_string() == "Option < Arc < str > >" => {
                 let body = if let Some(setter_fn) = setter_fn {
                     quote! {
                         #setter_fn(self, value)

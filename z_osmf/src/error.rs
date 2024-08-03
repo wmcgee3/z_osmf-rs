@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -8,7 +10,7 @@ pub enum Error {
     #[error("data serialization failed: {0}")]
     Fmt(#[from] std::fmt::Error),
     #[error("invalid response format: {0:?}")]
-    InvalidFormat(Box<[Box<str>]>),
+    InvalidFormat(Arc<[Arc<str>]>),
     #[error("invalid value: {0}")]
     InvalidValue(String),
     #[error("missing etag")]

@@ -9,13 +9,13 @@ use crate::{ClientCore, Result};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SystemSymbol {
-    name: Box<str>,
-    value: Box<str>,
+    name: Arc<str>,
+    value: Arc<str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SystemSymbolList {
-    inner: Box<[SystemSymbol]>,
+    inner: Arc<[SystemSymbol]>,
 }
 
 impl TryFromResponse for SystemSymbolList {
@@ -54,7 +54,7 @@ where
 {
     pub fn name<V>(self, value: V) -> Self
     where
-        V: ToString,
+        V: std::fmt::Display,
     {
         let mut new = self;
         match new.names {
@@ -67,7 +67,7 @@ where
 
     pub fn names<V>(self, value: &[V]) -> Self
     where
-        V: ToString,
+        V: std::fmt::Display,
     {
         let mut new = self;
         match new.names {
@@ -82,7 +82,7 @@ where
 #[derive(Deserialize)]
 struct ResponseJson {
     #[serde(rename = "system-symbol-list")]
-    symbols: Box<[SystemSymbol]>,
+    symbols: Arc<[SystemSymbol]>,
 }
 
 fn build_names<T>(
@@ -92,7 +92,7 @@ fn build_names<T>(
 where
     T: TryFromResponse,
 {
-    let query: Box<[_]> = builder
+    let query: Arc<[_]> = builder
         .names
         .iter()
         .map(|name| ("var-name", name))

@@ -16,7 +16,7 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
     target_type: PhantomData<T>,

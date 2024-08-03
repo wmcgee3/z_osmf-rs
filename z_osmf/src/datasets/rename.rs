@@ -18,13 +18,13 @@ where
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    from_dataset: Box<str>,
+    from_dataset: Arc<str>,
     #[endpoint(path)]
-    to_dataset: Box<str>,
+    to_dataset: Arc<str>,
     #[endpoint(skip_builder)]
-    from_member: Option<Box<str>>,
+    from_member: Option<Arc<str>>,
     #[endpoint(path, builder_fn = build_to_member)]
-    to_member: Option<Box<str>>,
+    to_member: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     enqueue: Option<DatasetEnqueue>,
 
@@ -44,7 +44,7 @@ struct RequestJson<'a> {
 struct FromDataset<'a> {
     dsn: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    member: &'a Option<Box<str>>,
+    member: &'a Option<Arc<str>>,
 }
 
 fn build_body<T>(

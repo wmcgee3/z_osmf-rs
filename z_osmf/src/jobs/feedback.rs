@@ -13,19 +13,19 @@ use super::{get_subsystem, JobIdentifier};
 #[serde(rename_all = "kebab-case")]
 pub struct JobFeedback {
     #[serde(rename = "jobid")]
-    id: Box<str>,
+    id: Arc<str>,
     #[serde(rename = "jobname")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "original-jobid")]
-    original_id: Option<Box<str>>,
-    owner: Box<str>,
-    member: Box<str>,
+    original_id: Option<Arc<str>>,
+    owner: Arc<str>,
+    member: Arc<str>,
     #[serde(rename = "sysname")]
-    system_name: Box<str>,
-    job_correlator: Box<str>,
-    status: Box<str>,
-    internal_code: Option<Box<str>>,
-    message: Option<Box<str>>,
+    system_name: Arc<str>,
+    job_correlator: Arc<str>,
+    status: Arc<str>,
+    internal_code: Option<Arc<str>>,
+    message: Option<Arc<str>>,
 }
 
 impl TryFromResponse for JobFeedback {
@@ -36,16 +36,16 @@ impl TryFromResponse for JobFeedback {
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct JobFeedbackBuilder<'a, T>
+pub struct JobFeedbackBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(path)]
-    identifier: JobIdentifier<'a>,
+    identifier: JobIdentifier,
     #[endpoint(builder_fn = build_body)]
     request: &'static str,
     #[endpoint(skip_setter, skip_builder)]
@@ -54,11 +54,11 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<'a, T> JobFeedbackBuilder<'a, T>
+impl<T> JobFeedbackBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> JobFeedbackBuilder<'a, ()> {
+    pub fn asynchronous(self) -> JobFeedbackBuilder<()> {
         JobFeedbackBuilder {
             core: self.core,
             subsystem: self.subsystem,
@@ -126,7 +126,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOB2", "JOB00084");
+        let identifier = JobIdentifier::NameId("TESTJOB2".to_string(), "JOB00084".to_string());
 
         let job_feedback = zosmf.jobs().cancel(identifier).get_request().unwrap();
 
@@ -157,7 +157,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
+        let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
         let job_feedback = zosmf.jobs().hold(identifier).get_request().unwrap();
 
         assert_eq!(
@@ -187,7 +187,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = JobIdentifier::NameId("TESTJOBW", "JOB00023");
+        let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
         let job_feedback = zosmf.jobs().release(identifier).get_request().unwrap();
 
         assert_eq!(
