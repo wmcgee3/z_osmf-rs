@@ -65,6 +65,10 @@
 
 pub use bytes::Bytes;
 
+pub use self::error::{Error, Result};
+
+pub mod info;
+
 #[cfg(feature = "datasets")]
 pub mod datasets;
 #[cfg(feature = "files")]
@@ -78,28 +82,12 @@ pub mod system_variables;
 #[cfg(feature = "workflows")]
 pub mod workflows;
 
-pub use self::error::{Error, Result};
-
-pub mod info;
-
 use std::sync::{Arc, RwLock};
 
 use reqwest::header::{HeaderMap, HeaderValue};
 use serde::{Deserialize, Serialize};
 
 use self::error::CheckStatus;
-use self::info::{Info, InfoBuilder};
-
-#[cfg(feature = "datasets")]
-use self::datasets::DatasetsClient;
-#[cfg(feature = "files")]
-use self::files::FilesClient;
-#[cfg(feature = "jobs")]
-use self::jobs::JobsClient;
-#[cfg(feature = "system-variables")]
-use self::system_variables::SystemVariablesClient;
-#[cfg(feature = "workflows")]
-use self::workflows::WorkflowsClient;
 
 mod convert;
 mod error;
@@ -166,8 +154,8 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn info(&self) -> Result<Info> {
-        InfoBuilder::new(self.core.clone()).build().await
+    pub async fn info(&self) -> Result<info::Info> {
+        info::InfoBuilder::new(self.core.clone()).build().await
     }
 
     /// Authenticate with z/OSMF.
@@ -245,8 +233,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "datasets")]
-    pub fn datasets(&self) -> DatasetsClient {
-        DatasetsClient::new(self.core.clone())
+    pub fn datasets(&self) -> datasets::DatasetsClient {
+        datasets::DatasetsClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with files.
@@ -259,8 +247,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "files")]
-    pub fn files(&self) -> FilesClient {
-        FilesClient::new(self.core.clone())
+    pub fn files(&self) -> files::FilesClient {
+        files::FilesClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with jobs.
@@ -273,8 +261,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "jobs")]
-    pub fn jobs(&self) -> JobsClient {
-        JobsClient::new(self.core.clone())
+    pub fn jobs(&self) -> jobs::JobsClient {
+        jobs::JobsClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with system symbols and variables.
@@ -287,8 +275,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "system-variables")]
-    pub fn system_variables(&self) -> SystemVariablesClient {
-        SystemVariablesClient::new(self.core.clone())
+    pub fn system_variables(&self) -> system_variables::SystemVariablesClient {
+        system_variables::SystemVariablesClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with workflows.
@@ -301,8 +289,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "workflows")]
-    pub fn workflows(&self) -> WorkflowsClient {
-        WorkflowsClient::new(self.core.clone())
+    pub fn workflows(&self) -> workflows::WorkflowsClient {
+        workflows::WorkflowsClient::new(self.core.clone())
     }
 
     fn set_token(&self, token: Option<AuthToken>) -> Result<()> {
