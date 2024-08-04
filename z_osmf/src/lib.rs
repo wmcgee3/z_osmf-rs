@@ -6,16 +6,18 @@
 //!
 //! Create a ZOsmf client:
 //! ```
-//! # fn example() -> Result<(), z_osmf::Error> {
+//! # fn example() -> z_osmf::Result<()> {
 //! let client = reqwest::Client::new();
-//! let zosmf = z_osmf::ZOsmf::new(client, "https://mainframe.my-company.com");
+//! let base_url = "https://mainframe.my-company.com";
+//!
+//! let zosmf = z_osmf::ZOsmf::new(client, base_url);
 //! # Ok(())
 //! # }
 //! ```
 //!
 //! List your datasets:
 //! ```
-//! # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+//! # async fn example(zosmf: z_osmf::ZOsmf) -> z_osmf::Result<()> {
 //! let my_datasets = zosmf
 //!     .datasets()
 //!     .list("USERNAME")
@@ -30,7 +32,7 @@
 //!
 //! List the files in your home directory:
 //! ```
-//! # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+//! # async fn example(zosmf: z_osmf::ZOsmf) -> z_osmf::Result<()> {
 //! let my_files = zosmf
 //!     .files()
 //!     .list("/u/username")
@@ -45,7 +47,7 @@
 //!
 //! List all active jobs:
 //! ```
-//! # async fn example(zosmf: z_osmf::ZOsmf) -> Result<(), z_osmf::Error> {
+//! # async fn example(zosmf: z_osmf::ZOsmf) -> z_osmf::Result<()> {
 //! let active_jobs = zosmf
 //!     .jobs()
 //!     .list()
