@@ -8,7 +8,7 @@ use crate::convert::TryFromResponse;
 use crate::jobs::{JobStatus, JobType};
 use crate::{ClientCore, Result};
 
-use super::{ReturnData, WorkflowAccess, WorkflowStatus};
+use super::{ReturnData, WorkflowAccess, WorkflowStatus, WorkflowType};
 
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -93,13 +93,15 @@ impl TryFromResponse for WorkflowProperties {
 }
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = get, path = "/zosmf/workflow/rest/1.0/workflows/{key}")]
+#[endpoint(method = get, path = "/zosmf/workflow/rest/1.0/{workflow_type}/{key}")]
 pub struct WorkflowPropertiesBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
+    #[endpoint(path, skip_setter)]
+    workflow_type: WorkflowType,
     #[endpoint(path)]
     key: Arc<str>,
     #[endpoint(skip_setter, builder_fn = build_return_data)]
@@ -112,6 +114,7 @@ impl WorkflowPropertiesBuilder<WorkflowProperties> {
     pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
         WorkflowPropertiesBuilder {
             core: self.core,
+            workflow_type: self.workflow_type,
             key: self.key,
             return_data: Some(ReturnData::Steps),
             target_type: PhantomData,
@@ -121,6 +124,7 @@ impl WorkflowPropertiesBuilder<WorkflowProperties> {
     pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
         WorkflowPropertiesBuilder {
             core: self.core,
+            workflow_type: self.workflow_type,
             key: self.key,
             return_data: Some(ReturnData::Variables),
             target_type: PhantomData,
@@ -132,6 +136,7 @@ impl WorkflowPropertiesBuilder<WorkflowPropertiesSteps> {
     pub fn variables(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
         WorkflowPropertiesBuilder {
             core: self.core,
+            workflow_type: self.workflow_type,
             key: self.key,
             return_data: Some(ReturnData::StepsVariables),
             target_type: PhantomData,
@@ -143,6 +148,7 @@ impl WorkflowPropertiesBuilder<WorkflowPropertiesVariables> {
     pub fn steps(self) -> WorkflowPropertiesBuilder<WorkflowPropertiesStepsVariables> {
         WorkflowPropertiesBuilder {
             core: self.core,
+            workflow_type: self.workflow_type,
             key: self.key,
             return_data: Some(ReturnData::StepsVariables),
             target_type: PhantomData,

@@ -1,3 +1,5 @@
+pub mod archive;
+pub mod archived_workflows;
 pub mod cancel;
 pub mod create;
 pub mod definition;
@@ -6,8 +8,9 @@ pub mod list;
 pub mod properties;
 pub mod start;
 
+use archive::{WorkflowArchive, WorkflowArchiveBuilder};
+use archived_workflows::{ArchivedWorkflowList, ArchivedWorkflowListBuilder};
 use definition::{WorkflowDefinition, WorkflowDefinitionBuilder};
-use delete::WorkflowType;
 use serde::{Deserialize, Serialize};
 
 use crate::{ClientCore, Result};
@@ -88,7 +91,7 @@ impl WorkflowsClient {
     where
         K: std::fmt::Display,
     {
-        WorkflowPropertiesBuilder::new(self.core.clone(), key)
+        WorkflowPropertiesBuilder::new(self.core.clone(), WorkflowType::Workflows, key)
     }
 
     /// # Examples
@@ -190,11 +193,66 @@ impl WorkflowsClient {
         WorkflowDefinitionBuilder::new(self.core.clone(), path)
     }
 
-    pub fn archive(&self) {}
+    /// # Examples
+    ///
+    /// Archive a z/OSMF Workflow:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let workflow_archive = zosmf
+    ///     .workflows()
+    ///     .archive("2535b19e-a8c3-4a52-9d77-e30bb920f912")
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn archive<K>(&self, key: K) -> Result<WorkflowArchive>
+    where
+        K: std::fmt::Display,
+    {
+        WorkflowArchiveBuilder::new(self.core.clone(), key)
+            .build()
+            .await
+    }
 
-    pub fn list_archived(&self) {}
+    /// # Examples
+    ///
+    /// List archived z/OSMF Workflows:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # use z_osmf::workflows::archived_workflows::WorkflowOrderBy;
+    /// let archived_workflow_list = zosmf
+    ///     .workflows()
+    ///     .list_archived()
+    ///     .order_by(WorkflowOrderBy::Desc)
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn list_archived(&self) -> ArchivedWorkflowListBuilder<ArchivedWorkflowList> {
+        ArchivedWorkflowListBuilder::new(self.core.clone())
+    }
 
-    pub fn properties_archived(&self) {}
+    /// # Examples
+    ///
+    /// Get the properties of an archived z/OSMF Workflow:
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// # use z_osmf::workflows::archived_workflows::WorkflowOrderBy;
+    /// let archived_workflow_properties = zosmf
+    ///     .workflows()
+    ///     .properties_archived("2535b19e-a8c3-4a52-9d77-e30bb920f912")
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn properties_archived<K>(&self, key: K) -> WorkflowPropertiesBuilder<WorkflowProperties>
+    where
+        K: std::fmt::Display,
+    {
+        WorkflowPropertiesBuilder::new(self.core.clone(), WorkflowType::ArchivedWorkflows, key)
+    }
 
     /// # Examples
     ///
@@ -227,10 +285,10 @@ pub enum WorkflowAccess {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum WorkflowStatus {
-    InProgress,
-    Complete,
     AutomationInProgress,
     Canceled,
+    Complete,
+    InProgress,
 }
 
 #[derive(Clone, Debug)]
@@ -238,4 +296,23 @@ enum ReturnData {
     Steps,
     StepsVariables,
     Variables,
+}
+
+#[derive(Clone, Debug)]
+enum WorkflowType {
+    ArchivedWorkflows,
+    Workflows,
+}
+
+impl std::fmt::Display for WorkflowType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                WorkflowType::ArchivedWorkflows => "archivedworkflows",
+                WorkflowType::Workflows => "workflows",
+            }
+        )
+    }
 }
