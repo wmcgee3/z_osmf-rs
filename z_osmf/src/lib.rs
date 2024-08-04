@@ -84,7 +84,7 @@ pub mod workflows;
 
 use std::sync::{Arc, RwLock};
 
-use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 
 use self::error::CheckStatus;
@@ -315,10 +315,18 @@ impl std::str::FromStr for AuthToken {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let (name, value) = s.split_once('=').ok_or(Error::InvalidValue(format!(
-            "invalid set-cookie header value: {}",
-            s
-        )))?;
+        let (name, value) = s
+            .split_once(';')
+            .ok_or(Error::InvalidValue(format!(
+                "invalid set-cookie header value: {}",
+                s
+            )))?
+            .0
+            .split_once('=')
+            .ok_or(Error::InvalidValue(format!(
+                "invalid set-cookie header value: {}",
+                s
+            )))?;
 
         let token = match name {
             "jwtToken" => AuthToken::Jwt(value.to_string()),
@@ -334,41 +342,39 @@ impl TryFrom<&HeaderValue> for AuthToken {
     type Error = Error;
 
     fn try_from(value: &HeaderValue) -> Result<Self> {
-        let s = value.to_str()?;
-
-        s.split_once(';')
-            .ok_or(Error::InvalidValue(format!(
-                "invalid set-cookie header value: {}",
-                s
-            )))?
-            .0
-            .parse()
+        value.to_str()?.parse()
     }
 }
 
 impl std::fmt::Display for AuthToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            AuthToken::Jwt(token) => format!("jwtToken={}", token),
-            AuthToken::Ltpa2(token) => format!("LtpaToken2={}", token),
+            AuthToken::Jwt(token) => format!("jwtToken={};", token),
+            AuthToken::Ltpa2(token) => format!("LtpaToken2={};", token),
         };
 
         write!(f, "{}", s)
     }
 }
 
-impl From<&AuthToken> for HeaderMap {
+impl From<&AuthToken> for (HeaderName, HeaderValue) {
     fn from(value: &AuthToken) -> Self {
-        let (key, val) = match value {
+        match value {
             AuthToken::Jwt(token_value) => (
                 reqwest::header::AUTHORIZATION,
                 format!("Bearer {}", token_value).parse().unwrap(),
             ),
             AuthToken::Ltpa2(token_value) => (
                 reqwest::header::COOKIE,
-                format!("LtpaToken2={}", token_value).parse().unwrap(),
+                token_value.to_string().parse().unwrap(),
             ),
-        };
+        }
+    }
+}
+
+impl From<&AuthToken> for HeaderMap {
+    fn from(value: &AuthToken) -> Self {
+        let (key, val) = value.into();
 
         let mut headers = HeaderMap::new();
         headers.insert(key, val);
