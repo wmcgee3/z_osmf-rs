@@ -4,13 +4,13 @@
 //!
 //! ## Examples
 //!
-//! Create a ZOsmf client:
+//! Create a ZOsmf client and authenticate:
 //! ```
-//! # fn example() -> z_osmf::Result<()> {
+//! # async fn example() -> z_osmf::Result<()> {
 //! let client = reqwest::Client::new();
 //! let base_url = "https://mainframe.my-company.com";
-//!
 //! let zosmf = z_osmf::ZOsmf::new(client, base_url);
+//! zosmf.login("USERNAME", "PASSWORD").await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -103,10 +103,10 @@ mod utils;
 /// # async fn example() -> anyhow::Result<()> {
 /// # use z_osmf::ZOsmf;
 /// let client = reqwest::Client::new();
-/// let url = "https://zosmf.mainframe.my-company.com";
+/// let base_url = "https://zosmf.mainframe.my-company.com";
 /// let username = "USERNAME";
 ///
-/// let zosmf = ZOsmf::new(client, url);
+/// let zosmf = ZOsmf::new(client, base_url);
 /// zosmf.login(username, "PASSWORD").await?;
 ///
 /// let my_datasets = zosmf.datasets().list(username).build().await?;
