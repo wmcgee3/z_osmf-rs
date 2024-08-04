@@ -5,9 +5,9 @@ mod _setup;
 async fn main() -> anyhow::Result<()> {
     let zosmf = _setup::get_zosmf().await?;
 
-    let info = zosmf.info().await?;
+    let workflows = zosmf.workflows().list().build().await?;
 
-    println!("{:#?}", info);
+    println!("{:#?}", workflows);
 
     Ok(())
 }

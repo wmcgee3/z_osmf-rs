@@ -9,29 +9,29 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct ChangeOwnerBuilder<T>
+pub struct FileChangeOwnerBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    owner: Box<str>,
+    owner: Arc<str>,
     #[endpoint(skip_builder)]
-    group: Option<Box<str>>,
+    group: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    links: Option<Links>,
+    links: Option<FileChangeOwnerLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Links {
+pub enum FileChangeOwnerLinks {
     Change,
     Follow,
 }
@@ -43,13 +43,13 @@ struct RequestJson<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     group: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<Links>,
+    links: Option<FileChangeOwnerLinks>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &ChangeOwnerBuilder<T>,
+    builder: &FileChangeOwnerBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -97,7 +97,7 @@ mod tests {
             .files()
             .change_owner("/u/jiahj/testDir", "ibmuser")
             .group("ibmgrp")
-            .links(Links::Change)
+            .links(FileChangeOwnerLinks::Change)
             .recursive(true)
             .get_request()
             .unwrap();

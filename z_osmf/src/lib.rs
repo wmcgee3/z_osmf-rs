@@ -1,10 +1,74 @@
+//! # z_osmf
+//!
+//! The VERY work in progress Rust z/OSMF<sup>TM</sup> Client.
+//!
+//! ## Examples
+//!
+//! Create a ZOsmf client and authenticate:
+//! ```
+//! # async fn example() -> z_osmf::Result<()> {
+//! let client = reqwest::Client::new();
+//! let base_url = "https://mainframe.my-company.com";
+//! let zosmf = z_osmf::ZOsmf::new(client, base_url);
+//! zosmf.login("USERNAME", "PASSWORD").await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! List your datasets:
+//! ```
+//! # async fn example(zosmf: z_osmf::ZOsmf) -> z_osmf::Result<()> {
+//! let my_datasets = zosmf
+//!     .datasets()
+//!     .list("USERNAME")
+//!     .build()
+//!     .await?;
+//! for dataset in my_datasets.items().iter() {
+//!     println!("{}", dataset.name());
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! List the files in your home directory:
+//! ```
+//! # async fn example(zosmf: z_osmf::ZOsmf) -> z_osmf::Result<()> {
+//! let my_files = zosmf
+//!     .files()
+//!     .list("/u/username")
+//!     .build()
+//!     .await?;
+//! for file in my_files.items().iter() {
+//!     println!("{}", file.name());
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! List all active jobs:
+//! ```
+//! # async fn example(zosmf: z_osmf::ZOsmf) -> z_osmf::Result<()> {
+//! let active_jobs = zosmf
+//!     .jobs()
+//!     .list()
+//!     .owner("*")
+//!     .active_only(true)
+//!     .build()
+//!     .await?;
+//! for job in active_jobs.items().iter() {
+//!     println!("{}", job.name());
+//! }
+//! # Ok(())
+//! # }
+//! ```
+
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 
 pub use bytes::Bytes;
 
-pub mod error;
+pub use self::error::{Error, Result};
+
 pub mod info;
 
 #[cfg(feature = "datasets")]
@@ -13,29 +77,23 @@ pub mod datasets;
 pub mod files;
 #[cfg(feature = "jobs")]
 pub mod jobs;
-#[cfg(feature = "variables")]
-pub mod variables;
-
-pub use self::error::Error;
-
-mod convert;
-mod utils;
+#[cfg(any(feature = "datasets", feature = "files"))]
+pub mod restfiles;
+#[cfg(feature = "system-variables")]
+pub mod system_variables;
+#[cfg(feature = "workflows")]
+pub mod workflows;
 
 use std::sync::{Arc, RwLock};
 
-use reqwest::header::HeaderValue;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use serde::{Deserialize, Serialize};
 
 use self::error::CheckStatus;
-use self::info::{Info, InfoBuilder};
 
-#[cfg(feature = "datasets")]
-use self::datasets::DatasetsClient;
-#[cfg(feature = "files")]
-use self::files::FilesClient;
-#[cfg(feature = "jobs")]
-use self::jobs::JobsClient;
-#[cfg(feature = "variables")]
-use self::variables::VariablesClient;
+mod convert;
+mod error;
+mod utils;
 
 /// # ZOsmf
 ///
@@ -61,7 +119,7 @@ use self::variables::VariablesClient;
 /// ```
 #[derive(Clone, Debug)]
 pub struct ZOsmf {
-    core: Arc<ClientCore>,
+    core: ClientCore,
 }
 
 impl ZOsmf {
@@ -72,21 +130,19 @@ impl ZOsmf {
     /// # async fn example() {
     /// # use z_osmf::ZOsmf;
     /// let client = reqwest::Client::new();
-    /// let base_url = "https://zosmf.mainframe.my-company.com";
+    /// let url = "https://zosmf.mainframe.my-company.com";
     ///
-    /// let zosmf = ZOsmf::new(client, base_url);
+    /// let zosmf = ZOsmf::new(client, url);
     /// # }
     /// ```
-    pub fn new<B>(client: reqwest::Client, base_url: B) -> Self
+    pub fn new<U>(client: reqwest::Client, url: U) -> Self
     where
-        B: std::fmt::Display,
+        U: std::fmt::Display,
     {
-        let base_url = format!("{}", base_url).trim_end_matches('/').into();
-        let core = Arc::new(ClientCore {
-            base_url,
-            client,
-            cookie: RwLock::new(None),
-        });
+        let token = Arc::new(RwLock::new(None));
+        let url = url.to_string().into();
+
+        let core = ClientCore { client, token, url };
 
         ZOsmf { core }
     }
@@ -100,8 +156,8 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn info(&self) -> Result<Info, Error> {
-        InfoBuilder::new(self.core.clone()).build().await
+    pub async fn info(&self) -> Result<info::Info> {
+        info::InfoBuilder::new(self.core.clone()).build().await
     }
 
     /// Authenticate with z/OSMF.
@@ -109,11 +165,11 @@ impl ZOsmf {
     /// # Example
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// zosmf.login("USERNAME", "PASSWORD").await?;
+    /// let auth_tokens = zosmf.login("USERNAME", "PASSWORD").await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn login<U, P>(&self, username: U, password: P) -> Result<(), Error>
+    pub async fn login<U, P>(&self, username: U, password: P) -> Result<Vec<AuthToken>>
     where
         U: std::fmt::Display,
         P: std::fmt::Display,
@@ -121,34 +177,24 @@ impl ZOsmf {
         let response = self
             .core
             .client
-            .post(format!(
-                "{}/zosmf/services/authenticate",
-                self.core.base_url
-            ))
+            .post(format!("{}/zosmf/services/authenticate", self.core.url))
             .basic_auth(username, Some(password))
             .send()
             .await?
             .check_status()
             .await?;
 
-        match self.core.cookie.write() {
-            Ok(mut cookie) => {
-                *cookie = Some(
-                    response
-                        .headers()
-                        .get("Set-Cookie")
-                        .ok_or(Error::Custom("failed to get authentication token".into()))?
-                        .clone(),
-                );
-            }
-            Err(_) => {
-                return Err(Error::Custom(
-                    "failed to retrieve authentication header".into(),
-                ))
-            }
-        }
+        let mut tokens: Vec<AuthToken> = response
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter()
+            .flat_map(|header_value| header_value.try_into().ok())
+            .collect();
+        tokens.sort_unstable();
 
-        Ok(())
+        self.set_token(tokens.first().cloned())?;
+
+        Ok(tokens)
     }
 
     /// Logout of z/OSMF.
@@ -165,28 +211,16 @@ impl ZOsmf {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn logout(&self) -> Result<(), Error> {
+    pub async fn logout(&self) -> Result<()> {
         self.core
             .client
-            .delete(format!(
-                "{}/zosmf/services/authenticate",
-                self.core.base_url
-            ))
+            .delete(format!("{}/zosmf/services/authenticate", self.core.url))
             .send()
             .await?
             .check_status()
             .await?;
 
-        match self.core.cookie.write() {
-            Ok(mut cookie) => {
-                *cookie = None;
-            }
-            Err(_) => {
-                return Err(Error::Custom(
-                    "failed to retrieve authentication header".into(),
-                ))
-            }
-        }
+        self.set_token(None)?;
 
         Ok(())
     }
@@ -201,8 +235,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "datasets")]
-    pub fn datasets(&self) -> DatasetsClient {
-        DatasetsClient::new(self.core.clone())
+    pub fn datasets(&self) -> datasets::DatasetsClient {
+        datasets::DatasetsClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with files.
@@ -215,8 +249,8 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "files")]
-    pub fn files(&self) -> FilesClient {
-        FilesClient::new(self.core.clone())
+    pub fn files(&self) -> files::FilesClient {
+        files::FilesClient::new(self.core.clone())
     }
 
     /// Create a sub-client for interacting with jobs.
@@ -229,21 +263,133 @@ impl ZOsmf {
     /// # }
     /// ```
     #[cfg(feature = "jobs")]
-    pub fn jobs(&self) -> JobsClient {
-        JobsClient::new(self.core.clone())
+    pub fn jobs(&self) -> jobs::JobsClient {
+        jobs::JobsClient::new(self.core.clone())
     }
 
-    #[cfg(feature = "variables")]
-    pub fn variables(&self) -> VariablesClient {
-        VariablesClient::new(self.core.clone())
+    /// Create a sub-client for interacting with system symbols and variables.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let system_variables = zosmf.system_variables();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "system-variables")]
+    pub fn system_variables(&self) -> system_variables::SystemVariablesClient {
+        system_variables::SystemVariablesClient::new(self.core.clone())
+    }
+
+    /// Create a sub-client for interacting with workflows.
+    ///
+    /// # Example
+    /// ```
+    /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
+    /// let workflows = zosmf.workflows();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "workflows")]
+    pub fn workflows(&self) -> workflows::WorkflowsClient {
+        workflows::WorkflowsClient::new(self.core.clone())
+    }
+
+    fn set_token(&self, token: Option<AuthToken>) -> Result<()> {
+        let mut write = self
+            .core
+            .token
+            .write()
+            .map_err(|err| Error::RwLockPoisonError(err.to_string()))?;
+        *write = token;
+
+        Ok(())
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub enum AuthToken {
+    Jwt(String),
+    Ltpa2(String),
+}
+
+impl std::str::FromStr for AuthToken {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let (name, value) = s
+            .split_once(';')
+            .ok_or(Error::InvalidValue(format!(
+                "invalid set-cookie header value: {}",
+                s
+            )))?
+            .0
+            .split_once('=')
+            .ok_or(Error::InvalidValue(format!(
+                "invalid set-cookie header value: {}",
+                s
+            )))?;
+
+        let token = match name {
+            "jwtToken" => AuthToken::Jwt(value.to_string()),
+            "LtpaToken2" => AuthToken::Ltpa2(value.to_string()),
+            _ => return Err(Error::InvalidValue(format!("invalid token name: {}", name))),
+        };
+
+        Ok(token)
+    }
+}
+
+impl TryFrom<&HeaderValue> for AuthToken {
+    type Error = Error;
+
+    fn try_from(value: &HeaderValue) -> Result<Self> {
+        value.to_str()?.parse()
+    }
+}
+
+impl std::fmt::Display for AuthToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            AuthToken::Jwt(token) => format!("jwtToken={};", token),
+            AuthToken::Ltpa2(token) => format!("LtpaToken2={};", token),
+        };
+
+        write!(f, "{}", s)
+    }
+}
+
+impl From<&AuthToken> for (HeaderName, HeaderValue) {
+    fn from(value: &AuthToken) -> Self {
+        match value {
+            AuthToken::Jwt(token_value) => (
+                reqwest::header::AUTHORIZATION,
+                format!("Bearer {}", token_value).parse().unwrap(),
+            ),
+            AuthToken::Ltpa2(token_value) => (
+                reqwest::header::COOKIE,
+                token_value.to_string().parse().unwrap(),
+            ),
+        }
+    }
+}
+
+impl From<&AuthToken> for HeaderMap {
+    fn from(value: &AuthToken) -> Self {
+        let (key, val) = value.into();
+
+        let mut headers = HeaderMap::new();
+        headers.insert(key, val);
+
+        headers
+    }
+}
+
+#[derive(Clone, Debug)]
 struct ClientCore {
-    base_url: Box<str>,
     client: reqwest::Client,
-    cookie: RwLock<Option<HeaderValue>>,
+    token: Arc<RwLock<Option<AuthToken>>>,
+    url: Arc<str>,
 }
 
 #[cfg(test)]

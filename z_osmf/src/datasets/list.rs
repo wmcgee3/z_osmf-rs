@@ -7,77 +7,35 @@ use serde::{Deserialize, Deserializer, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::utils::{
-    de_optional_y_n, de_optional_yes_no, de_yes_no, get_transaction_id, ser_optional_y_n,
-    ser_optional_yes_no, ser_yes_no,
-};
-use crate::ClientCore;
+use crate::restfiles::get_transaction_id;
+use crate::{ClientCore, Result};
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Datasets<T> {
-    items: Box<[T]>,
-    #[getter(copy)]
-    json_version: i32,
-    #[getter(copy)]
-    more_rows: Option<bool>,
-    #[getter(copy)]
-    returned_rows: i32,
-    #[getter(copy)]
-    total_rows: Option<i32>,
-    transaction_id: Box<str>,
-}
+use super::{de_optional_y_n, ser_optional_y_n};
 
-impl<T> TryFromResponse for Datasets<T>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let transaction_id = get_transaction_id(&value)?;
-
-        let ResponseJson {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-        } = value.json().await?;
-
-        Ok(Datasets {
-            items,
-            json_version,
-            more_rows,
-            returned_rows,
-            total_rows,
-            transaction_id,
-        })
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct DatasetBase {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct DatasetAttributesBase {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "blksz")]
-    block_size: Option<Box<str>>,
+    block_size: Option<Arc<str>>,
     #[serde(rename = "catnm")]
-    catalog: Option<Box<str>>,
+    catalog: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(default, deserialize_with = "de_optional_date", rename = "cdate")]
     creation_date: Option<NaiveDate>,
     #[serde(rename = "dev")]
-    device_type: Option<Box<str>>,
+    device_type: Option<Arc<str>>,
     #[serde(rename = "dsntp")]
-    dataset_type: Option<Box<str>>,
+    dataset_type: Option<Arc<str>>,
     #[serde(rename = "dsorg")]
-    organization: Option<Box<str>>,
+    organization: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(default, deserialize_with = "de_optional_date", rename = "edate")]
     expiration_date: Option<NaiveDate>,
     #[serde(rename = "extx")]
-    extents_used: Option<Box<str>>,
+    extents_used: Option<Arc<str>>,
     #[serde(rename = "lrecl")]
-    record_length: Option<Box<str>>,
+    record_length: Option<Arc<str>>,
     #[getter(copy)]
     #[serde(
         rename = "migr",
@@ -105,85 +63,87 @@ pub struct DatasetBase {
     #[serde(default, deserialize_with = "de_optional_date", rename = "rdate")]
     last_referenced_date: Option<NaiveDate>,
     #[serde(rename = "recfm")]
-    record_format: Option<Box<str>>,
+    record_format: Option<Arc<str>>,
     #[serde(rename = "sizex")]
-    size_in_tracks: Option<Box<str>>,
+    size_in_tracks: Option<Arc<str>>,
     #[serde(rename = "spacu")]
-    space_units: Option<Box<str>>,
+    space_units: Option<Arc<str>>,
     #[serde(rename = "used")]
-    percent_used: Option<Box<str>>,
+    percent_used: Option<Arc<str>>,
     #[serde(rename = "vol")]
-    volume: Volume,
+    volume: DatasetVolume,
     #[serde(rename = "vols")]
-    volumes: Option<Box<str>>,
+    volumes: Option<Arc<str>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct DatasetName {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct DatasetAttributesName {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    name: Arc<str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct DatasetVolume {
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct DatasetAttributesVolume {
     #[serde(rename = "dsname")]
-    name: Box<str>,
+    name: Arc<str>,
     #[serde(rename = "vol")]
-    volume: Volume,
+    volume: DatasetVolume,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub enum Volume {
-    Alias,
-    Migrated,
-    Vsam,
-    Volume(String),
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct DatasetList<T> {
+    items: Arc<[T]>,
+    #[getter(copy)]
+    json_version: i32,
+    #[getter(copy)]
+    more_rows: Option<bool>,
+    #[getter(copy)]
+    returned_rows: i32,
+    #[getter(copy)]
+    total_rows: Option<i32>,
+    transaction_id: Arc<str>,
 }
 
-impl<'de> Deserialize<'de> for Volume {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
+impl<T> TryFromResponse for DatasetList<T>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
+        let transaction_id = get_transaction_id(&value)?;
 
-        Ok(match s.as_str() {
-            "*ALIAS" => Volume::Alias,
-            "MIGRAT" => Volume::Migrated,
-            "*VSAM*" => Volume::Vsam,
-            _ => Volume::Volume(s),
-        })
-    }
-}
+        let ResponseJson {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+        } = value.json().await?;
 
-impl Serialize for Volume {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(match self {
-            Volume::Alias => "*ALIAS",
-            Volume::Migrated => "MIGRAT",
-            Volume::Volume(vol) => vol.as_ref(),
-            Volume::Vsam => "*VSAM*",
+        Ok(DatasetList {
+            items,
+            json_version,
+            more_rows,
+            returned_rows,
+            total_rows,
+            transaction_id,
         })
     }
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restfiles/ds")]
-pub struct DatasetsBuilder<T>
+pub struct DatasetListBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(query = "dslevel")]
-    name_pattern: Box<str>,
+    level: Arc<str>,
     #[endpoint(query = "volser")]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(query = "start")]
-    start: Option<Box<str>>,
+    start: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Max-Items")]
     max_items: Option<i32>,
     #[endpoint(skip_setter, builder_fn = build_attributes)]
@@ -194,14 +154,14 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> DatasetsBuilder<T>
+impl<T> DatasetListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn attributes_base(self) -> DatasetsBuilder<Datasets<DatasetBase>> {
-        DatasetsBuilder {
+    pub fn attributes_base(self) -> DatasetListBuilder<DatasetList<DatasetAttributesBase>> {
+        DatasetListBuilder {
             core: self.core,
-            name_pattern: self.name_pattern,
+            level: self.level,
             volume: self.volume,
             start: self.start,
             max_items: self.max_items,
@@ -211,10 +171,10 @@ where
         }
     }
 
-    pub fn attributes_dsname(self) -> DatasetsBuilder<Datasets<DatasetName>> {
-        DatasetsBuilder {
+    pub fn attributes_dsname(self) -> DatasetListBuilder<DatasetList<DatasetAttributesName>> {
+        DatasetListBuilder {
             core: self.core,
-            name_pattern: self.name_pattern,
+            level: self.level,
             volume: self.volume,
             start: self.start,
             max_items: self.max_items,
@@ -224,10 +184,10 @@ where
         }
     }
 
-    pub fn attributes_vol(self) -> DatasetsBuilder<Datasets<DatasetVolume>> {
-        DatasetsBuilder {
+    pub fn attributes_vol(self) -> DatasetListBuilder<DatasetList<DatasetAttributesVolume>> {
+        DatasetListBuilder {
             core: self.core,
-            name_pattern: self.name_pattern,
+            level: self.level,
             volume: self.volume,
             start: self.start,
             max_items: self.max_items,
@@ -235,6 +195,44 @@ where
             include_total: self.include_total,
             target_type: PhantomData,
         }
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum DatasetVolume {
+    Alias,
+    Migrated,
+    Vsam,
+    Volume(String),
+}
+
+impl<'de> Deserialize<'de> for DatasetVolume {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        Ok(match s.as_str() {
+            "*ALIAS" => DatasetVolume::Alias,
+            "MIGRAT" => DatasetVolume::Migrated,
+            "*VSAM*" => DatasetVolume::Vsam,
+            _ => DatasetVolume::Volume(s),
+        })
+    }
+}
+
+impl Serialize for DatasetVolume {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(match self {
+            DatasetVolume::Alias => "*ALIAS",
+            DatasetVolume::Migrated => "MIGRAT",
+            DatasetVolume::Volume(vol) => vol.as_ref(),
+            DatasetVolume::Vsam => "*VSAM*",
+        })
     }
 }
 
@@ -262,7 +260,7 @@ impl std::fmt::Display for Attrs {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseJson<T> {
-    items: Box<[T]>,
+    items: Arc<[T]>,
     returned_rows: i32,
     #[serde(default)]
     more_rows: Option<bool>,
@@ -274,7 +272,7 @@ struct ResponseJson<T> {
 
 fn build_attributes<T>(
     request_builder: RequestBuilder,
-    list_builder: &DatasetsBuilder<T>,
+    list_builder: &DatasetListBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,
@@ -299,7 +297,7 @@ where
 
 pub fn de_optional_date<'de, D: Deserializer<'de>>(
     deserializer: D,
-) -> Result<Option<NaiveDate>, D::Error> {
+) -> std::result::Result<Option<NaiveDate>, D::Error> {
     let s: String = Deserialize::deserialize(deserializer)?;
 
     match s.as_str() {
@@ -310,9 +308,57 @@ pub fn de_optional_date<'de, D: Deserializer<'de>>(
     }
 }
 
+fn de_optional_yes_no<'de, D>(deserializer: D) -> std::result::Result<Option<bool>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer)?
+        .map(|s| match s.as_str() {
+            "YES" => Ok(true),
+            "NO" => Ok(false),
+            _ => Err(serde::de::Error::unknown_variant(&s, &["YES", "NO"])),
+        })
+        .transpose()
+}
+
+fn de_yes_no<'de, D>(deserializer: D) -> std::result::Result<bool, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+
+    match s.as_str() {
+        "YES" => Ok(true),
+        "NO" => Ok(false),
+        _ => Err(serde::de::Error::unknown_variant(&s, &["YES", "NO"])),
+    }
+}
+
+fn ser_optional_yes_no<S>(v: &Option<bool>, serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match v {
+        Some(value) => serializer.serialize_str(if *value { "YES" } else { "NO" }),
+        None => serializer.serialize_none(),
+    }
+}
+
+fn ser_yes_no<S>(v: &bool, serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(if *v { "YES" } else { "NO" })
+}
+
 #[cfg(test)]
 mod tests {
+    use serde::de::value::StrDeserializer;
+    use serde::de::IntoDeserializer;
+
     use crate::tests::*;
+
+    use super::*;
 
     #[test]
     fn example_1() {
@@ -363,5 +409,79 @@ mod tests {
             format!("{:?}", manual_request),
             format!("{:?}", list_datasets_base)
         );
+    }
+
+    #[test]
+    fn test_de_optional_yes_no() {
+        #[derive(Debug, Deserialize, PartialEq)]
+        struct Test {
+            #[serde(default, deserialize_with = "de_optional_yes_no")]
+            value: Option<bool>,
+        }
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": "YES"}"#).unwrap(),
+            Test { value: Some(true) }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": "NO"}"#).unwrap(),
+            Test { value: Some(false) }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": null}"#).unwrap(),
+            Test { value: None }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{}"#).unwrap(),
+            Test { value: None }
+        );
+
+        assert!(serde_json::from_str::<Test>(r#"{"value": "N"}"#).is_err());
+    }
+
+    #[test]
+    fn test_de_yes_no() {
+        let deserializer: StrDeserializer<serde::de::value::Error> = "YES".into_deserializer();
+        assert!(de_yes_no(deserializer).unwrap());
+
+        let deserializer: StrDeserializer<serde::de::value::Error> = "NO".into_deserializer();
+        assert!(!de_yes_no(deserializer).unwrap());
+
+        let deserializer: StrDeserializer<serde::de::value::Error> = "NONSENSE".into_deserializer();
+        assert!(de_yes_no(deserializer).is_err());
+    }
+
+    #[test]
+    fn test_ser_yes_no() {
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_yes_no(&true, &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""YES""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_yes_no(&false, &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""NO""#);
+    }
+
+    #[test]
+    fn test_ser_optional_yes_no() {
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_yes_no(&Some(true), &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""YES""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_yes_no(&Some(false), &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""NO""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_yes_no(&None, &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#"null"#);
     }
 }

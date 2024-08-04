@@ -9,33 +9,33 @@ use crate::ClientCore;
 use super::{get_member, get_volume};
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = delete, path = "/zosmf/restfiles/ds{volume}/{dataset_name}{member}")]
-pub struct DeleteBuilder<T>
+#[endpoint(method = delete, path = "/zosmf/restfiles/ds{volume}/{dataset}{member}")]
+pub struct DatasetDeleteBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset_name: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_volume)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(path, builder_fn = build_member)]
-    member: Option<Box<str>>,
+    member: Option<Arc<str>>,
     #[endpoint(header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<Box<str>>,
+    dsname_encoding: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
 
-fn build_member<T>(builder: &DeleteBuilder<T>) -> String
+fn build_member<T>(builder: &DatasetDeleteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
     get_member(&builder.member)
 }
 
-fn build_volume<T>(builder: &DeleteBuilder<T>) -> String
+fn build_volume<T>(builder: &DatasetDeleteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

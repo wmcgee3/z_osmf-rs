@@ -8,24 +8,24 @@ use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset_name}")]
-pub struct CreateBuilder<T>
+#[endpoint(method = post, path = "/zosmf/restfiles/ds/{dataset}")]
+pub struct DatasetCreateBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset_name: Box<str>,
+    dataset: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    device_type: Option<Box<str>>,
+    device_type: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    organization: Option<Box<str>>,
+    organization: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    space_allocation_unit: Option<Box<str>>,
+    space_allocation_unit: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     primary_space: Option<i32>,
     #[endpoint(skip_builder)]
@@ -35,21 +35,21 @@ where
     #[endpoint(skip_builder)]
     average_block_size: Option<i32>,
     #[endpoint(skip_builder)]
-    record_format: Option<Box<str>>,
+    record_format: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     block_size: Option<i32>,
     #[endpoint(skip_builder)]
     record_length: Option<i32>,
     #[endpoint(skip_builder)]
-    storage_class: Option<Box<str>>,
+    storage_class: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    management_class: Option<Box<str>>,
+    management_class: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    data_class: Option<Box<str>>,
+    data_class: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    dataset_type: Option<Box<str>>,
+    dataset_type: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    model_dataset: Option<Box<str>>,
+    model_dataset: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
@@ -92,12 +92,12 @@ struct RequestJson<'a> {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CreateBuilder<T>,
+    builder: &DatasetCreateBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let CreateBuilder {
+    let DatasetCreateBuilder {
         volume,
         device_type,
         organization,

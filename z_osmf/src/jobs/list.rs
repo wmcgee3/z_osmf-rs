@@ -5,22 +5,21 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::ClientCore;
+use crate::{ClientCore, Result};
 
-use super::{get_subsystem, JobExec};
+use super::{get_subsystem, JobAttributesExec};
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Jobs<T> {
-    items: Box<[T]>,
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct JobList<T> {
+    items: Arc<[T]>,
 }
 
-impl<T> TryFromResponse for Jobs<T>
+impl<T> TryFromResponse for JobList<T>
 where
     T: for<'de> Deserialize<'de>,
 {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        Ok(Jobs {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
+        Ok(JobList {
             items: value.json().await?,
         })
     }
@@ -28,24 +27,24 @@ where
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = get, path = "/zosmf/restjobs/jobs{subsystem}")]
-pub struct JobsBuilder<T>
+pub struct JobListBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(query = "owner")]
-    owner: Option<Box<str>>,
+    owner: Option<Arc<str>>,
     #[endpoint(query = "prefix")]
-    prefix: Option<Box<str>>,
+    prefix: Option<Arc<str>>,
     #[endpoint(query = "jobid")]
-    job_id: Option<Box<str>>,
+    job_id: Option<Arc<str>>,
     #[endpoint(query = "max-jobs")]
     max_jobs: Option<i32>,
     #[endpoint(query = "user-correlator")]
-    user_correlator: Option<Box<str>>,
+    user_correlator: Option<Arc<str>>,
     #[endpoint(skip_setter, builder_fn = build_exec_data)]
     exec_data: Option<bool>,
     #[endpoint(builder_fn = build_active_only)]
@@ -54,12 +53,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> JobsBuilder<T>
+impl<T> JobListBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn exec_data(self) -> JobsBuilder<Jobs<JobExec>> {
-        JobsBuilder {
+    pub fn exec_data(self) -> JobListBuilder<JobList<JobAttributesExec>> {
+        JobListBuilder {
             core: self.core,
             subsystem: self.subsystem,
             owner: self.owner,
@@ -76,7 +75,7 @@ where
 
 fn build_active_only<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobsBuilder<T>,
+    builder: &JobListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -89,7 +88,7 @@ where
 
 fn build_exec_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &JobsBuilder<T>,
+    builder: &JobListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -100,7 +99,7 @@ where
     }
 }
 
-fn build_subsystem<T>(builder: &JobsBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobListBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

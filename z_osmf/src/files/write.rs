@@ -2,56 +2,38 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Write {
-    etag: Box<str>,
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for Write {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let etag = get_etag(&value)?.ok_or(Error::Etag)?;
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(Write {
-            etag,
-            transaction_id,
-        })
-    }
-}
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct WriteBuilder<T>
+pub struct FileWriteBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(skip_builder)]
     crlf_newlines: Option<bool>,
     #[endpoint(skip_setter, builder_fn = build_data)]
     data: Option<Data>,
     #[endpoint(skip_builder)]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(header = "If-Match")]
-    if_match: Option<Box<str>>,
+    if_match: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
 
-impl WriteBuilder<Write> {
+impl<T> FileWriteBuilder<T>
+where
+    T: TryFromResponse,
+{
     pub fn binary<B>(mut self, data: B) -> Self
     where
         B: Into<Bytes>,
@@ -73,12 +55,12 @@ impl WriteBuilder<Write> {
 
 fn build_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &WriteBuilder<T>,
+    builder: &FileWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let WriteBuilder {
+    let FileWriteBuilder {
         crlf_newlines,
         data,
         encoding,
@@ -108,7 +90,7 @@ where
 #[derive(Clone, Debug)]
 enum Data {
     Binary(Bytes),
-    Text(Box<str>),
+    Text(Arc<str>),
 }
 
 #[cfg(test)]

@@ -9,27 +9,27 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct ChangeModeBuilder<T>
+pub struct FileChangeModeBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    mode: Box<str>,
+    mode: Arc<str>,
     #[endpoint(skip_builder)]
-    links: Option<Links>,
+    links: Option<FileChangeModeLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
     target_type: PhantomData<T>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Links {
+pub enum FileChangeModeLinks {
     Follow,
     Suppress,
 }
@@ -39,13 +39,13 @@ struct RequestJson<'a> {
     request: &'static str,
     mode: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    links: Option<Links>,
+    links: Option<FileChangeModeLinks>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &ChangeModeBuilder<T>,
+    builder: &FileChangeModeBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -87,7 +87,7 @@ mod tests {
         let request = zosmf
             .files()
             .change_mode("/u/jiahj/text.txt", "755")
-            .links(Links::Suppress)
+            .links(FileChangeModeLinks::Suppress)
             .recursive(true)
             .get_request()
             .unwrap();

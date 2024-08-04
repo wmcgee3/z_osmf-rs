@@ -13,31 +13,31 @@ pub mod write;
 use std::sync::Arc;
 
 use reqwest::header::HeaderValue;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::error::Error;
-use crate::ClientCore;
+use crate::restfiles::Etag;
+use crate::{ClientCore, Result};
 
-use self::copy::CopyBuilder;
-use self::copy_file::CopyFileBuilder;
-use self::create::CreateBuilder;
-use self::delete::DeleteBuilder;
-use self::list::{DatasetName, Datasets, DatasetsBuilder};
-use self::members::{MemberName, Members, MembersBuilder};
-use self::migrate::{Migrate, MigrateBuilder};
-use self::read::{Read, ReadBuilder};
-use self::recall::RecallBuilder;
-use self::rename::RenameBuilder;
-use self::write::{Write, WriteBuilder};
+use self::copy::DatasetCopyBuilder;
+use self::copy_file::DatasetCopyFileBuilder;
+use self::create::DatasetCreateBuilder;
+use self::delete::DatasetDeleteBuilder;
+use self::list::{DatasetAttributesName, DatasetList, DatasetListBuilder};
+use self::members::{MemberAttributesName, MemberList, MemberListBuilder};
+use self::migrate::DatasetMigrateBuilder;
+use self::read::{DatasetRead, DatasetReadBuilder};
+use self::recall::DatasetRecallBuilder;
+use self::rename::DatasetRenameBuilder;
+use self::write::DatasetWriteBuilder;
 
 #[derive(Clone, Debug)]
 pub struct DatasetsClient {
-    core: Arc<ClientCore>,
+    core: ClientCore,
 }
 
 /// # Datasets
 impl DatasetsClient {
-    pub(crate) fn new(core: Arc<ClientCore>) -> Self {
+    pub(crate) fn new(core: ClientCore) -> Self {
         DatasetsClient { core }
     }
 
@@ -68,8 +68,12 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy(&self, from_dataset: &str, to_dataset: &str) -> CopyBuilder<String> {
-        CopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
+    pub fn copy<F, T>(&self, from_dataset: F, to_dataset: T) -> DatasetCopyBuilder<String>
+    where
+        F: std::fmt::Display,
+        T: std::fmt::Display,
+    {
+        DatasetCopyBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// #Examples
@@ -98,13 +102,17 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn copy_file(&self, from_path: &str, to_dataset: &str) -> CopyFileBuilder<String> {
-        CopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
+    pub fn copy_file<F, T>(&self, from_path: F, to_dataset: T) -> DatasetCopyFileBuilder<String>
+    where
+        F: std::fmt::Display,
+        T: std::fmt::Display,
+    {
+        DatasetCopyFileBuilder::new(self.core.clone(), from_path, to_dataset)
     }
 
     /// # Examples
     ///
-    /// Creating a sequential dataset:
+    /// Create a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_dataset = zosmf
@@ -126,7 +134,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Creating a partitioned dataset (PDS):
+    /// Create a partitioned dataset (PDS):
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pds = zosmf
@@ -149,7 +157,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Creating a library / partitioned dataset extended (PDS-E):
+    /// Create a library / partitioned dataset extended (PDS-E):
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let create_pdse = zosmf
@@ -172,13 +180,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(&self, dataset_name: &str) -> CreateBuilder<String> {
-        CreateBuilder::new(self.core.clone(), dataset_name)
+    pub fn create<D>(&self, dataset: D) -> DatasetCreateBuilder<String>
+    where
+        D: std::fmt::Display,
+    {
+        DatasetCreateBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Deleting a sequential dataset:
+    /// Delete a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_dataset = zosmf
@@ -190,7 +201,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Deleting an uncataloged sequential dataset:
+    /// Delete an uncataloged sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged = zosmf
@@ -203,7 +214,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Deleting a PDS member:
+    /// Delete a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_member = zosmf
@@ -216,7 +227,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Deleting an uncataloged PDS member:
+    /// Delete an uncataloged PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let delete_uncataloged_member = zosmf
@@ -229,13 +240,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, dataset_name: &str) -> DeleteBuilder<String> {
-        DeleteBuilder::new(self.core.clone(), dataset_name)
+    pub fn delete<D>(&self, dataset: D) -> DatasetDeleteBuilder<String>
+    where
+        D: std::fmt::Display,
+    {
+        DatasetDeleteBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Listing datasets:
+    /// List datasets:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets = zosmf
@@ -247,7 +261,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Listing the base attributes of uncataloged datasets:
+    /// List the base attributes of uncataloged datasets:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_datasets_base = zosmf
@@ -260,13 +274,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn list(&self, name_pattern: &str) -> DatasetsBuilder<Datasets<DatasetName>> {
-        DatasetsBuilder::new(self.core.clone(), name_pattern)
+    pub fn list<L>(&self, level: L) -> DatasetListBuilder<DatasetList<DatasetAttributesName>>
+    where
+        L: std::fmt::Display,
+    {
+        DatasetListBuilder::new(self.core.clone(), level)
     }
 
     /// # Examples
     ///
-    /// Listing PDS members:
+    /// List PDS members:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members = zosmf
@@ -278,7 +295,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Listing the base attributes of PDS members:
+    /// List the base attributes of PDS members:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let list_members_base = zosmf
@@ -290,8 +307,11 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn members(&self, dataset_name: &str) -> MembersBuilder<Members<MemberName>> {
-        MembersBuilder::new(self.core.clone(), dataset_name)
+    pub fn members<D>(&self, dataset: D) -> MemberListBuilder<MemberList<MemberAttributesName>>
+    where
+        D: std::fmt::Display,
+    {
+        MemberListBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -307,13 +327,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn migrate(&self, name: &str) -> MigrateBuilder<Migrate> {
-        MigrateBuilder::new(self.core.clone(), name)
+    pub fn migrate<D>(&self, dataset: D) -> DatasetMigrateBuilder<Etag>
+    where
+        D: std::fmt::Display,
+    {
+        DatasetMigrateBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Reading a PDS member:
+    /// Read a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_member = zosmf
@@ -326,7 +349,7 @@ impl DatasetsClient {
     /// # }
     /// ```
     ///
-    /// Reading a sequential dataset:
+    /// Read a sequential dataset:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let read_dataset = zosmf
@@ -337,8 +360,11 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn read(&self, dataset_name: &str) -> ReadBuilder<Read<Box<str>>> {
-        ReadBuilder::new(self.core.clone(), dataset_name)
+    pub fn read<D>(&self, dataset: D) -> DatasetReadBuilder<DatasetRead<Arc<str>>>
+    where
+        D: std::fmt::Display,
+    {
+        DatasetReadBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
@@ -354,13 +380,16 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn recall(&self, name: &str) -> RecallBuilder<String> {
-        RecallBuilder::new(self.core.clone(), name)
+    pub fn recall<D>(&self, dataset: D) -> DatasetRecallBuilder<String>
+    where
+        D: std::fmt::Display,
+    {
+        DatasetRecallBuilder::new(self.core.clone(), dataset)
     }
 
     /// # Examples
     ///
-    /// Renaming MY.OLD.DSN to MY.NEW.DSN:
+    /// Rename MY.OLD.DSN to MY.NEW.DSN:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
     /// let rename_dataset = zosmf
@@ -371,16 +400,20 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rename(&self, from_dataset: &str, to_dataset: &str) -> RenameBuilder<String> {
-        RenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
+    pub fn rename<F, T>(&self, from_dataset: F, to_dataset: T) -> DatasetRenameBuilder<String>
+    where
+        F: std::fmt::Display,
+        T: std::fmt::Display,
+    {
+        DatasetRenameBuilder::new(self.core.clone(), from_dataset, to_dataset)
     }
 
     /// # Examples
     ///
-    /// Writing to a PDS member:
+    /// Write to a PDS member:
     /// ```
     /// # async fn example(zosmf: z_osmf::ZOsmf) -> anyhow::Result<()> {
-    /// # let string_data = "".to_string();
+    /// # let string_data = "";
     /// let write_dataset = zosmf
     ///     .datasets()
     ///     .write("SYS1.PARMLIB")
@@ -392,12 +425,23 @@ impl DatasetsClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn write(&self, dataset_name: &str) -> WriteBuilder<Write> {
-        WriteBuilder::new(self.core.clone(), dataset_name)
+    pub fn write<D>(&self, dataset: D) -> DatasetWriteBuilder<Etag>
+    where
+        D: std::fmt::Display,
+    {
+        DatasetWriteBuilder::new(self.core.clone(), dataset)
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(untagged)]
+pub enum Enigma<T> {
+    #[serde(deserialize_with = "de_unknown", serialize_with = "ser_unknown")]
+    Unknown,
+    Known(T),
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DatasetDataType {
     Binary,
@@ -419,53 +463,85 @@ impl std::fmt::Display for DatasetDataType {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum DatasetEnqueue {
+    Exclu,
+    Shrw,
+}
+
+impl From<DatasetEnqueue> for HeaderValue {
+    fn from(val: DatasetEnqueue) -> HeaderValue {
+        match val {
+            DatasetEnqueue::Exclu => "EXCLU",
+            DatasetEnqueue::Shrw => "SHRW",
+        }
+        .try_into()
+        .unwrap()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum MigratedRecall {
+pub enum DatasetMigratedRecall {
     Error,
     NoWait,
     Wait,
 }
 
-impl From<MigratedRecall> for HeaderValue {
-    fn from(val: MigratedRecall) -> HeaderValue {
+impl From<DatasetMigratedRecall> for HeaderValue {
+    fn from(val: DatasetMigratedRecall) -> HeaderValue {
         match val {
-            MigratedRecall::Error => "error",
-            MigratedRecall::NoWait => "nowait",
-            MigratedRecall::Wait => "wait",
+            DatasetMigratedRecall::Error => "error",
+            DatasetMigratedRecall::NoWait => "nowait",
+            DatasetMigratedRecall::Wait => "wait",
         }
         .try_into()
         .unwrap()
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
-pub enum Enqueue {
-    #[serde(rename = "EXCLU")]
-    Exclusive,
-    #[serde(rename = "SHRW")]
-    SharedReadWrite,
+#[derive(Deserialize, Serialize)]
+enum Unknown {
+    #[serde(rename = "?")]
+    Unknown,
 }
 
-impl From<Enqueue> for HeaderValue {
-    fn from(val: Enqueue) -> HeaderValue {
-        match val {
-            Enqueue::Exclusive => "EXCLU",
-            Enqueue::SharedReadWrite => "SHRW",
-        }
-        .try_into()
-        .unwrap()
-    }
+fn de_unknown<'de, D>(deserializer: D) -> std::result::Result<(), D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Unknown::deserialize(deserializer).map(|_| ())
 }
 
-fn get_member(value: &Option<Box<str>>) -> String {
+fn ser_unknown<S>(serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    Unknown::Unknown.serialize(serializer)
+}
+
+fn de_optional_y_n<'de, D>(deserializer: D) -> std::result::Result<Option<bool>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer)?
+        .map(|s| match s.as_str() {
+            "Y" => Ok(true),
+            "N" => Ok(false),
+            _ => Err(serde::de::Error::unknown_variant(&s, &["Y", "N"])),
+        })
+        .transpose()
+}
+
+fn get_member(value: &Option<Arc<str>>) -> String {
     value
         .as_ref()
         .map(|v| format!("({})", v))
-        .unwrap_or("".to_string())
+        .unwrap_or_default()
 }
 
-fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Error> {
+fn get_session_ref(response: &reqwest::Response) -> Result<Option<Arc<str>>> {
     Ok(response
         .headers()
         .get("X-IBM-Session-Ref")
@@ -474,11 +550,21 @@ fn get_session_ref(response: &reqwest::Response) -> Result<Option<Box<str>>, Err
         .map(|v| v.into()))
 }
 
-fn get_volume(value: &Option<Box<str>>) -> String {
+fn get_volume(value: &Option<Arc<str>>) -> String {
     value
         .as_ref()
         .map(|v| format!("/-({})", v))
-        .unwrap_or("".to_string())
+        .unwrap_or_default()
+}
+
+fn ser_optional_y_n<S>(v: &Option<bool>, serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match v {
+        Some(value) => serializer.serialize_str(if *value { "Y" } else { "N" }),
+        None => serializer.serialize_none(),
+    }
 }
 
 #[cfg(test)]
@@ -496,22 +582,22 @@ mod tests {
 
     #[test]
     fn display_migrated_recall() {
-        let header_value: HeaderValue = MigratedRecall::Error.into();
+        let header_value: HeaderValue = DatasetMigratedRecall::Error.into();
         assert_eq!(header_value, HeaderValue::from_static("error"));
 
-        let header_value: HeaderValue = MigratedRecall::NoWait.into();
+        let header_value: HeaderValue = DatasetMigratedRecall::NoWait.into();
         assert_eq!(header_value, HeaderValue::from_static("nowait"));
 
-        let header_value: HeaderValue = MigratedRecall::Wait.into();
+        let header_value: HeaderValue = DatasetMigratedRecall::Wait.into();
         assert_eq!(header_value, HeaderValue::from_static("wait"));
     }
 
     #[test]
     fn display_obtain_enq() {
-        let header_value: HeaderValue = Enqueue::Exclusive.into();
+        let header_value: HeaderValue = DatasetEnqueue::Exclu.into();
         assert_eq!(header_value, HeaderValue::from_static("EXCLU"));
 
-        let header_value: HeaderValue = Enqueue::SharedReadWrite.into();
+        let header_value: HeaderValue = DatasetEnqueue::Shrw.into();
         assert_eq!(header_value, HeaderValue::from_static("SHRW"));
     }
 
@@ -527,5 +613,54 @@ mod tests {
 
         let response = reqwest::Response::from(http::Response::new(""));
         assert_eq!(get_session_ref(&response).unwrap(), None);
+    }
+
+    #[test]
+    fn test_de_optional_y_n() {
+        #[derive(Debug, Deserialize, PartialEq)]
+        struct Test {
+            #[serde(default, deserialize_with = "de_optional_y_n")]
+            value: Option<bool>,
+        }
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": "Y"}"#).unwrap(),
+            Test { value: Some(true) }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": "N"}"#).unwrap(),
+            Test { value: Some(false) }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{"value": null}"#).unwrap(),
+            Test { value: None }
+        );
+
+        assert_eq!(
+            serde_json::from_str::<Test>(r#"{}"#).unwrap(),
+            Test { value: None }
+        );
+
+        assert!(serde_json::from_str::<Test>(r#"{"value": "NOPE"}"#).is_err());
+    }
+
+    #[test]
+    fn test_ser_optional_y_n() {
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_y_n(&Some(true), &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""Y""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_y_n(&Some(false), &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#""N""#);
+
+        let mut serializer = serde_json::Serializer::new(Vec::new());
+        ser_optional_y_n(&None, &mut serializer).unwrap();
+        let serialized = String::from_utf8(serializer.into_inner()).unwrap();
+        assert_eq!(serialized, r#"null"#);
     }
 }

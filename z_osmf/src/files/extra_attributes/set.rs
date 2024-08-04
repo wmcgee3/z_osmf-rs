@@ -10,14 +10,14 @@ use super::RequestJson;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct SetBuilder<T>
+pub struct FileExtraAttributesSetBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
     apf_authorized: Option<bool>,
     #[endpoint(skip_builder)]
@@ -32,7 +32,7 @@ where
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &SetBuilder<T>,
+    builder: &FileExtraAttributesSetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

@@ -1,38 +1,31 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
+use crate::restfiles::CopyDataType;
 use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{to_path}")]
-pub struct CopyDatasetBuilder<T>
+pub struct FileCopyDatasetBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(builder_fn = build_body)]
-    from_dataset: Box<str>,
+    from_dataset: Arc<str>,
     #[endpoint(path)]
-    to_path: Box<str>,
+    to_path: Arc<str>,
     #[endpoint(skip_builder)]
-    from_member: Option<Box<str>>,
+    from_member: Option<Arc<str>>,
     #[endpoint(skip_builder)]
-    dataset_type: Option<DatasetType>,
+    dataset_type: Option<CopyDataType>,
 
     target_type: PhantomData<T>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum DatasetType {
-    Binary,
-    Executable,
-    Text,
 }
 
 #[derive(Serialize)]
@@ -48,12 +41,12 @@ struct FromDataset<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     member: Option<&'a str>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    dataset_type: Option<DatasetType>,
+    dataset_type: Option<CopyDataType>,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CopyDatasetBuilder<T>,
+    builder: &FileCopyDatasetBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -105,7 +98,7 @@ mod tests {
             .files()
             .copy_dataset("MY.TEST.PDS", "/u/jiahj/copyFile.txt")
             .from_member("TEST")
-            .dataset_type(DatasetType::Text)
+            .dataset_type(CopyDataType::Text)
             .get_request()
             .unwrap();
 

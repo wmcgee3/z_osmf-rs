@@ -9,14 +9,14 @@ use crate::ClientCore;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct UnlinkBuilder<T>
+pub(crate) struct FileUnlinkBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
     target_type: PhantomData<T>,
@@ -29,7 +29,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    _builder: &UnlinkBuilder<T>,
+    _builder: &FileUnlinkBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,

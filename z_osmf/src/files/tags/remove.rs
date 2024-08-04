@@ -7,20 +7,20 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-use super::Links;
+use super::FileTagLinks;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub struct RemoveBuilder<T>
+pub struct FileTagsRemoveBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
     #[endpoint(builder_fn = build_body)]
-    links: Option<Links>,
+    links: Option<FileTagLinks>,
     #[endpoint(skip_builder)]
     recursive: Option<bool>,
 
@@ -31,13 +31,13 @@ where
 struct RemoveRequestJson {
     request: &'static str,
     action: &'static str,
-    links: Option<Links>,
+    links: Option<FileTagLinks>,
     recursive: bool,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &RemoveBuilder<T>,
+    builder: &FileTagsRemoveBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -84,7 +84,7 @@ mod tests {
         let request = zosmf
             .files()
             .remove_tag("/u/jiahj/testFile.txt")
-            .links(Links::Suppress)
+            .links(FileTagLinks::Suppress)
             .recursive(true)
             .get_request()
             .unwrap();

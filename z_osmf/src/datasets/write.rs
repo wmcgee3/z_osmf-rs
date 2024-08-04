@@ -2,71 +2,50 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use serde::{Deserialize, Serialize};
-use z_osmf_macros::{Endpoint, Getters};
+use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::error::Error;
-use crate::utils::{get_etag, get_transaction_id};
 use crate::ClientCore;
 
-use super::{get_member, get_volume, Enqueue, MigratedRecall};
-
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct Write {
-    etag: Box<str>,
-    transaction_id: Box<str>,
-}
-
-impl TryFromResponse for Write {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, Error> {
-        let etag = get_etag(&value)?.ok_or(Error::Etag)?;
-        let transaction_id = get_transaction_id(&value)?;
-
-        Ok(Write {
-            etag,
-            transaction_id,
-        })
-    }
-}
+use super::{get_member, get_volume, DatasetEnqueue, DatasetMigratedRecall};
 
 #[derive(Clone, Debug, Endpoint)]
-#[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{dataset_name}{member}")]
-pub struct WriteBuilder<T>
+#[endpoint(method = put, path = "/zosmf/restfiles/ds{volume}/{dataset}{member}")]
+pub struct DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    dataset_name: Box<str>,
+    dataset: Arc<str>,
     #[endpoint(path, builder_fn = build_volume)]
-    volume: Option<Box<str>>,
+    volume: Option<Arc<str>>,
     #[endpoint(path, builder_fn = build_member)]
-    member: Option<Box<str>>,
+    member: Option<Arc<str>>,
     #[endpoint(header = "If-Match")]
-    if_match: Option<Box<str>>,
+    if_match: Option<Arc<str>>,
     #[endpoint(skip_setter, builder_fn = build_data)]
     data: Option<Data>,
     #[endpoint(skip_builder)]
-    encoding: Option<Box<str>>,
+    encoding: Option<Arc<str>>,
     #[endpoint(skip_builder)]
     crlf_newlines: Option<bool>,
     #[endpoint(header = "X-IBM-Migrated-Recall")]
-    migrated_recall: Option<MigratedRecall>,
+    migrated_recall: Option<DatasetMigratedRecall>,
     #[endpoint(header = "X-IBM-Obtain-ENQ")]
-    obtain_enq: Option<Enqueue>,
+    obtain_enq: Option<DatasetEnqueue>,
     #[endpoint(header = "X-IBM-Session-Ref")]
-    session_ref: Option<Box<str>>,
+    session_ref: Option<Arc<str>>,
     #[endpoint(builder_fn = build_release_enq)]
     release_enq: Option<bool>,
     #[endpoint(header = "X-IBM-Dsname-Encoding")]
-    dsname_encoding: Option<Box<str>>,
+    dsname_encoding: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
 
-impl<T> WriteBuilder<T>
+impl<T> DatasetWriteBuilder<T>
 where
     T: TryFromResponse,
 {
@@ -74,7 +53,7 @@ where
     where
         B: Into<Bytes>,
     {
-        WriteBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Binary(data.into())),
             ..self
         }
@@ -84,7 +63,7 @@ where
     where
         B: Into<Bytes>,
     {
-        WriteBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Record(data.into())),
             ..self
         }
@@ -92,9 +71,9 @@ where
 
     pub fn text<S>(self, data: S) -> Self
     where
-        S: ToString,
+        S: std::fmt::Display,
     {
-        WriteBuilder {
+        DatasetWriteBuilder {
             data: Some(Data::Text(data.to_string())),
             ..self
         }
@@ -110,12 +89,12 @@ enum Data {
 
 fn build_data<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &WriteBuilder<T>,
+    builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
 {
-    let WriteBuilder {
+    let DatasetWriteBuilder {
         data,
         encoding,
         crlf_newlines,
@@ -145,7 +124,7 @@ where
     }
 }
 
-fn build_member<T>(builder: &WriteBuilder<T>) -> String
+fn build_member<T>(builder: &DatasetWriteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
@@ -154,7 +133,7 @@ where
 
 fn build_release_enq<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &WriteBuilder<T>,
+    builder: &DatasetWriteBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -165,7 +144,7 @@ where
     }
 }
 
-fn build_volume<T>(builder: &WriteBuilder<T>) -> String
+fn build_volume<T>(builder: &DatasetWriteBuilder<T>) -> String
 where
     T: TryFromResponse,
 {

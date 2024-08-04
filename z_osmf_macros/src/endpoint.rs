@@ -36,7 +36,7 @@ impl From<Endpoint> for proc_macro::TokenStream {
 
                 #get_response_fn
 
-                pub async fn build(self) -> Result<T, crate::error::Error> {
+                pub async fn build(self) -> crate::Result<T> {
                     use crate::convert::TryIntoTarget;
 
                     self.get_response().await?.try_into_target().await
@@ -73,10 +73,17 @@ impl Endpoint {
             .map(|f| {
                 let EndpointField { ident, ty, .. } = f;
 
-                (
-                    quote! { #ident: impl Into<#ty> },
-                    quote! { #ident: #ident.into() },
-                )
+                if ty.to_token_stream().to_string() == "Arc < str >" {
+                    (
+                        quote! { #ident: impl std::fmt::Display },
+                        quote! { #ident: #ident.to_string().into() },
+                    )
+                } else {
+                    (
+                        quote! { #ident: impl Into<#ty> },
+                        quote! { #ident: #ident.into() },
+                    )
+                }
             })
             .unzip();
 
@@ -110,7 +117,7 @@ impl Endpoint {
         let request_builders: Vec<_> = fields.iter().map(|f| f.request_builder()).collect();
 
         quote! {
-            fn get_request(&self) -> Result<reqwest::Request, crate::error::Error> {
+            fn get_request(&self) -> crate::Result<reqwest::Request> {
                 let path = {
                     #( #path_builders )*
 
@@ -119,23 +126,19 @@ impl Endpoint {
 
                 let mut request_builder = self.core
                     .client
-                    .#method(format!("{}{}", self.core.base_url, path));
+                    .#method(format!("{}{}", self.core.url, path));
 
                 #( #request_builders )*
 
-                if let Ok(lock) = &self.core.cookie.read() {
-                    match lock.as_ref() {
-                        Some(cookie) => {
-                            request_builder = request_builder.header("Cookie", cookie);
-                        }
-                        _ => {}
-                    }
+                let read = self.core.token.read().map_err(|err| crate::Error::RwLockPoisonError(err.to_string()))?;
+                if let Some(ref token) = *read {
+                    request_builder = request_builder.headers(token.into());
                 }
 
                 Ok(request_builder.build()?)
             }
 
-            async fn get_response(&self) -> Result<reqwest::Response, crate::error::Error> {
+            async fn get_response(&self) -> crate::Result<reqwest::Response> {
                 use crate::error::CheckStatus;
 
                 let request = self.get_request()?;
@@ -206,7 +209,7 @@ impl EndpointField {
                 ident: Some(ident),
                 ty,
                 ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
+            } if ty.to_token_stream().to_string() == "Option < Arc < str > >" => Some(quote! {
                 if let Some(value) = &self.#ident {
                     request_builder = request_builder.header(#header, value.as_ref());
                 }
@@ -251,106 +254,67 @@ impl EndpointField {
 
     fn setter(&self) -> Option<TokenStream> {
         match self {
-            EndpointField { ty, .. } if !is_option(ty) => None,
             EndpointField {
-                skip_setter: true, ..
-            } => None,
+                ty, skip_setter, ..
+            } if !is_option(ty) | skip_setter => None,
             EndpointField {
-                setter_fn: Some(setter_fn),
+                setter_fn,
                 ident: Some(ident),
                 ty,
                 ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    #setter_fn(self, Some(value.to_string().into()))
-                }
-            }),
-            EndpointField {
-                setter_fn: Some(setter_fn),
-                ident: Some(ident),
-                ty,
-                ..
-            } if ty.to_token_stream().to_string() == "Box < str >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    #setter_fn(self, value.to_string().into())
-                }
-            }),
-            EndpointField {
-                setter_fn: Some(setter_fn),
-                ident: Some(ident),
-                ty,
-                ..
-            } if is_option(ty) => {
-                let ty = extract_optional_type(ty).unwrap();
+            } if ty.to_token_stream().to_string() == "Option < Arc < str > >" => {
+                let body = if let Some(setter_fn) = setter_fn {
+                    quote! {
+                        #setter_fn(self, value)
+                    }
+                } else {
+                    quote! {
+                        let mut new = self;
+                        new.#ident = Some(value.to_string().into());
+
+                        new
+                    }
+                };
 
                 Some(quote! {
-                    pub fn #ident(self, value: impl Into<#ty>) -> Self {
-                        #setter_fn(self, Some(value.into()))
+                    pub fn #ident<V>(self, value: V) -> Self
+                    where
+                        V: std::fmt::Display,
+                    {
+                        #body
                     }
                 })
             }
             EndpointField {
-                setter_fn: Some(setter_fn),
+                setter_fn,
                 ident: Some(ident),
                 ty,
                 ..
-            } => Some(quote! {
-                pub fn #ident(self, value: impl Into<#ty>) -> Self {
-                    #setter_fn(self, value.into())
-                }
-            }),
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } if ty.to_token_stream().to_string() == "Option < Box < str > >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    let mut new = self;
-                    new.#ident = Some(value.to_string().into());
-
-                    new
-                }
-            }),
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } if ty.to_token_stream().to_string() == "Box < str >" => Some(quote! {
-                pub fn #ident(self, value: impl ToString) -> Self {
-                    let mut new = self;
-                    new.#ident = value.to_string().into();
-
-                    new
-                }
-            }),
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } if is_option(ty) => {
+            } => {
                 let ty = extract_optional_type(ty).unwrap();
 
-                Some(quote! {
-                    pub fn #ident(self, value: impl Into<#ty>) -> Self {
+                let body = if let Some(setter_fn) = setter_fn {
+                    quote! {
+                        #setter_fn(self, Some(value.into()))
+                    }
+                } else {
+                    quote! {
                         let mut new = self;
                         new.#ident = Some(value.into());
 
                         new
                     }
+                };
+
+                Some(quote! {
+                    pub fn #ident<V>(self, value: V) -> Self
+                    where
+                        V: Into<#ty>,
+                    {
+                        #body
+                    }
                 })
             }
-            EndpointField {
-                ident: Some(ident),
-                ty,
-                ..
-            } => Some(quote! {
-                pub fn #ident(self, value: impl Into<#ty>) -> Self {
-                    let mut new = self;
-                    new.#ident = value.into();
-
-                    new
-                }
-            }),
             _ => None,
         }
     }

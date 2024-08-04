@@ -5,23 +5,23 @@ use serde::Serialize;
 use z_osmf_macros::Endpoint;
 
 use crate::convert::TryFromResponse;
-use crate::jobs::Identifier;
+use crate::jobs::JobIdentifier;
 use crate::ClientCore;
 
 use super::get_subsystem;
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restjobs/jobs{subsystem}/{identifier}")]
-pub struct ClassBuilder<T>
+pub struct JobChangeClassBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path, builder_fn = build_subsystem)]
-    subsystem: Option<Box<str>>,
+    subsystem: Option<Arc<str>>,
     #[endpoint(path)]
-    identifier: Identifier,
+    identifier: JobIdentifier,
     #[endpoint(builder_fn = build_body)]
     class: char,
     #[endpoint(skip_setter, skip_builder)]
@@ -30,12 +30,12 @@ where
     target_type: PhantomData<T>,
 }
 
-impl<T> ClassBuilder<T>
+impl<T> JobChangeClassBuilder<T>
 where
     T: TryFromResponse,
 {
-    pub fn asynchronous(self) -> ClassBuilder<()> {
-        ClassBuilder {
+    pub fn asynchronous(self) -> JobChangeClassBuilder<()> {
+        JobChangeClassBuilder {
             core: self.core,
             class: self.class,
             subsystem: self.subsystem,
@@ -54,7 +54,7 @@ struct RequestJson {
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &ClassBuilder<T>,
+    builder: &JobChangeClassBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -69,7 +69,7 @@ where
     })
 }
 
-fn build_subsystem<T>(builder: &ClassBuilder<T>) -> String
+fn build_subsystem<T>(builder: &JobChangeClassBuilder<T>) -> String
 where
     T: TryFromResponse,
 {
@@ -101,7 +101,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
         let job_feedback = zosmf
             .jobs()
             .change_class(identifier, 'A')
@@ -135,7 +135,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let identifier = Identifier::NameId("TESTJOBW".into(), "JOB00023".into());
+        let identifier = JobIdentifier::NameId("TESTJOBW".to_string(), "JOB00023".to_string());
         let job_feedback = zosmf
             .jobs()
             .change_class(identifier, 'A')

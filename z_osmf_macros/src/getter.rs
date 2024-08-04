@@ -73,9 +73,9 @@ impl GetterField {
             } if ty
                 .to_token_stream()
                 .to_string()
-                .starts_with("Option < Box < ") =>
+                .starts_with("Option < Arc < ") =>
             {
-                let ty = extract_box_type(&extract_optional_type(ty).unwrap()).unwrap();
+                let ty = extract_pointer_type(&extract_optional_type(ty).unwrap()).unwrap();
 
                 Some(quote! {
                     pub fn #ident(&self) -> Option<&#ty> {
@@ -100,8 +100,8 @@ impl GetterField {
                 ident: Some(ident),
                 ty,
                 ..
-            } if is_box(ty) => {
-                let ty = extract_box_type(ty).unwrap();
+            } if is_arc(ty) => {
+                let ty = extract_pointer_type(ty).unwrap();
 
                 Some(quote! {
                     pub fn #ident(&self) -> &#ty {
@@ -127,10 +127,10 @@ impl GetterField {
     }
 }
 
-fn extract_box_type(ty: &syn::Type) -> Option<syn::Type> {
+fn extract_pointer_type(ty: &syn::Type) -> Option<syn::Type> {
     if let syn::Type::Path(type_path) = &ty {
         if let Some(path_segment) = type_path.path.segments.first() {
-            if is_box(ty) {
+            if is_arc(ty) {
                 if let syn::PathArguments::AngleBracketed(angle_bracketed) = &path_segment.arguments
                 {
                     let tokens = angle_bracketed.args.first().unwrap().to_token_stream();
@@ -145,10 +145,10 @@ fn extract_box_type(ty: &syn::Type) -> Option<syn::Type> {
     None
 }
 
-fn is_box(ty: &syn::Type) -> bool {
+fn is_arc(ty: &syn::Type) -> bool {
     if let syn::Type::Path(type_path) = &ty {
         if let Some(path_segment) = type_path.path.segments.first() {
-            return path_segment.ident == format_ident!("{}", "Box");
+            return path_segment.ident == format_ident!("{}", "Arc");
         }
     }
 

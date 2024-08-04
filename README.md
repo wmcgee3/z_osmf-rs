@@ -7,7 +7,7 @@ The VERY work in progress Rust z/OSMF<sup>TM</sup> [^1] Client.
 List your datasets:
 ```rust no_run
 #[tokio::main]
-async fn main() -> Result<(), z_osmf::Error> {
+async fn main() -> z_osmf::Result<()> {
     let client = reqwest::Client::new();
     let base_url = "https://mainframe.my-company.com";
 
@@ -31,7 +31,7 @@ async fn main() -> Result<(), z_osmf::Error> {
 List the files in your home directory:
 ```rust no_run
 #[tokio::main]
-async fn main() -> Result<(), z_osmf::Error> {
+async fn main() -> z_osmf::Result<()> {
     let client = reqwest::Client::new();
     let base_url = "https://mainframe.my-company.com";
 
@@ -55,7 +55,7 @@ async fn main() -> Result<(), z_osmf::Error> {
 List all active jobs:
 ```rust no_run
 #[tokio::main]
-async fn main() -> Result<(), z_osmf::Error> {
+async fn main() -> z_osmf::Result<()> {
     let client = reqwest::Client::new();
     let base_url = "https://mainframe.my-company.com";
 

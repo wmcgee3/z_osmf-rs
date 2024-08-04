@@ -1,8 +1,5 @@
-pub use self::reset::ResetBuilder;
-pub use self::set::SetBuilder;
-
-mod reset;
-mod set;
+pub mod reset;
+pub mod set;
 
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -11,21 +8,21 @@ use serde::{Deserialize, Serialize};
 use z_osmf_macros::{Endpoint, Getters};
 
 use crate::convert::TryFromResponse;
-use crate::utils::get_transaction_id;
-use crate::ClientCore;
+use crate::restfiles::get_transaction_id;
+use crate::{ClientCore, Error, Result};
 
-#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, PartialEq, Serialize)]
-pub struct ExtraAttributes {
-    name: Box<str>,
+#[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileExtraAttributeList {
+    name: Arc<str>,
     apf_authorized: bool,
     program_controlled: bool,
     shared_address_space: bool,
     shared_library: bool,
-    transaction_id: Box<str>,
+    transaction_id: Arc<str>,
 }
 
-impl TryFromResponse for ExtraAttributes {
-    async fn try_from_response(value: reqwest::Response) -> Result<Self, crate::error::Error> {
+impl TryFromResponse for FileExtraAttributeList {
+    async fn try_from_response(value: reqwest::Response) -> Result<Self> {
         let transaction_id = get_transaction_id(&value)?;
 
         let json: ResponseJson = value.json().await?;
@@ -36,7 +33,7 @@ impl TryFromResponse for ExtraAttributes {
             let shared_address_space = s.ends_with("YES");
             let shared_library = l.ends_with("YES");
 
-            Ok(ExtraAttributes {
+            Ok(FileExtraAttributeList {
                 name: name.clone(),
                 apf_authorized,
                 program_controlled,
@@ -45,23 +42,21 @@ impl TryFromResponse for ExtraAttributes {
                 transaction_id,
             })
         } else {
-            Err(crate::error::Error::Custom(
-                format!("invalid return value format: {:?}", json.stdout).into(),
-            ))
+            Err(Error::InvalidFormat(json.stdout))
         }
     }
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = put, path = "/zosmf/restfiles/fs{path}")]
-pub(crate) struct ExtraAttributesBuilder<T>
+pub(crate) struct FileExtraAttributeListBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
     target_type: PhantomData<T>,
@@ -69,7 +64,7 @@ where
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    _: &ExtraAttributesBuilder<T>,
+    _: &FileExtraAttributeListBuilder<T>,
 ) -> reqwest::RequestBuilder
 where
     T: TryFromResponse,
@@ -85,12 +80,12 @@ where
 struct RequestJson {
     request: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    set: Option<Box<str>>,
+    set: Option<Arc<str>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    reset: Option<Box<str>>,
+    reset: Option<Arc<str>>,
 }
 
 #[derive(Deserialize)]
 struct ResponseJson {
-    stdout: Box<[Box<str>]>,
+    stdout: Arc<[Arc<str>]>,
 }

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
     let _ = dotenvy::dotenv_override();
 
@@ -5,7 +7,9 @@ pub async fn get_zosmf() -> anyhow::Result<z_osmf::ZOsmf> {
     let username = std::env::var("ZOSMF_USERNAME")?;
     let password = std::env::var("ZOSMF_PASSWORD")?;
 
-    let mut client_builder = reqwest::Client::builder();
+    let mut client_builder = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(10))
+        .danger_accept_invalid_certs(true);
 
     if let Ok(cert_path) = std::env::var("ZOSMF_CERT_PATH") {
         let text = std::fs::read_to_string(cert_path)?;

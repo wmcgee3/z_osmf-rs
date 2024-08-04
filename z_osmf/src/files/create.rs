@@ -8,28 +8,28 @@ use z_osmf_macros::Endpoint;
 use crate::convert::TryFromResponse;
 use crate::ClientCore;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum FileType {
+pub enum FileCreateType {
     Directory,
     File,
 }
 
 #[derive(Clone, Debug, Endpoint)]
 #[endpoint(method = post, path = "/zosmf/restfiles/fs{path}")]
-pub struct CreateBuilder<T>
+pub struct FileCreateBuilder<T>
 where
     T: TryFromResponse,
 {
     core: Arc<ClientCore>,
 
     #[endpoint(path)]
-    path: Box<str>,
+    path: Arc<str>,
 
     #[endpoint(builder_fn = build_body)]
-    file_type: Option<FileType>,
+    file_type: Option<FileCreateType>,
     #[endpoint(skip_builder)]
-    mode: Option<Box<str>>,
+    mode: Option<Arc<str>>,
 
     target_type: PhantomData<T>,
 }
@@ -37,14 +37,14 @@ where
 #[derive(Serialize)]
 struct RequestJson<'a> {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    file_type: Option<&'a FileType>,
+    file_type: Option<&'a FileCreateType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     mode: Option<&'a str>,
 }
 
 fn build_body<T>(
     request_builder: reqwest::RequestBuilder,
-    builder: &CreateBuilder<T>,
+    builder: &FileCreateBuilder<T>,
 ) -> RequestBuilder
 where
     T: TryFromResponse,
@@ -84,7 +84,7 @@ mod tests {
         let create_file = zosmf
             .files()
             .create("/u/jiahj/text.txt")
-            .file_type(FileType::File)
+            .file_type(FileCreateType::File)
             .mode("RWXRW-RW-")
             .get_request()
             .unwrap();
@@ -120,7 +120,7 @@ mod tests {
         let create_file = zosmf
             .files()
             .create("/u/jiahj/testDir")
-            .file_type(FileType::Directory)
+            .file_type(FileCreateType::Directory)
             .mode("rwxr-xrwx")
             .get_request()
             .unwrap();
