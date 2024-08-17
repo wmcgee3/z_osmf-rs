@@ -70,6 +70,7 @@ pub use bytes::Bytes;
 pub use self::error::{Error, Result};
 
 pub mod info;
+pub mod error;
 
 #[cfg(feature = "datasets")]
 pub mod datasets;
@@ -92,7 +93,6 @@ use serde::{Deserialize, Serialize};
 use self::error::CheckStatus;
 
 mod convert;
-mod error;
 mod utils;
 
 /// # ZOsmf
