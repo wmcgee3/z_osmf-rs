@@ -44,7 +44,11 @@ pub enum ZOsmfError {
         message: String,
         details: Option<Vec<String>>,
     },
-    Text(String),
+    Text {
+        url: String,
+        status: reqwest::StatusCode,
+        body: String,
+    },
 }
 
 pub trait CheckStatus {
@@ -60,15 +64,20 @@ impl CheckStatus for reqwest::Response {
             Err(err) => {
                 let url = self.url().to_string();
                 let status = self.status();
-                let text = self.text().await.map_err(|_| Error::Reqwest(err))?;
+                let body = self.text().await.map_err(|_| Error::Reqwest(err))?;
                 let ErrorJson {
                     category,
                     return_code,
                     reason,
                     message,
                     details,
-                } = serde_json::from_str(&text)
-                    .map_err(|_| Error::ZOsmf(ZOsmfError::Text(text)))?;
+                } = serde_json::from_str(&body).map_err(|_| {
+                    Error::ZOsmf(ZOsmfError::Text {
+                        url: url.clone(),
+                        status,
+                        body,
+                    })
+                })?;
 
                 return Err(Error::ZOsmf(ZOsmfError::Json {
                     url,
