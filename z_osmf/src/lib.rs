@@ -366,10 +366,7 @@ impl From<&AuthToken> for (HeaderName, HeaderValue) {
                 reqwest::header::AUTHORIZATION,
                 format!("Bearer {}", token_value).parse().unwrap(),
             ),
-            AuthToken::Ltpa2(token_value) => (
-                reqwest::header::COOKIE,
-                token_value.to_string().parse().unwrap(),
-            ),
+            AuthToken::Ltpa2(_) => (reqwest::header::COOKIE, value.to_string().parse().unwrap()),
         }
     }
 }
