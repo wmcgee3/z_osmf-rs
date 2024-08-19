@@ -12,18 +12,18 @@ use crate::{ClientCore, Result};
 #[derive(Clone, Debug, Deserialize, Eq, Getters, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct FileAttributes {
     name: Arc<str>,
-    mode: Arc<str>,
+    mode: Option<Arc<str>>,
     #[getter(copy)]
-    size: i32,
+    size: Option<i32>,
     #[getter(copy)]
-    uid: i32,
+    uid: Option<i32>,
     #[serde(default)]
     user: Option<Arc<str>>,
     #[getter(copy)]
-    gid: i32,
-    group: Arc<str>,
+    gid: Option<i32>,
+    group: Option<Arc<str>>,
     #[getter(copy)]
-    mtime: NaiveDateTime,
+    mtime: Option<NaiveDateTime>,
     #[serde(default)]
     target: Option<Arc<str>>,
 }
