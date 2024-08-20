@@ -206,6 +206,44 @@ pub enum DatasetVolume {
     Volume(String),
 }
 
+impl From<String> for DatasetVolume {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "*ALIAS" => DatasetVolume::Alias,
+            "MIGRAT" => DatasetVolume::Migrated,
+            "*VSAM*" => DatasetVolume::Vsam,
+            _ => DatasetVolume::Volume(value),
+        }
+    }
+}
+
+impl From<&str> for DatasetVolume {
+    fn from(value: &str) -> Self {
+        DatasetVolume::from(value.to_string())
+    }
+}
+
+impl std::str::FromStr for DatasetVolume {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(s.into())
+    }
+}
+
+impl std::fmt::Display for DatasetVolume {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            DatasetVolume::Alias => "*ALIAS",
+            DatasetVolume::Migrated => "MIGRAT",
+            DatasetVolume::Volume(vol) => vol.as_ref(),
+            DatasetVolume::Vsam => "*VSAM*",
+        };
+
+        write!(f, "{}", s)
+    }
+}
+
 impl<'de> Deserialize<'de> for DatasetVolume {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
@@ -213,12 +251,7 @@ impl<'de> Deserialize<'de> for DatasetVolume {
     {
         let s = String::deserialize(deserializer)?;
 
-        Ok(match s.as_str() {
-            "*ALIAS" => DatasetVolume::Alias,
-            "MIGRAT" => DatasetVolume::Migrated,
-            "*VSAM*" => DatasetVolume::Vsam,
-            _ => DatasetVolume::Volume(s),
-        })
+        Ok(s.parse().unwrap())
     }
 }
 
@@ -227,12 +260,7 @@ impl Serialize for DatasetVolume {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(match self {
-            DatasetVolume::Alias => "*ALIAS",
-            DatasetVolume::Migrated => "MIGRAT",
-            DatasetVolume::Volume(vol) => vol.as_ref(),
-            DatasetVolume::Vsam => "*VSAM*",
-        })
+        serializer.serialize_str(&self.to_string())
     }
 }
 
