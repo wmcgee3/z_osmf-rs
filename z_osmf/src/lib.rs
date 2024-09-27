@@ -69,8 +69,8 @@ pub use bytes::Bytes;
 
 pub use self::error::{Error, Result};
 
-pub mod info;
 pub mod error;
+pub mod info;
 
 #[cfg(feature = "datasets")]
 pub mod datasets;
