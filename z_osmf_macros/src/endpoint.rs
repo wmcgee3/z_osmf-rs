@@ -121,7 +121,7 @@ impl Endpoint {
                 let path = {
                     #( #path_builders )*
 
-                    urlencoding::encode(&format!(#path)).into_owned()
+                    format!(#path)
                 };
 
                 let mut request_builder = self.core
@@ -181,12 +181,12 @@ impl EndpointField {
                 builder_fn: Some(builder_fn),
                 ..
             } => Some(quote! {
-                let #ident = #builder_fn(self);
+                let #ident = urlencoding::encode(&#builder_fn(self).to_string()).into_owned();
             }),
             EndpointField {
                 ident: Some(ident), ..
             } => Some(quote! {
-                let #ident = &self.#ident;
+                let #ident = urlencoding::encode(&self.#ident.to_string()).into_owned();
             }),
             _ => None,
         }
