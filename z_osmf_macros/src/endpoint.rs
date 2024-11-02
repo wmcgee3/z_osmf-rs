@@ -121,7 +121,7 @@ impl Endpoint {
                 let path = {
                     #( #path_builders )*
 
-                    format!(#path)
+                    urlencoding::encode(&format!(#path)).into_owned()
                 };
 
                 let mut request_builder = self.core
