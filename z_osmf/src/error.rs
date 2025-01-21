@@ -7,6 +7,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("z/OSMF API error response: {0:?}")]
+    Api(ApiError),
     #[error("data serialization failed: {0}")]
     Fmt(#[from] std::fmt::Error),
     #[error("invalid response format: {0:?}")]
@@ -29,12 +31,10 @@ pub enum Error {
     SerdeDe(#[from] serde::de::value::Error),
     #[error("header value to string failed: {0}")]
     ReqwestHeaderToString(#[from] reqwest::header::ToStrError),
-    #[error("z/OSMF error response: {0:?}")]
-    ZOsmf(ZOsmfError),
 }
 
 #[derive(Debug)]
-pub enum ZOsmfError {
+pub enum ApiError {
     Json {
         url: String,
         status: reqwest::StatusCode,
@@ -49,6 +49,22 @@ pub enum ZOsmfError {
         status: reqwest::StatusCode,
         body: String,
     },
+}
+
+impl ApiError {
+    pub fn url(&self) -> &str {
+        match self {
+            Self::Json { url, .. } => url,
+            Self::Text { url, .. } => url,
+        }
+    }
+
+    pub fn status(&self) -> reqwest::StatusCode {
+        match self {
+            Self::Json { status, .. } => *status,
+            Self::Text { status, .. } => *status,
+        }
+    }
 }
 
 pub trait CheckStatus {
@@ -72,14 +88,14 @@ impl CheckStatus for reqwest::Response {
                     message,
                     details,
                 } = serde_json::from_str(&body).map_err(|_| {
-                    Error::ZOsmf(ZOsmfError::Text {
+                    Error::Api(ApiError::Text {
                         url: url.clone(),
                         status,
                         body,
                     })
                 })?;
 
-                return Err(Error::ZOsmf(ZOsmfError::Json {
+                return Err(Error::Api(ApiError::Json {
                     url,
                     status,
                     category,
